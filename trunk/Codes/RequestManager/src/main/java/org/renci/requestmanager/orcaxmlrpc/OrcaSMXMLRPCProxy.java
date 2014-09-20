@@ -536,7 +536,7 @@ public class OrcaSMXMLRPCProxy {
 		List<Map<String, ?>> users = new ArrayList<Map<String, ?>>();
                 //TODO
 		//String keyPathStr = GUI.getInstance().getPreference(GUI.PrefsEnum.SSH_PUBKEY);
-                String keyPathStr = null;
+                String keyPathStr = "~/.ssh/id_rsa.pub";
                 //TODO
 		File keyPath;
 		if (keyPathStr.startsWith("~/")) {
@@ -561,16 +561,16 @@ public class OrcaSMXMLRPCProxy {
 		// any additional keys?
                 //TODO
 		//keyPathStr = GUI.getInstance().getPreference(GUI.PrefsEnum.SSH_OTHER_PUBKEY);
-                keyPathStr = null;
+                //keyPathStr = null;
                 //TODO
-		if (keyPathStr.startsWith("~/")) {
-			keyPathStr = keyPathStr.replaceAll("~/", "/");
-			keyPath = new File(System.getProperty("user.home"), keyPathStr);
-		}
-		else {
-			keyPath = new File(keyPathStr);
-		}
-		String otherUserKey = getUserKeyFile(keyPath);
+		//if (keyPathStr.startsWith("~/")) {
+		//	keyPathStr = keyPathStr.replaceAll("~/", "/");
+		//	keyPath = new File(System.getProperty("user.home"), keyPathStr);
+		//}
+		//else {
+		//	keyPath = new File(keyPathStr);
+		//}
+		//String otherUserKey = getUserKeyFile(keyPath);
 
                 //TODO
 		//if (otherUserKey != null) {

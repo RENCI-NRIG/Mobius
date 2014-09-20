@@ -19,6 +19,8 @@ import java.io.InputStreamReader;
 import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.ShadowQSubscriber;
+import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 /**
  * Hello world!
@@ -44,6 +46,13 @@ public class RequestManagerMain
 
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
+        
+        NdlLibManager ndlManager = new NdlLibManager();
+        String ndlReq = ndlManager.generateRequest();
+        
+        sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
+        
+        System.exit(0);
 
         // Start the RMController timer thread
         RMController rmController = new RMController(rmProperties); // Invocation of the constructor will start the RMController thread
@@ -140,6 +149,46 @@ public class RequestManagerMain
 
     }
 
+    // Send modify request to a specific ORCA controller
+    private void sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
 
+        Logger logger = Logger.getLogger(this.getClass());
+
+        String modifyRes = null;
+        try {
+            OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+            orcaProxy.setControllerUrl(controllerUrl);
+            modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
+            logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
+            System.out.println("Result for modify slice for " + sliceId + " = " + modifyRes);
+        } catch (Exception ex) {
+            logger.error("Exception while calling ORCA modifySlice" + ex);
+            System.out.println("Exception while calling ORCA modifySlice" + ex);
+            return;
+        }
+        return;
+
+    }
+    
+    // Send modify request to a specific ORCA controller
+    private static void sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
+
+        //Logger logger = Logger.getLogger(this.getClass());
+
+        String createRes = null;
+        try {
+            OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+            orcaProxy.setControllerUrl(controllerUrl);
+            createRes = orcaProxy.createSlice(sliceId, createReq);
+            //logger.info("Result for create slice for " + sliceId + " = " + createRes);
+            System.out.println("Result for modify slice for " + sliceId + " = " + createRes);
+        } catch (Exception ex) {
+            //logger.error("Exception while calling ORCA createSlice" + ex);
+            System.out.println("Exception while calling ORCA createSlice" + ex);
+            return;
+        }
+        return;
+
+    }    
 
 }

@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
  *
  * @author anirban
  */
-public class RMController {
+public class RMController implements RMConstants{
 
         private static ArrayList<Timer> timers = new ArrayList<Timer>();
 	private static boolean noStart = false;
@@ -92,8 +92,41 @@ public class RMController {
                                     String currOrcaSliceId = currAppRequestInfo.getOrcaSliceID();
                                     System.out.println("Current slice = " + currOrcaSliceId);
                                     logger.info("Current slice = " + currOrcaSliceId);
-
-                                    currAppRequestInfo.setProcessed(true);
+                                    
+                                    if(currAppRequestInfo.getNewReq() != null && currAppRequestInfo.getModifyReq() != null){
+                                        logger.error("App request can't have both modify and new slice request at the same time");
+                                        continue;
+                                    }
+                                    
+                                    if(currAppRequestInfo.getNewReq() != null){ // this is a first time request to create a new slice
+                                        
+                                        NewRequestInfo newReq = currAppRequestInfo.getNewReq();
+                                        processNewReq(newReq);
+                                        currAppRequestInfo.setProcessed(true);
+                                        continue;
+                                                                                
+                                    }
+                                    
+                                    if(currAppRequestInfo.getModifyReq() != null){ // this is a modify request for an existing slice
+                                        
+                                        ModifyRequestInfo modReq = currAppRequestInfo.getModifyReq();
+                                        processModReq(modReq);
+                                        currAppRequestInfo.setProcessed(true);
+                                        continue;
+                                                                                
+                                    }
+                                    
+                                    if(currAppRequestInfo.getLinkReq() != null){ // this is a request to add a link
+                                        
+                                        LinkRequestInfo linkReq = currAppRequestInfo.getLinkReq();
+                                        processLinkReq(linkReq);
+                                        currAppRequestInfo.setProcessed(true);
+                                        continue;
+                                                                                
+                                    }
+                                    
+                                    // In future there can be many other kinds of modify requests, which would be handled here
+                            
                                 }
 
                             } // end for all requests in the queue 
@@ -108,6 +141,22 @@ public class RMController {
 
 
 
+                }
+
+                
+                private void processNewReq(NewRequestInfo newReq) {
+                    
+                    
+                    
+                    
+                }
+
+                private void processModReq(ModifyRequestInfo modReq) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+
+                private void processLinkReq(LinkRequestInfo linkReq) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
                 }
 
 
