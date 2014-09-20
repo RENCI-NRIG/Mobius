@@ -18,7 +18,7 @@ public class LinkRequestInfo {
     
     // following is the identifier in the stitchport registry; 
     // querying with this identifier gives the url of the stitchport mapper service; 
-    // querying that service gives IP level info, vlan tags etc.
+    // querying that service gives IP level info, vlan tag, port etc.
     private String stitchPortID;
 
     public LinkRequestInfo(String wfUuid, String linkId, int linkBandwidth, String stitchPortID) {
