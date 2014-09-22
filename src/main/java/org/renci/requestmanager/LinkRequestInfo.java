@@ -35,6 +35,10 @@ public class LinkRequestInfo {
         this.stitchPortID = stitchPortID;
     }    
 
+    public LinkRequestInfo(){
+        
+    }
+    
     public String getWfUuid() {
         return wfUuid;
     }
