@@ -17,16 +17,27 @@ import java.io.InputStreamReader;
  */
 public interface RMConstants {
     
+    public String CondorBasicTypeName = "condor";
+    public String HadoopBasicTypeName = "hadoop";
+    public String MPIBasicTypeName = "mpi";
+    public String SPSuffix = "_sp"; // stitch port suffix
+    public String StorageSuffix = "_storage"; // storage suffix
+    public String MultiSuffix = "_multi"; // *multi ones are where master and workers are in different domains
+    
     public enum RequestTemplates {
         
-        CONDOR_POOL("condor_pool"),
-        CONDOR_POOL_SP("condor_pool_sp"),
-        CONDOR_POOL_STORAGE("condor_pool_storage"),
-        CONDOR_POOL_STORAGE_SP("condor_pool_storage_sp"),
-        HADOOP_CLUSTER("hadoop_cluster"),
-        HADOOP_CLUSTER_STORAGE("hadoop_cluster_storage"),
-        MPI_CLUSTER("mpi_cluster"),
-        MPI_CLUSTER_STORAGE("mpi_cluster_storage");
+        CONDOR_POOL(CondorBasicTypeName),
+        CONDOR_POOL_SP(CondorBasicTypeName + SPSuffix),
+        CONDOR_POOL_STORAGE(CondorBasicTypeName + StorageSuffix),
+        CONDOR_POOL_STORAGE_SP(CondorBasicTypeName + StorageSuffix + SPSuffix),
+        CONDOR_POOL_MULTI(CondorBasicTypeName + MultiSuffix), 
+        CONDOR_POOL_SP_MULTI(CondorBasicTypeName + SPSuffix + MultiSuffix),
+        CONDOR_POOL_STORAGE_MULTI(CondorBasicTypeName + StorageSuffix + MultiSuffix),
+        CONDOR_POOL_STORAGE_SP_MULTI(CondorBasicTypeName + StorageSuffix + SPSuffix + MultiSuffix),
+        HADOOP_CLUSTER(HadoopBasicTypeName),
+        HADOOP_CLUSTER_STORAGE(HadoopBasicTypeName + StorageSuffix),
+        MPI_CLUSTER(MPIBasicTypeName),
+        MPI_CLUSTER_STORAGE(MPIBasicTypeName + StorageSuffix);
 
         public String name;
         RequestTemplates(String s) {
@@ -34,6 +45,8 @@ public interface RMConstants {
         }
         
     }
+    
+    public String defaultControllerUrl = "https://geni.renci.org:11443/orca/xmlrpc";
     
     public enum ComputeDomains {
         
@@ -45,7 +58,7 @@ public interface RMConstants {
         FIU("FIU (Miami, FL USA) XO Rack"),
         UH("UH (Houston, TX USA) XO Rack"),
         NCSU("NCSU (Raleigh, NC USA) XO Rack"),
-        // TODO : Add more racks here
+        // TODO : Add more racks here. Or, read it from a configuration file
         UvA("UvA (Amsterdam, The Netherlands) XO Rack");
         
         
@@ -62,14 +75,14 @@ public interface RMConstants {
     }
     
     
-    public class CondorPoolDefaults{
+    public class CondorDefaults{
         
-        private static final int defaultBW = 100 ; //100Mb/s
+        private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
         private static final String defaultImageUrl = "http://geni-images.renci.org/images/standard/centos/centos6.3-v1.0.11.xml"; // defaul url to image xml file
         private static final String defaultImageHash = "776f4874420266834c3e56c8092f5ca48a180eed"; // hash of the image xml file
-        private static final String defaultImageName = "CP-default"; // default name of image
+        private static final String defaultImageName = "Condor-default-image"; // default name of image
         private static String defaultPostbootMaster = readStringFromFile(""); // default postboot script for master
         private static String defaultPostbootWorker = readStringFromFile(""); // default postboot script for workers
         
@@ -102,7 +115,7 @@ public interface RMConstants {
             
 	}
         
-        public CondorPoolDefaults(){
+        public CondorDefaults(){
             
         }
 
@@ -111,7 +124,7 @@ public interface RMConstants {
         }
 
         public static void setDefaultPostbootMaster(String defaultPostbootMaster) {
-            CondorPoolDefaults.defaultPostbootMaster = defaultPostbootMaster;
+            CondorDefaults.defaultPostbootMaster = defaultPostbootMaster;
         }
 
         public static String getDefaultPostbootWorker() {
@@ -119,10 +132,10 @@ public interface RMConstants {
         }
 
         public static void setDefaultPostbootWorker(String defaultPostbootWorker) {
-            CondorPoolDefaults.defaultPostbootWorker = defaultPostbootWorker;
+            CondorDefaults.defaultPostbootWorker = defaultPostbootWorker;
         }
 
-        public static int getDefaultBW() {
+        public static long getDefaultBW() {
             return defaultBW;
         }
 

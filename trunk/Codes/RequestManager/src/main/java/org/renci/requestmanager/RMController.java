@@ -11,6 +11,8 @@ import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.log4j.Logger;
+import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 /**
  *
@@ -101,7 +103,7 @@ public class RMController implements RMConstants{
                                     if(currAppRequestInfo.getNewReq() != null){ // this is a first time request to create a new slice
                                         
                                         NewRequestInfo newReq = currAppRequestInfo.getNewReq();
-                                        processNewReq(newReq);
+                                        processNewReq(newReq, currOrcaSliceId);
                                         currAppRequestInfo.setProcessed(true);
                                         continue;
                                                                                 
@@ -144,10 +146,49 @@ public class RMController implements RMConstants{
                 }
 
                 
-                private void processNewReq(NewRequestInfo newReq) {
+                /*
+                * Processes a new user request, generates appropriate ndl request and sends it to ORCA/ExoGENI
+                */
+                
+                private void processNewReq(NewRequestInfo newReq, String orcaSliceID) {
                     
+                    if(newReq == null || orcaSliceID == null || orcaSliceID.isEmpty()){
+                        logger.error("newReq or orcaSliceID is null.. new user request not processed..");
+                        return;
+                    }
                     
+                    String requestedTemplateType = newReq.getTemplateType();
                     
+                    if (requestedTemplateType == null){
+                        logger.error("requestedTemplateType is null.. new user request not processed..");
+                        return;
+                    }
+                    
+                    // Depending on the template type, call ndllib to generate appropriate request
+                    NdlLibManager ndlManager = new NdlLibManager();
+                    String ndlReq = null;
+                    
+                    if(requestedTemplateType.startsWith(CondorBasicTypeName)){
+                        logger.info("Calling ndllib to generate a request with basic type = " + CondorBasicTypeName);
+                        ndlReq = ndlManager.generateNewCondorRequest(newReq, logger);
+                    }
+                    else if(requestedTemplateType.startsWith(HadoopBasicTypeName)){
+                        logger.info("Calling ndllib to generate a request with basic type = " + HadoopBasicTypeName);
+                        ndlReq = ndlManager.generateNewHadoopRequest(newReq);
+                    }
+                    else if(requestedTemplateType.startsWith(MPIBasicTypeName)){
+                        logger.info("Calling ndllib to generate a request with basic type = " + MPIBasicTypeName);
+                        ndlReq = ndlManager.generateNewMPIRequest(newReq);
+                    }
+                    else {
+                        logger.error("Unsupported requested template type");
+                        return;
+                    }
+                    
+                    // Send request to ExoGENI
+                    logger.info("Sending request to ExoGENI...");
+                    sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
+                    logger.info("Done processing new user request");
                     
                 }
 
@@ -159,7 +200,52 @@ public class RMController implements RMConstants{
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
                 }
 
+                /*
+                * Sends ndl request to a specific controller
+                */
+                private void sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
 
+                    if(controllerUrl == null || controllerUrl.isEmpty()){
+                        controllerUrl = RMConstants.defaultControllerUrl;
+                    }
+                    
+                    String createRes = null;
+                    try {
+                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+                        orcaProxy.setControllerUrl(controllerUrl);
+                        createRes = orcaProxy.createSlice(sliceId, createReq);
+                        logger.info("Result for create slice for " + sliceId + " = " + createRes);
+                        System.out.println("Result for modify slice for " + sliceId + " = " + createRes);
+                    } catch (Exception ex) {
+                        logger.error("Exception while calling ORCA createSlice" + ex);
+                        System.out.println("Exception while calling ORCA createSlice" + ex);
+                        return;
+                    }
+
+                }
+                
+                /*
+                * Sends ndl request to the default controller
+                */
+                private void sendCreateRequestToORCA(String sliceId, String createReq){
+                    
+                    String controllerUrl = RMConstants.defaultControllerUrl;
+                                       
+                    String createRes = null;
+                    try {
+                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+                        orcaProxy.setControllerUrl(controllerUrl);
+                        createRes = orcaProxy.createSlice(sliceId, createReq);
+                        logger.info("Result for create slice for " + sliceId + " = " + createRes);
+                        System.out.println("Result for modify slice for " + sliceId + " = " + createRes);
+                    } catch (Exception ex) {
+                        logger.error("Exception while calling ORCA createSlice" + ex);
+                        System.out.println("Exception while calling ORCA createSlice" + ex);
+                        return;
+                    }
+
+                }
+                
                 
         }    
     

@@ -16,7 +16,7 @@ public class NewRequestInfo {
     private String templateType; // mandatory: Can be anything specified in RMConstants - "condor_pool", "condor_pool_storage" ....
     private int newCompRes; // optional: initial number of workers (HTCondor, Hadoop, MPI), if requested
     private int newStorage; // optional: initial amount of storage in GB, if requested
-    private int newBandwidth; // optional: bandwidth between compute resources in Mb/s, if requested
+    private long newBandwidth; // optional: bandwidth between compute resources in Mb/s, if requested
     private String newImageUrl; // optional: image url, if requested
     private String newImageHash; // optional: image hash, if requested
     private String newImageName; // optional: image name, if requested
@@ -26,7 +26,7 @@ public class NewRequestInfo {
     
     // NOTE: Not allowing user to pick domain
 
-    public NewRequestInfo(String wfUuid, String templateType, int newCompRes, int newStorage, int newBandwidth, LinkRequestInfo newLinkInfo) {
+    public NewRequestInfo(String wfUuid, String templateType, int newCompRes, int newStorage, long newBandwidth, LinkRequestInfo newLinkInfo) {
         this.wfUuid = wfUuid;
         this.templateType = templateType;
         this.newCompRes = newCompRes;
@@ -35,7 +35,7 @@ public class NewRequestInfo {
         this.newLinkInfo = newLinkInfo;
     }
     
-    public NewRequestInfo(String templateType, int newCompRes, int newStorage, int newBandwidth, LinkRequestInfo newLinkInfo) {
+    public NewRequestInfo(String templateType, int newCompRes, int newStorage, long newBandwidth, LinkRequestInfo newLinkInfo) {
         this.templateType = templateType;
         this.newCompRes = newCompRes;
         this.newStorage = newStorage;
@@ -53,14 +53,14 @@ public class NewRequestInfo {
         this.newCompRes = newCompRes;
     }
 
-    public NewRequestInfo(String templateType, int newCompRes, int newStorage, int newBandwidth) {
+    public NewRequestInfo(String templateType, int newCompRes, int newStorage, long newBandwidth) {
         this.templateType = templateType;
         this.newCompRes = newCompRes;
         this.newStorage = newStorage;
         this.newBandwidth = newBandwidth;
     }
 
-    public NewRequestInfo(String templateType, int newCompRes, int newBandwidth) {
+    public NewRequestInfo(String templateType, int newCompRes, long newBandwidth) {
         this.templateType = templateType;
         this.newCompRes = newCompRes;
         this.newBandwidth = newBandwidth;
@@ -94,14 +94,54 @@ public class NewRequestInfo {
         this.newStorage = newStorage;
     }
 
-    public int getNewBandwidth() {
+    public long getNewBandwidth() {
         return newBandwidth;
     }
 
-    public void setNewBandwidth(int newBandwidth) {
+    public void setNewBandwidth(long newBandwidth) {
         this.newBandwidth = newBandwidth;
     }
 
+    public String getNewImageUrl() {
+        return newImageUrl;
+    }
+
+    public void setNewImageUrl(String newImageUrl) {
+        this.newImageUrl = newImageUrl;
+    }
+
+    public String getNewImageHash() {
+        return newImageHash;
+    }
+
+    public void setNewImageHash(String newImageHash) {
+        this.newImageHash = newImageHash;
+    }
+
+    public String getNewImageName() {
+        return newImageName;
+    }
+
+    public void setNewImageName(String newImageName) {
+        this.newImageName = newImageName;
+    }
+
+    public String getNewPostbootMaster() {
+        return newPostbootMaster;
+    }
+
+    public void setNewPostbootMaster(String newPostbootMaster) {
+        this.newPostbootMaster = newPostbootMaster;
+    }
+
+    public String getNewPostbootWorker() {
+        return newPostbootWorker;
+    }
+
+    public void setNewPostbootWorker(String newPostbootWorker) {
+        this.newPostbootWorker = newPostbootWorker;
+    }
+   
     public LinkRequestInfo getNewLinkInfo() {
         return newLinkInfo;
     }

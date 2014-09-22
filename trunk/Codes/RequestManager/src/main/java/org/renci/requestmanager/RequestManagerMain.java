@@ -48,7 +48,7 @@ public class RequestManagerMain
         processPreferences();
         
         NdlLibManager ndlManager = new NdlLibManager();
-        String ndlReq = ndlManager.generateRequest();
+        String ndlReq = ndlManager.generateTestRequest();
         
         sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
         
@@ -170,7 +170,7 @@ public class RequestManagerMain
 
     }
     
-    // Send modify request to a specific ORCA controller
+    // Send create request to a specific ORCA controller
     private static void sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
 
         //Logger logger = Logger.getLogger(this.getClass());
