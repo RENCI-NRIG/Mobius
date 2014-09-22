@@ -24,6 +24,9 @@ public interface RMConstants {
     public String StorageSuffix = "_storage"; // storage suffix
     public String MultiSuffix = "_multi"; // *multi ones are where master and workers are in different domains
     
+    public String defaultControllerUrl = "https://geni.renci.org:11443/orca/xmlrpc";
+    public String defaultSPMapperUrl = "http://url.sp.mapper";
+    
     public enum RequestTemplates {
         
         CONDOR_POOL(CondorBasicTypeName),
@@ -46,7 +49,6 @@ public interface RMConstants {
         
     }
     
-    public String defaultControllerUrl = "https://geni.renci.org:11443/orca/xmlrpc";
     
     public enum ComputeDomains {
         
@@ -73,7 +75,6 @@ public interface RMConstants {
                    
         
     }
-    
     
     public class CondorDefaults{
         
