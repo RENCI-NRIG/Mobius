@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 import org.apache.log4j.Logger;
-import org.renci.requestmanager.amqp.ShadowQSubscriber;
+import org.renci.requestmanager.amqp.RequestSubscriber;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
@@ -57,9 +57,9 @@ public class RequestManagerMain
         // Start the RMController timer thread
         RMController rmController = new RMController(rmProperties); // Invocation of the constructor will start the RMController thread
         
-        // Start ShadowQSubscriber thread
+        // Start RequestSubscriber thread
         try {
-            Thread shadowQsubscriberThread = new Thread(new ShadowQSubscriber(rmProperties));
+            Thread shadowQsubscriberThread = new Thread(new RequestSubscriber(rmProperties));
             shadowQsubscriberThread.start();
         } catch (Exception ex) {
             logger.error("Exception while starting ShadowQSubscriber thread " + ex);
@@ -150,19 +150,19 @@ public class RequestManagerMain
     }
 
     // Send modify request to a specific ORCA controller
-    private void sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
+    private static void sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
 
-        Logger logger = Logger.getLogger(this.getClass());
+        //Logger logger = Logger.getLogger(this.getClass());
 
         String modifyRes = null;
         try {
             OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
             orcaProxy.setControllerUrl(controllerUrl);
             modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
-            logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
+            //logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
             System.out.println("Result for modify slice for " + sliceId + " = " + modifyRes);
         } catch (Exception ex) {
-            logger.error("Exception while calling ORCA modifySlice" + ex);
+            //logger.error("Exception while calling ORCA modifySlice" + ex);
             System.out.println("Exception while calling ORCA modifySlice" + ex);
             return;
         }

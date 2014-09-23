@@ -17,17 +17,18 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.renci.requestmanager.AppRequestInfo;
+import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMState;
 
 /**
  *
  * @author anirban
  */
-public class ShadowQSubscriber implements Runnable {
+public class RequestSubscriber implements Runnable {
 
     // There is one AMQP queue per slice for resouce requests
-    // This slice name is read from configuration file when request manager starts
-    private static String QUEUE_NAME = "testSlice"; 
+    // This queue/slice name is read from configuration file when request manager starts
+    private static String QUEUE_NAME = "testRequestQ"; 
     
     protected ConnectionFactory factory = null;
     
@@ -35,7 +36,7 @@ public class ShadowQSubscriber implements Runnable {
     
     private static Properties rmProperties = null;
 
-    public ShadowQSubscriber(Properties rmProps) throws Exception{
+    public RequestSubscriber(Properties rmProps) throws Exception{
         
         logger = Logger.getLogger(this.getClass());
         
@@ -65,12 +66,14 @@ public class ShadowQSubscriber implements Runnable {
                 System.out.println(" [x] Received '" + message + "'");
               
                 // Parse message
-                AppRequestInfo newReq = parseAndCreateAppRequest(message);
+                AppRequestInfo appReq = parseAndCreateAppRequest(message);
                 
-                // Add it to app request queue               
-                RMState rmState = RMState.getInstance();
-                rmState.addReqToAppReqQ(newReq);
-        
+                // Add it to app request queue
+                if(appReq != null){
+                    RMState rmState = RMState.getInstance();
+                    rmState.addReqToAppReqQ(appReq);
+                }
+                
                 System.out.println("DONE...");
              
             }
@@ -111,12 +114,44 @@ public class ShadowQSubscriber implements Runnable {
             logger.info("Exception while parsing JSON message " + ex);
         }
 
-        logger.info("Done parsing JSON");
+        logger.info("Done parsing JSON message");
         
-        String reqType = (String) jsonObject.get("type");
+        AppRequestInfo appReq = null;
+        
+        String reqType = (String) jsonObject.get("requestType");
         logger.info("Resource request type: " + reqType);
         
         if(reqType.equalsIgnoreCase("new")){
+            
+            // Check mandatory fields
+            String requestTemplateType = (String) jsonObject.get("req_templateType");
+            if(requestTemplateType == null){
+                logger.error("new resource request has to have a req_templateType");
+                return null;
+            }
+            
+            String requestSliceID = (String) jsonObject.get("req_sliceID");
+            if(requestSliceID == null){
+                logger.error("new resource request has to have a req_sliceID");
+                return null;
+            }
+            
+            String requestWfuuid = (String) jsonObject.get("req_wfuuid");
+            if(requestWfuuid == null){
+                logger.error("new resource request has to have a req_wfuuid");
+                return null;
+            }
+            
+            NewRequestInfo newReq = new NewRequestInfo();
+            newReq.setTemplateType(requestTemplateType);
+            newReq.setWfUuid(reqType);
+            // Will pass requestSliceID as parameter to AppRequestInfo constructor
+            
+            if(jsonObject.containsKey("")){
+                
+            }
+            
+            appReq = new AppRequestInfo(requestSliceID, null, null, newReq);
             
         }
         else if(reqType.equalsIgnoreCase("modifyCompute")){
@@ -126,6 +161,7 @@ public class ShadowQSubscriber implements Runnable {
             
         }
         
+        /*
         Long id =  (Long) jsonObject.get("id");
         System.out.println("The id is: " + id.toString());
 
@@ -134,11 +170,10 @@ public class ShadowQSubscriber implements Runnable {
         for(int i=0; i<lang.size(); i++){
                 System.out.println("The " + i + " element of the array: "+lang.get(i));
         }
+        */
         
         
-        AppRequestInfo newReq = new AppRequestInfo("testSlice", null, null, null);
-        
-        return newReq;
+        return appReq;
         
     }
     
