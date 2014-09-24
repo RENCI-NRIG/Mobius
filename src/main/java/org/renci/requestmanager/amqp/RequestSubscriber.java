@@ -165,8 +165,6 @@ public class RequestSubscriber implements Runnable {
                 newReq.setNewCompRes(-1);
             }
             
-            logger.info("Read compute");
-            
             if(jsonObject.containsKey("req_storage")){
                 Long requestStorage = (Long) jsonObject.get("req_storage");
                 logger.info("requestStorage = " + requestStorage.intValue());
@@ -176,8 +174,6 @@ public class RequestSubscriber implements Runnable {
                 newReq.setNewStorage(-1);
             }
             
-            logger.info("Read storage");
-            
             if(jsonObject.containsKey("req_BW")){
                 Long requestBW = (Long) jsonObject.get("req_BW");
                 logger.info("requestBW = " + requestBW.longValue());
@@ -186,8 +182,7 @@ public class RequestSubscriber implements Runnable {
             else{
                 newReq.setNewBandwidth(-1);
             }
-            
-            logger.info("Read BW");
+          
             
             // image properties
             if(jsonObject.containsKey("req_imageUrl") && jsonObject.containsKey("req_imageHash") && jsonObject.containsKey("req_imageName")){
@@ -197,14 +192,13 @@ public class RequestSubscriber implements Runnable {
                 newReq.setNewImageUrl(requestImageUrl);
                 newReq.setNewImageHash(requestImageHash);
                 newReq.setNewImageName(requestImageName);
+                logger.info("requestImageUrl = " + requestImageUrl + " | " + "requestImageHash = " + requestImageHash + " | " + "requestImageName = " + requestImageName);
             }
             else{
                 newReq.setNewImageUrl(null);
                 newReq.setNewImageHash(null);
                 newReq.setNewImageName(null);
             }
-            
-            logger.info("Read image");
             
             // postboot scripts
             if(jsonObject.containsKey("req_postbootMaster")){
@@ -223,7 +217,6 @@ public class RequestSubscriber implements Runnable {
                 newReq.setNewPostbootWorker(null);
             }
             
-            logger.info("Read postboot");
             
             // Link request
             if(jsonObject.containsKey("req_linkID") && jsonObject.containsKey("req_linkBW") && jsonObject.containsKey("req_stitchportID")){

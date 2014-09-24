@@ -63,7 +63,7 @@ public class NdlLibManager implements RMConstants{
         String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name;
         
         // Choose domains for master and worker
-        if(templateType.matches(MultiSuffix)){ // master and workers requested to be in separate domains
+        if(templateType.contains(MultiSuffix)){ // master and workers requested to be in separate domains
             logger.info("Using master domain = " + domainName1);
             logger.info("Using workers domain = " + domainName2);
             master.setDomain(domainName1);
@@ -125,7 +125,7 @@ public class NdlLibManager implements RMConstants{
         // Now add storage or stitchports, if either is requested
         
         // Storage: TODO: Ask Paul how to do this
-        if(templateType.matches(StorageSuffix)){ //Storage is requested
+        if(templateType.contains(StorageSuffix)){ //Storage is requested
             // Create new storage node and attach to master node
             StorageNode storage = s.addStorageNode("Storage");
             Network link = s.addLink("LinkToStorage");
@@ -133,8 +133,9 @@ public class NdlLibManager implements RMConstants{
             // Set properties of storage
         }
         
+        
         // Stitchport + autoIP
-        if(templateType.matches(SPSuffix)){ // Stitchport requested
+        if(templateType.contains(SPSuffix)){ // Stitchport requested
                         
             logger.info("request includes request for stitchport");
             // TODO: Read LinkRequestInfo inside newReq; query SP mapper and get these properties
