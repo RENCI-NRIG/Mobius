@@ -135,9 +135,8 @@ public class NdlLibManager implements RMConstants{
         
         // Stitchport + autoIP
         if(templateType.matches(SPSuffix)){ // Stitchport requested
-            StitchPort  data       = s.addStitchPort("Data");
-            InterfaceNode2Net dataIface    = (InterfaceNode2Net) net.stitch(data);
-            
+                        
+            logger.info("request includes request for stitchport");
             // TODO: Read LinkRequestInfo inside newReq; query SP mapper and get these properties
             
             LinkRequestInfo linkReq = newReq.getNewLinkInfo();
@@ -149,6 +148,13 @@ public class NdlLibManager implements RMConstants{
                 
                 int label = spInfo.getVlanTagSet().get(0).intValue(); // get the first available vlan tag
                 String port = spInfo.getPortSet().get(0);
+                              
+                StitchPort  data       = s.addStitchPort("Data");
+                InterfaceNode2Net dataIface    = (InterfaceNode2Net) net.stitch(data);
+                
+                logger.info("Using stitchport vlan tag = " + label);
+                logger.info("Using stitchport port urn = " + port);
+                
                 data.setLabel(Integer.toString(label)); //
                 data.setPort(port);
                 
@@ -181,6 +187,9 @@ public class NdlLibManager implements RMConstants{
         workersIface.setNetmask("255.255.255.0");
         
         logger.debug("Generated request = " + "\n" + s.getRequest());
+        
+        // For debugging saving the request to a file in /tmp
+        s.save("/tmp/generatedRequest.rdf");
         
         return (s.getRequest());        
 
