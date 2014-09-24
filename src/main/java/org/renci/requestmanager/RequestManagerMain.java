@@ -47,20 +47,21 @@ public class RequestManagerMain
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
         
-        NdlLibManager ndlManager = new NdlLibManager();
-        String ndlReq = ndlManager.generateTestRequest();
-        
-        sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
-        
-        System.exit(0);
+//        NdlLibManager ndlManager = new NdlLibManager();
+//        String ndlReq = ndlManager.generateTestRequest();
+//        
+//        sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
+//        
+//        System.exit(0);
 
         // Start the RMController timer thread
         RMController rmController = new RMController(rmProperties); // Invocation of the constructor will start the RMController thread
         
         // Start RequestSubscriber thread
         try {
-            Thread shadowQsubscriberThread = new Thread(new RequestSubscriber(rmProperties));
-            shadowQsubscriberThread.start();
+            Thread requestSubscriberThread = new Thread(new RequestSubscriber(rmProperties));
+            requestSubscriberThread.start();
+            logger.info("Started request subscriber thread...");
         } catch (Exception ex) {
             logger.error("Exception while starting ShadowQSubscriber thread " + ex);
         }

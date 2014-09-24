@@ -17,6 +17,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.renci.requestmanager.AppRequestInfo;
+import org.renci.requestmanager.LinkRequestInfo;
 import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMState;
 
@@ -28,7 +29,7 @@ public class RequestSubscriber implements Runnable {
 
     // There is one AMQP queue per slice for resouce requests
     // This queue/slice name is read from configuration file when request manager starts
-    private static String QUEUE_NAME = "testRequestQ"; 
+    private static String QUEUE_NAME = null; 
     
     protected ConnectionFactory factory = null;
     
@@ -72,6 +73,7 @@ public class RequestSubscriber implements Runnable {
                 if(appReq != null){
                     RMState rmState = RMState.getInstance();
                     rmState.addReqToAppReqQ(appReq);
+                    logger.info("Added new request to appRequestQ...");
                 }
                 
                 System.out.println("DONE...");
@@ -80,6 +82,7 @@ public class RequestSubscriber implements Runnable {
             
         } catch (Exception ex) {
             logger.error("Exception while getting message from AMQP queue: " + ex);
+            ex.printStackTrace();
         }
         
     }
@@ -98,7 +101,7 @@ public class RequestSubscriber implements Runnable {
         factory.setUsername("anirban");
         factory.setPassword("adamant123");  
                
-        QUEUE_NAME = "testSlice"; // populated from rmProps
+        QUEUE_NAME = "testRequestQ"; // populated from rmProps
         
     }
     
@@ -111,7 +114,8 @@ public class RequestSubscriber implements Runnable {
         try {
             jsonObject = (JSONObject) jsonParser.parse(amqpMesg);
         } catch (ParseException ex) {
-            logger.info("Exception while parsing JSON message " + ex);
+            logger.info("Exception while parsing JSON amqp message " + ex);
+            return null;
         }
 
         logger.info("Done parsing JSON message");
@@ -144,21 +148,126 @@ public class RequestSubscriber implements Runnable {
             
             NewRequestInfo newReq = new NewRequestInfo();
             newReq.setTemplateType(requestTemplateType);
-            newReq.setWfUuid(reqType);
+            newReq.setWfUuid(requestWfuuid);
             // Will pass requestSliceID as parameter to AppRequestInfo constructor
             
-            if(jsonObject.containsKey("")){
+            logger.info("requestTemplateType = " + requestTemplateType);
+            logger.info("requestWfUuid = " + requestWfuuid);
+            logger.info("requestSliceID = " + requestSliceID);
+                    
+            // compute, storage and bandwidth
+            if(jsonObject.containsKey("req_numWorkers")){
+                Long requestNumWorkers = (Long) jsonObject.get("req_numWorkers");
+                logger.info("requestNumWorkers = " + requestNumWorkers.intValue());
+                newReq.setNewCompRes(requestNumWorkers.intValue());
+            }
+            else{
+                newReq.setNewCompRes(-1);
+            }
+            
+            logger.info("Read compute");
+            
+            if(jsonObject.containsKey("req_storage")){
+                Long requestStorage = (Long) jsonObject.get("req_storage");
+                logger.info("requestStorage = " + requestStorage.intValue());
+                newReq.setNewStorage(requestStorage.intValue());
+            }
+            else{
+                newReq.setNewStorage(-1);
+            }
+            
+            logger.info("Read storage");
+            
+            if(jsonObject.containsKey("req_BW")){
+                Long requestBW = (Long) jsonObject.get("req_BW");
+                logger.info("requestBW = " + requestBW.longValue());
+                newReq.setNewBandwidth(requestBW.longValue());
+            }
+            else{
+                newReq.setNewBandwidth(-1);
+            }
+            
+            logger.info("Read BW");
+            
+            // image properties
+            if(jsonObject.containsKey("req_imageUrl") && jsonObject.containsKey("req_imageHash") && jsonObject.containsKey("req_imageName")){
+                String requestImageUrl = (String) jsonObject.get("req_imageUrl");
+                String requestImageHash = (String) jsonObject.get("req_imageHash");
+                String requestImageName = (String) jsonObject.get("req_imageName");
+                newReq.setNewImageUrl(requestImageUrl);
+                newReq.setNewImageHash(requestImageHash);
+                newReq.setNewImageName(requestImageName);
+            }
+            else{
+                newReq.setNewImageUrl(null);
+                newReq.setNewImageHash(null);
+                newReq.setNewImageName(null);
+            }
+            
+            logger.info("Read image");
+            
+            // postboot scripts
+            if(jsonObject.containsKey("req_postbootMaster")){
+                String requestPostbootMaster = (String) jsonObject.get("req_postbootMaster");
+                newReq.setNewPostbootMaster(requestPostbootMaster);
+            }
+            else{
+                newReq.setNewPostbootMaster(null);
+            }
+            
+            if(jsonObject.containsKey("req_postbootWorker")){
+                String requestPostbootWorker = (String) jsonObject.get("req_postbootWorker");
+                newReq.setNewPostbootWorker(requestPostbootWorker);
+            }
+            else{
+                newReq.setNewPostbootWorker(null);
+            }
+            
+            logger.info("Read postboot");
+            
+            // Link request
+            if(jsonObject.containsKey("req_linkID") && jsonObject.containsKey("req_linkBW") && jsonObject.containsKey("req_stitchportID")){
+                String requestLinkID = (String) jsonObject.get("req_linkID");
+                Long requestLinkBW = (Long) jsonObject.get("req_linkBW");
+                String requestStitchportID = (String) jsonObject.get("req_stitchportID");
                 
+                LinkRequestInfo linkInfo = new LinkRequestInfo();
+                linkInfo.setLinkId(requestLinkID);
+                linkInfo.setLinkBandwidth(requestLinkBW.longValue());
+                linkInfo.setStitchPortID(requestStitchportID);
+                linkInfo.setWfUuid(requestWfuuid);
+                
+                newReq.setNewLinkInfo(linkInfo);
+                
+            }
+            else if(jsonObject.containsKey("req_linkID") && jsonObject.containsKey("req_stitchportID")){
+                String requestLinkID = (String) jsonObject.get("req_linkID");
+                String requestStitchportID = (String) jsonObject.get("req_stitchportID");
+                
+                LinkRequestInfo linkInfo = new LinkRequestInfo();
+                linkInfo.setLinkId(requestLinkID);
+                linkInfo.setLinkBandwidth(-1);
+                linkInfo.setStitchPortID(requestStitchportID);
+                linkInfo.setWfUuid(requestWfuuid);
+                
+                newReq.setNewLinkInfo(linkInfo);
+            }
+            else {
+                newReq.setNewLinkInfo(null);
             }
             
             appReq = new AppRequestInfo(requestSliceID, null, null, newReq);
             
+            
         }
         else if(reqType.equalsIgnoreCase("modifyCompute")){
+            
+            // TODO: parse and create modifyrequest
            
         }
         else if(reqType.equalsIgnoreCase("modifyNetwork")){
             
+            // TODO: when we have slice modify
         }
         
         /*

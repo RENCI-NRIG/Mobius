@@ -21,8 +21,8 @@ public class RequestTestPublisher {
 
     public static void main(String[] argv) throws Exception {
 
-        buildMessage();
-        System.exit(0);
+//        buildMessage();
+//        System.exit(0);
         
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("gaul.isi.edu");
@@ -51,14 +51,14 @@ public class RequestTestPublisher {
         JSONObject obj = new JSONObject();
 	// mandatory
         obj.put("requestType", "new");
-        obj.put("req_templateType", "condor");
+        obj.put("req_templateType", "condor_sp");
         obj.put("req_sliceID", "testSlice");
         obj.put("req_wfuuid", "0xcdfvgh");
         
         // optional parameters
-        obj.put("req_numWorkers", new Integer(4));
-        obj.put("req_storage", new Integer(100));
-        obj.put("req_BW", new Long(100000000));
+        obj.put("req_numWorkers", 4);
+        obj.put("req_storage", 100);
+        obj.put("req_BW", 100000000);
         obj.put("req_imageUrl", "image url");
         obj.put("req_imageHash", "image hash");
         obj.put("req_imageName", "image name");

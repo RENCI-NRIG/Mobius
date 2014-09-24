@@ -9,17 +9,89 @@
   <url>http://maven.apache.org</url>
 
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <!-- or whatever version you use -->
-          <source>1.7</source>
-          <target>1.7</target>
-        </configuration>
-      </plugin>
-    </plugins>
+    
+    		<resources>
+			<resource>
+				<directory>${basedir}</directory>
+				<filtering>false</filtering>
+				<includes>
+					<include>LICENSE</include>
+					<include>README</include>
+					<include>RELEASE-NOTES</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<filtering>false</filtering>
+				<includes>
+					<include>**/*</include>
+				</includes>
+			</resource>
+		</resources>
+
+          <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- or whatever version you use -->
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>  
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.3</version>
+                <configuration>
+                    <encoding>${mvn.project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>${mvn.main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                   <artifactId>appassembler-maven-plugin</artifactId>
+                   <configuration>
+                      <programs>
+                         <program>
+                            <mainClass>org.renci.requestmanager.RequestManagerMain</mainClass>
+                            <name>rm</name>
+                         </program>
+                         <program>
+                            <mainClass>org.renci.requestmanager.RequestTestPublisher</mainClass>
+                            <name>testpublisher</name>
+                         </program>
+                      </programs>
+                      <daemons>
+                         <daemon>
+                            <id>rmd</id>
+                            <mainClass>org.renci.requestmanager.RequestManagerMain</mainClass>
+                            <platforms>
+                               <platform>jsw</platform>
+                            </platforms>
+                         </daemon>
+                      </daemons>
+                    </configuration>
+             </plugin>
+
+        </plugins>
+    
+    
   </build>
 
   <dependencies>

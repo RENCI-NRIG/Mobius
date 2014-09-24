@@ -46,7 +46,8 @@ public class RMController implements RMConstants{
 			timer = new Timer("RMControllerTask", true);
 			timers.add(timer);
 		}
-		timer.schedule(new RMControllerTask(), 30*1000, 30*1000); // run every 30 seconds
+		//timer.schedule(new RMControllerTask(), 30*1000, 30*1000); // run every 30 seconds after 30 seconds
+                timer.schedule(new RMControllerTask(), 0, 30*1000); // run every 30 seconds
 	}
 
 	private void allStop() {
@@ -187,7 +188,7 @@ public class RMController implements RMConstants{
                     
                     // Send request to ExoGENI
                     logger.info("Sending request to ExoGENI...");
-                    sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
+                    // sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
                     logger.info("Done processing new user request");
                     
                 }
