@@ -69,7 +69,7 @@ public class RequestTestPublisher {
         
         obj.put("req_linkID", "0xghlkjh");
         obj.put("req_linkBW", new Long(100000000));
-        obj.put("req_stitchportID", "stitchportIdentifier");
+        obj.put("req_stitchportID", "SURFnet");
         
         System.out.println("JSON request = \n" + obj.toJSONString());
 	//obj.put("age", new Integer(100));
