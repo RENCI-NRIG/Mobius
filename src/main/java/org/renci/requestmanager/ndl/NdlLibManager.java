@@ -144,7 +144,7 @@ public class NdlLibManager implements RMConstants{
             if(linkReq != null){
                 String stitchPortID = linkReq.getStitchPortID();
                 
-                SPMapperClient spMapperClient = new SPMapperClient();
+                SPMapperClient spMapperClient = new SPMapperClient(logger);
                 SPMapperClient.SPInfo spInfo = spMapperClient.getSPInfo(stitchPortID);
                 
                 int label = spInfo.getVlanTagSet().get(0).intValue(); // get the first available vlan tag
@@ -175,17 +175,19 @@ public class NdlLibManager implements RMConstants{
             }
             // TODO: Call auto-IP
             // s.sutoIP();
+            s.autoIP();
         }
         else{ // No SP requested
             // TODO: Call auto-IP
             // s.sutoIP();
+            s.autoIP();
         }
 
         // TODO: Call auto-IP
-        masterIface.setIpAddress("172.16.1.1");
-        masterIface.setNetmask("255.255.255.0");
-        workersIface.setIpAddress("172.16.1.100");
-        workersIface.setNetmask("255.255.255.0");
+//        masterIface.setIpAddress("172.16.1.1");
+//        masterIface.setNetmask("255.255.255.0");
+//        workersIface.setIpAddress("172.16.1.100");
+//        workersIface.setNetmask("255.255.255.0");
         
         logger.debug("Generated request = " + "\n" + s.getRequest());
         
