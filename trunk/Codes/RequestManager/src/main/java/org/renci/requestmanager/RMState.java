@@ -17,7 +17,7 @@ import java.util.Iterator;
  */
 public class RMState implements Serializable {
 
-        private ArrayList<AppRequestInfo> appReqQ = new ArrayList<AppRequestInfo>();
+        private ArrayList<AppRequestInfo> appReqQ = new ArrayList<AppRequestInfo>(); // keeps track of user/application requests (new, modify)
 
         // use output compression
         private static boolean compressOutput = true;

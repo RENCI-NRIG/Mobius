@@ -73,7 +73,7 @@ public class RequestSubscriber implements Runnable {
                 if(appReq != null){
                     RMState rmState = RMState.getInstance();
                     rmState.addReqToAppReqQ(appReq);
-                    logger.info("Added new request to appRequestQ...");
+                    logger.info("Added request to appRequestQ...");
                 }
                 
                 System.out.println("DONE...");

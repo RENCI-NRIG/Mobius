@@ -174,7 +174,6 @@ public class NdlLibManager implements RMConstants{
                 
             }
             // TODO: Call auto-IP
-            // s.sutoIP();
             s.autoIP();
         }
         else{ // No SP requested
@@ -207,7 +206,7 @@ public class NdlLibManager implements RMConstants{
     }
     
     
-        public String generateTestRequest(){
+    public String generateTestRequest(){
         
         Slice s = new Slice();
         s.logger().debug("adamantTest1: ");

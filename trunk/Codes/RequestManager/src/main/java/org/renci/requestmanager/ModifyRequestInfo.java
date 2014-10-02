@@ -13,6 +13,7 @@ package org.renci.requestmanager;
 public class ModifyRequestInfo {
     
     private String wfUuid; // workflow unique id
+    private String orcaSliceId; // orca sliceID
     private int deadline; // time from unix epoch
     private int numCurrentRes; // number of compute resources that application thinks is available now
     private int deadlineDiff; // +/- seconds by which application thinks it will miss deadline
@@ -27,6 +28,14 @@ public class ModifyRequestInfo {
         this.wfUuid = wfUuid;
     }
 
+    public String getOrcaSliceId() {
+        return orcaSliceId;
+    }
+
+    public void setOrcaSliceId(String orcaSliceId) {
+        this.orcaSliceId = orcaSliceId;
+    }
+    
     public int getDeadline() {
         return deadline;
     }
