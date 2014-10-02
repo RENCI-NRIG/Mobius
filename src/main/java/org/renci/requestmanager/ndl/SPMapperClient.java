@@ -5,9 +5,12 @@
  */
 package org.renci.requestmanager.ndl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import dataModel.NetworkConfiguration;
 import java.util.ArrayList;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.RMConstants;
+import sslRestAPIClient.NetworkConfigurationImpl;
 import sslRestAPIClient.SslRestClient;
 
 /**
@@ -95,21 +98,68 @@ public class SPMapperClient {
        
        //Provided with the Query URL one can query for the network configuration 
         String netConfig = spRegistryAndMapperServiceClient.getNetworkConfigFromURL(stitchPortMapperServiceUrl);
+        JsonNode netConfigJson = spRegistryAndMapperServiceClient.getNetworkConfigFromURLInJson(stitchPortMapperServiceUrl);
         
-        if(netConfig != null){
+        if(netConfig != null && netConfigJson != null){
             logger.info("Network Configuration for " + stitchPortID + ": " + netConfig);
+            
+            //Lets build a NetworkConfiguraiton data object 
+            NetworkConfiguration myNetworkConfig = new NetworkConfigurationImpl(netConfigJson);
+            logger.info("vlanRange " + myNetworkConfig.getVLANRange());
+            logger.info("config_url " + myNetworkConfig.getConfigUrl());
+            
+            
+            
             // TODO: get the network properties here and populate spInfo
             // Remove below when we have getters for netConfig contents
             spInfo = new SPInfo();
+            
+            // Get vlan tag range info
+            int firstTag = -1, lastTag = -1;
+            logger.info("vlanRange " + myNetworkConfig.getVLANRange());
+            String vlanRange = myNetworkConfig.getVLANRange();
+            if(vlanRange != null){ 
+                if(vlanRange.contains("-")){ // eg. vlanRange = "3208-3212"
+                    firstTag = Integer.parseInt(vlanRange.split("-")[0]);
+                    lastTag = Integer.parseInt(vlanRange.split("-")[1]);
+                }
+                else { // eg. vlanRange = "3208"
+                    firstTag = Integer.parseInt(vlanRange);
+                    lastTag = Integer.parseInt(vlanRange);
+                }
+                logger.info("firstTag = " + firstTag + " | lastTag = " + lastTag);
+            }
+            
             ArrayList<Integer> vlanTagSet = new ArrayList<Integer>();
-            vlanTagSet.add(1499);
+            if(firstTag != -1 && lastTag != -1){ // we have valid vlanRange
+                for(int i = firstTag; i <= lastTag; i++){
+                    vlanTagSet.add(i);
+                }
+            }
+            else{
+                vlanTagSet = null;
+            }
+            
+            // Get port info == config_url
             ArrayList<String> portSet = new ArrayList<String>();
-            portSet.add("http://geni-orca.renci.org/owl/ben-6509.rdf#Renci/Cisco/6509/TenGigabitEthernet/3/4/ethernet");
-            ArrayList<String> allowedIPSet = new ArrayList<String>();
-            allowedIPSet.add("172.16.1.100/24");
-            allowedIPSet.add("172.16.1.101/24");
-            ArrayList<String> subnetSet = new ArrayList<String>();
-            subnetSet.add("172.16.1.1/24");
+            String config_url = myNetworkConfig.getConfigUrl();
+            if(config_url != null){
+                portSet.add(config_url);
+            }
+            else{
+                portSet = null;
+            }
+            
+            String firstNetworkOffered =  myNetworkConfig.getAvailableNetworkMasks().get(0);
+            logger.info("First network offered : " + firstNetworkOffered);
+            logger.info("Available IPs for ntework " + firstNetworkOffered + ":\n "+ myNetworkConfig.getAvailableIPs(myNetworkConfig.getAvailableNetworkMasks().get(0))); 
+            logger.info("We only want 20 available IPs for this network: \n"+ myNetworkConfig.getNAvailableIPs(firstNetworkOffered, 20));
+            
+            ArrayList<String> allowedIPSet = (ArrayList<String>) myNetworkConfig.getAvailableIPs(firstNetworkOffered);
+            
+            ArrayList<String> subnetSet = (ArrayList<String>) myNetworkConfig.getAvailableNetworkMasks();
+            
+            // TODO: create a hashMap for allowedIP : {<subnet_i, ip_list_i>} 
 
             spInfo.setVlanTagSet(vlanTagSet);
             spInfo.setPortSet(portSet);

@@ -191,6 +191,8 @@ public class RMController implements RMConstants{
                     // sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
                     logger.info("Done processing new user request");
                     
+                    //TODO: push orcaSliceID to manifest publishing queue
+                    
                 }
 
                 private void processModReq(ModifyRequestInfo modReq) {
