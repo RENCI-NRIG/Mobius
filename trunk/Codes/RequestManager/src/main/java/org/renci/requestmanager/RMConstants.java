@@ -86,6 +86,7 @@ public interface RMConstants {
         private static final String defaultImageName = "Condor-default-image"; // default name of image
         private static String defaultPostbootMaster = readStringFromFile(""); // default postboot script for master
         private static String defaultPostbootWorker = readStringFromFile(""); // default postboot script for workers
+        private static final int defaultMaxNumWorkers = 256; // default max size of worker nodegroup
         
         private static String readStringFromFile(String filePathStr) {
             
@@ -159,6 +160,11 @@ public interface RMConstants {
         public static String getDefaultImageName() {
             return defaultImageName;
         }
+
+        public static int getDefaultMaxNumWorkers() {
+            return defaultMaxNumWorkers;
+        }
+        
         
         
     }

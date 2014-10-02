@@ -40,6 +40,10 @@ public class RequestTestPublisher {
         channel.basicPublish("", QUEUE_NAME, null, message.getBytes());
         System.out.println(" [x] Sent '" + message + "'");
 
+        channel.close();
+        connection.close();
+        System.exit(0);
+        
         try{     
             Thread.sleep(40000); // wait for 40 seconds
         } catch (InterruptedException ex) {

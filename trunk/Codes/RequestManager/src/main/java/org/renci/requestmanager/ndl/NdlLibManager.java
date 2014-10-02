@@ -6,10 +6,10 @@
 
 package org.renci.requestmanager.ndl;
 
+import java.util.ArrayList;
 import java.util.Random;
 import orca.ndllib.resources.request.*;
 import orca.ndllib.Slice;
-import orca.ndllib.*;
 import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMConstants;
 
@@ -89,22 +89,27 @@ public class NdlLibManager implements RMConstants{
         // Choose postbootscript for workers
         if(newReq.getNewPostbootWorker() == null){ // No postboot script supplied by user; use default postboot script
             logger.info("Using default postboot script for workers");
-            master.setPostBootScript(CondorDefaults.getDefaultPostbootWorker());
+            workers.setPostBootScript(CondorDefaults.getDefaultPostbootWorker());
         }
         else {
             logger.info("Using user-supplied postboot script for workers");
-            master.setPostBootScript(newReq.getNewPostbootWorker());
+            workers.setPostBootScript(newReq.getNewPostbootWorker());
         }
         
-        // Choose number of workers
+        // Choose number of workers, max nodecount 
         if(newReq.getNewCompRes() <= 0){
             logger.info("Using default number of workers = " + CondorDefaults.getDefaultNumWorkers());
-            workers.setNodeCount(CondorDefaults.getDefaultNumWorkers());    
+            workers.setNodeCount(CondorDefaults.getDefaultNumWorkers());
         }
         else{
             logger.info("Using user-supplied number of workers = " + newReq.getNewCompRes());
-            workers.setNodeCount(newReq.getNewCompRes());
+            workers.setNodeCount(newReq.getNewCompRes());            
         }
+        
+        workers.setMaxNodeCount(CondorDefaults.getDefaultMaxNumWorkers());
+        
+        master.setNodeCount(1);
+        master.setMaxNodeCount(1);
             
         // Choose bandwidth between compute resources
         if(newReq.getNewBandwidth() <= 0){
@@ -147,30 +152,46 @@ public class NdlLibManager implements RMConstants{
                 SPMapperClient spMapperClient = new SPMapperClient(logger);
                 SPMapperClient.SPInfo spInfo = spMapperClient.getSPInfo(stitchPortID);
                 
-                int label = spInfo.getVlanTagSet().get(0).intValue(); // get the first available vlan tag
-                String port = spInfo.getPortSet().get(0);
-                              
-                StitchPort  data       = s.addStitchPort("Data");
-                InterfaceNode2Net dataIface    = (InterfaceNode2Net) net.stitch(data);
-                
-                logger.info("Using stitchport vlan tag = " + label);
-                logger.info("Using stitchport port urn = " + port);
-                
-                data.setLabel(Integer.toString(label)); //
-                data.setPort(port);
-                
-                // set bandwidth with stitchport bandwidth if that is more then the bandwidth of broadcast network                
-                if(linkReq.getLinkBandwidth() > 0 && linkReq.getLinkBandwidth() > net.getBandwidth()){
-                    logger.info("Using user-supplied link to SP bandwidth as the slice bandwidth");
-                    net.setBandwidth(linkReq.getLinkBandwidth());
-                }
-                
-                // TODO: put constraints on auto-IP
-                // subnet = spInfo.getSubnet();
-                // net.setSubnet(subnet);
-                // availIP = spInfo.getAllowedIP();
-                // net.setAvailIP(availIP);
-                                
+                if(spInfo != null){
+                    int label = spInfo.getVlanTagSet().get(0); // get the first available vlan tag
+                    String port = spInfo.getPortSet().get(0);
+
+                    StitchPort  data       = s.addStitchPort("Data");
+                    InterfaceNode2Net dataIface    = (InterfaceNode2Net) net.stitch(data);
+
+                    logger.info("Using stitchport vlan tag = " + label);
+                    logger.info("Using stitchport port urn = " + port);
+
+                    data.setLabel(Integer.toString(label)); //
+                    data.setPort(port);
+
+                    // set bandwidth with stitchport bandwidth if that is more then the bandwidth of broadcast network                
+                    if(linkReq.getLinkBandwidth() > 0 && linkReq.getLinkBandwidth() > net.getBandwidth()){
+                        logger.info("Using user-supplied link to SP bandwidth as the slice bandwidth");
+                        net.setBandwidth(linkReq.getLinkBandwidth());
+                    }
+
+                    // TODO: put constraints on auto-IP
+                    ArrayList<String> subnetSet = spInfo.getSubnetSet();
+                    String firstSubnet = subnetSet.get(0); // "10.32.8.0/24"
+                    String firstSubnetNetwork = firstSubnet.split("/")[0]; // "10.32.8.0"
+                    String firstSubnetMask = firstSubnet.split("/")[1]; // "24"
+                    logger.info("passing " + firstSubnetNetwork + " and " + firstSubnetMask + " to ndllib's setIPSubnet");
+                    net.setIPSubnet(firstSubnetNetwork, Integer.parseInt(firstSubnetMask));
+                    
+                    net.clearAvailableIPs(); 
+                    ArrayList<String> availIPSet = spInfo.getAllowedIPSetFirstSubnet();
+                    logger.info(" passing to ndllib as available IPs: " + availIPSet);
+                    for (String ip: availIPSet){
+                        net.addAvailableIP(ip);
+                    }
+                    
+                    logger.info("availIPSet size = " + availIPSet.size());
+                    workers.setMaxNodeCount(availIPSet.size() - 2);
+                    //workers.setMaxNodeCount(5);
+                    // NOTE: If we have to deal with multiple subnets and allowed ips in future, we have that info in spInfo.getAllIPInfo()
+                    
+                }              
                 
             }
             // TODO: Call auto-IP
@@ -181,12 +202,6 @@ public class NdlLibManager implements RMConstants{
             // s.sutoIP();
             s.autoIP();
         }
-
-        // TODO: Call auto-IP
-//        masterIface.setIpAddress("172.16.1.1");
-//        masterIface.setNetmask("255.255.255.0");
-//        workersIface.setIpAddress("172.16.1.100");
-//        workersIface.setNetmask("255.255.255.0");
         
         logger.debug("Generated request = " + "\n" + s.getRequest());
         
