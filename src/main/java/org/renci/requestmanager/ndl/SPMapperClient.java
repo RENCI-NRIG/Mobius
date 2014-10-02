@@ -8,6 +8,8 @@ package org.renci.requestmanager.ndl;
 import com.fasterxml.jackson.databind.JsonNode;
 import dataModel.NetworkConfiguration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.RMConstants;
 import sslRestAPIClient.NetworkConfigurationImpl;
@@ -25,9 +27,9 @@ public class SPMapperClient {
     public class SPInfo{
         ArrayList<Integer> vlanTagSet = null;
         ArrayList<String> portSet = null;
-        ArrayList<String> allowedIPSet = null;
-        ArrayList<String> disallowedIPSet = null;
+        ArrayList<String> allowedIPSetFirstSubnet = null;
         ArrayList<String> subnetSet = null;
+        HashMap<String,List<String>> allIPInfo = null;
         
         // TODO: Add subnet information
 
@@ -51,20 +53,12 @@ public class SPMapperClient {
             this.portSet = portSet;
         }
 
-        public ArrayList<String> getAllowedIPSet() {
-            return allowedIPSet;
+        public ArrayList<String> getAllowedIPSetFirstSubnet() {
+            return allowedIPSetFirstSubnet;
         }
 
-        public void setAllowedIPSet(ArrayList<String> allowedIPSet) {
-            this.allowedIPSet = allowedIPSet;
-        }
-
-        public ArrayList<String> getDisallowedIPSet() {
-            return disallowedIPSet;
-        }
-
-        public void setDisallowedIPSet(ArrayList<String> disallowedIPSet) {
-            this.disallowedIPSet = disallowedIPSet;
+        public void setAllowedIPSetFirstSubnet(ArrayList<String> allowedIPSet) {
+            this.allowedIPSetFirstSubnet = allowedIPSet;
         }
 
         public ArrayList<String> getSubnetSet() {
@@ -73,6 +67,14 @@ public class SPMapperClient {
 
         public void setSubnetSet(ArrayList<String> subnetSet) {
             this.subnetSet = subnetSet;
+        }
+
+        public HashMap<String, List<String>> getAllIPInfo() {
+            return allIPInfo;
+        }
+
+        public void setAllIPInfo(HashMap<String, List<String>> allIPInfo) {
+            this.allIPInfo = allIPInfo;
         }
         
         
@@ -153,37 +155,47 @@ public class SPMapperClient {
             String firstNetworkOffered =  myNetworkConfig.getAvailableNetworkMasks().get(0);
             logger.info("First network offered : " + firstNetworkOffered);
             logger.info("Available IPs for ntework " + firstNetworkOffered + ":\n "+ myNetworkConfig.getAvailableIPs(myNetworkConfig.getAvailableNetworkMasks().get(0))); 
-            logger.info("We only want 20 available IPs for this network: \n"+ myNetworkConfig.getNAvailableIPs(firstNetworkOffered, 20));
+            //logger.info("We only want 20 available IPs for this network: \n"+ myNetworkConfig.getNAvailableIPs(firstNetworkOffered, 20));
             
-            ArrayList<String> allowedIPSet = (ArrayList<String>) myNetworkConfig.getAvailableIPs(firstNetworkOffered);
+            ArrayList<String> allowedIPSetFirstSubnet = (ArrayList<String>) myNetworkConfig.getAvailableIPs(firstNetworkOffered);
             
             ArrayList<String> subnetSet = (ArrayList<String>) myNetworkConfig.getAvailableNetworkMasks();
+            
+            HashMap<String, List<String>> ipInfo = (HashMap<String, List<String>>) myNetworkConfig.getIPInfo();
             
             // TODO: create a hashMap for allowedIP : {<subnet_i, ip_list_i>} 
 
             spInfo.setVlanTagSet(vlanTagSet);
             spInfo.setPortSet(portSet);
-            spInfo.setAllowedIPSet(allowedIPSet);
+            spInfo.setAllowedIPSetFirstSubnet(allowedIPSetFirstSubnet); // ONLY allowedIP set for first subnet
             spInfo.setSubnetSet(subnetSet);
+            spInfo.setAllIPInfo(ipInfo);
             
         }
         else {
             logger.info("Using default SP netConfig properties");
+            
             spInfo = new SPInfo();
             ArrayList<Integer> vlanTagSet = new ArrayList<Integer>();
-            vlanTagSet.add(1499);
+            vlanTagSet.add(3208);
             ArrayList<String> portSet = new ArrayList<String>();
-            portSet.add("http://geni-orca.renci.org/owl/ben-6509.rdf#Renci/Cisco/6509/TenGigabitEthernet/3/4/ethernet");
-            ArrayList<String> allowedIPSet = new ArrayList<String>();
-            allowedIPSet.add("172.16.1.100/24");
-            allowedIPSet.add("172.16.1.101/24");
+            portSet.add("http://geni-orca.renci.org/owl/ion.rdf#ION/Cenic/Cisco/6509/TenGigabitEthernet/1/2/ethernet");
+            ArrayList<String> allowedIPSetFirstSubnet = new ArrayList<String>();
+            allowedIPSetFirstSubnet.add("10.32.8.20");
+            allowedIPSetFirstSubnet.add("10.32.8.22");
+            allowedIPSetFirstSubnet.add("10.32.8.22");
+            allowedIPSetFirstSubnet.add("10.32.8.23");
             ArrayList<String> subnetSet = new ArrayList<String>();
-            subnetSet.add("172.16.1.1/24");
+            subnetSet.add("10.32.8.0/24");
 
+            HashMap<String, List<String>> ipInfo = new HashMap<String, List<String>>();
+            ipInfo.put("10.32.8.0/24", allowedIPSetFirstSubnet);
+            
             spInfo.setVlanTagSet(vlanTagSet);
             spInfo.setPortSet(portSet);
-            spInfo.setAllowedIPSet(allowedIPSet);
+            spInfo.setAllowedIPSetFirstSubnet(allowedIPSetFirstSubnet);
             spInfo.setSubnetSet(subnetSet);
+            spInfo.setAllIPInfo(ipInfo);
             // TODO set subnet
         }               
         
