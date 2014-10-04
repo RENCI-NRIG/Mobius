@@ -18,6 +18,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.renci.requestmanager.AppRequestInfo;
 import org.renci.requestmanager.LinkRequestInfo;
+import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMState;
 
@@ -256,7 +257,76 @@ public class RequestSubscriber implements Runnable {
         else if(reqType.equalsIgnoreCase("modifyCompute")){
             
             // TODO: parse and create modifyrequest
-           
+            // Check mandatory fields
+            String requestSliceID = (String) jsonObject.get("req_sliceID");
+            if(requestSliceID == null){
+                logger.error("modifyCompute request has to have a req_sliceID");
+                return null;
+            }
+            
+            String requestWfuuid = (String) jsonObject.get("req_wfuuid");
+            if(requestWfuuid == null){
+                logger.error("modifyCompute request has to have a req_wfuuid");
+                return null;
+            }
+            
+            int reqNumCurrentRes = -1;
+            if(!jsonObject.containsKey("req_numCurrentRes")){
+                logger.error("modifyCompute request has to have a req_numCurrentRes");
+                return null;
+            }
+            else {
+                Long requestNumCurrentRes = (Long) jsonObject.get("req_numCurrentRes");
+                logger.info("requestNumCurrentRes = " + requestNumCurrentRes.intValue());
+                reqNumCurrentRes = requestNumCurrentRes.intValue();
+            }
+            
+            int reqNumResToMeetDeadline = -1;
+            if(!jsonObject.containsKey("req_numResReqToMeetDeadline")){
+                logger.error("modifyCompute request has to have a req_numResReqToMeetDeadline");
+                return null;
+            }
+            else {
+                Long requestNumtResToMeetDeadline = (Long) jsonObject.get("req_numResReqToMeetDeadline");
+                logger.info("requestNumResToMeetDeadline = " + requestNumtResToMeetDeadline.intValue());
+                reqNumResToMeetDeadline = requestNumtResToMeetDeadline.intValue();
+            }
+            
+            ModifyRequestInfo modifyComputeReq = new ModifyRequestInfo();
+            modifyComputeReq.setOrcaSliceId(requestSliceID);
+            modifyComputeReq.setWfUuid(requestWfuuid);
+            modifyComputeReq.setNumCurrentRes(reqNumCurrentRes);
+            modifyComputeReq.setNumResReqToMeetDeadline(reqNumResToMeetDeadline);
+            
+            if(jsonObject.containsKey("req_deadline")){
+                Long requestDeadline = (Long) jsonObject.get("req_deadline");
+                logger.info("requestDeadline = " + requestDeadline.intValue());
+                modifyComputeReq.setDeadline(requestDeadline.intValue());
+            }
+            else {
+                modifyComputeReq.setDeadline(-1);
+            }
+            
+            if(jsonObject.containsKey("req_deadlineDiff")){
+                Long requestDeadlineDiff = (Long) jsonObject.get("req_deadlineDiff");
+                logger.info("requestDeadlineDiff = " + requestDeadlineDiff.intValue());
+                modifyComputeReq.setDeadlineDiff(requestDeadlineDiff.intValue());
+            }
+            else {
+                modifyComputeReq.setDeadlineDiff(-1);
+            }
+            
+            if(jsonObject.containsKey("req_numResUtilMax")){
+                Long requestNumResUtilMax = (Long) jsonObject.get("req_numResUtilMax");
+                logger.info("requestNumResUtilMax = " + requestNumResUtilMax.intValue());
+                modifyComputeReq.setNumResUtilMax(requestNumResUtilMax.intValue());
+            }
+            else {
+                modifyComputeReq.setNumResUtilMax(-1);
+            }
+                       
+            appReq = new AppRequestInfo(requestSliceID, null, modifyComputeReq, null);
+            
         }
         else if(reqType.equalsIgnoreCase("modifyNetwork")){
             

@@ -15,6 +15,9 @@ import org.renci.requestmanager.RMConstants;
 
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.LinkRequestInfo;
+import org.renci.requestmanager.ModifyRequestInfo;
+import org.renci.requestmanager.policy.IModifyPolicy;
+import org.renci.requestmanager.policy.SimpleUnitsModifyPolicy;
 
 /**
  *
@@ -212,14 +215,133 @@ public class NdlLibManager implements RMConstants{
 
     }
     
-    public String generateNewHadoopRequest(NewRequestInfo newReq){
+    public String generateNewHadoopRequest(NewRequestInfo newReq, Logger logger){
         return null;
     }
     
-    public String generateNewMPIRequest(NewRequestInfo newReq){
+    public String generateNewMPIRequest(NewRequestInfo newReq, Logger logger){
         return null;
     }
     
+    public String generateModifyComputeRequest(ModifyRequestInfo modReq, String currManifest, Logger logger) {
+        
+        Slice s = new Slice();
+        s.loadRDF(currManifest);
+        
+        logger.debug("SliceState = " + s.getState());
+        
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers, can't modify Nodegroup");
+            return null;
+        }
+        
+        // Run policy to determine change in number of workers
+        IModifyPolicy modPolicy = new SimpleUnitsModifyPolicy(logger);
+        int change = modPolicy.determineChangeInNumWorkers(modReq, currManifest);
+        
+        if(change == 0){
+            logger.info("Modify policy determined that no new nodes should be added, and no existing node should be deleted");
+            return null;
+        }        
+        
+        if(change < 0){ // Need to delete some workers           
+            int i = 0;
+            int numNodesToDelete = (-1)*change;
+            for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(i < numNodesToDelete){
+                    logger.info("manifestNode: deleting " + mn.getURI());
+                    mn.delete();
+                    i++;
+                }
+            }
+        }
+        
+        if (change > 0){ // Need to add more workers
+            int numWorkers = 0;
+            for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                numWorkers++;
+            }
+            logger.info("There are " + numWorkers + "worker nodes in the current manifest");
+            int newNumWorkers = numWorkers + change;
+            logger.info("Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers");
+            cn.setNodeCount(newNumWorkers);            
+        }     
+        
+        s.save("/tmp/generatedModifyRequest.rdf");
+        return s.getRequest();
+    }   
+    
+    public String getSliceManifestStatus(String manifest, Logger logger){
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        return s.getState();
+    }
+    
+    public int getNumWorkersInManifest(String manifest, Logger logger){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers..");
+            return -1;
+        }
+        int numWorkers = 0;
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            numWorkers++;
+        }
+        logger.info("There are " + numWorkers + " worker nodes in the current manifest");
+        return numWorkers;
+        
+    }
+    
+    // Qn: if some are in failed state, what is the overall sliceState ?
+    
+    public int getNumActiveWorkersInManifest(String manifest, Logger logger){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers..");
+            return -1;
+        }
+        int numActiveWorkers = 0;
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            if(!mn.getState().equalsIgnoreCase("Active")){
+                numActiveWorkers++;
+            }
+        }
+        logger.info("There are " + numActiveWorkers + " Active worker nodes in the current manifest");
+        return numActiveWorkers;
+        
+    }
+    
+    public boolean areAllWorkersInManifestActive(String manifest, Logger logger){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers..");
+            return false;
+        }
+        
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            if(!mn.getState().equalsIgnoreCase("Active")){
+                return false;
+            }
+        }
+        // Code gets here when all are "Active"
+        return true;
+        
+    }
     
     public String generateTestRequest(){
         
