@@ -101,12 +101,12 @@ public class RequestTestPublisher {
         obj.put("requestType", "modifyCompute");
         obj.put("req_sliceID", "testSlice");
         obj.put("req_wfuuid", "0xcdfvgh");
-        obj.put("req_deadline", 1412217288);
         obj.put("req_numCurrentRes", 4);
         obj.put("req_numResReqToMeetDeadline", 8);
         
         
         // optional parameters
+        obj.put("req_deadline", 1412217288);
         obj.put("req_deadlineDiff", 600);
         obj.put("req_numResUtilMax", 6);
         
