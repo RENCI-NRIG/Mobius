@@ -26,12 +26,14 @@ import org.renci.requestmanager.policy.SimpleUnitsModifyPolicy;
 public class NdlLibManager implements RMConstants{
     
     // This is the class responsible for talking to ndlLib and generate requests
+    protected Logger logger = null;
+    
     
     public NdlLibManager(){
-        
+        logger = Logger.getLogger(this.getClass());
     }
     
-    public String generateNewCondorRequest(NewRequestInfo newReq, Logger logger){
+    public String generateNewCondorRequest(NewRequestInfo newReq){
         
         // Parse what fields are present in newReq and generate appropriate ndl request
         Slice s = new Slice();
@@ -126,7 +128,7 @@ public class NdlLibManager implements RMConstants{
         
         // Choose instance type
         master.setNodeType("XO Large");
-        workers.setNodeType("XO Large");
+        workers.setNodeType("XO Medium");
         
         // At this point basic condor cluster is ready, without IP address assignment
         
@@ -135,6 +137,7 @@ public class NdlLibManager implements RMConstants{
         // Storage: TODO: Ask Paul how to do this
         if(templateType.contains(StorageSuffix)){ //Storage is requested
             // Create new storage node and attach to master node
+            // TODO: Handle storage
             StorageNode storage = s.addStorageNode("Storage");
             Network link = s.addLink("LinkToStorage");
             storage.stitch(link);
@@ -190,19 +193,19 @@ public class NdlLibManager implements RMConstants{
                     }
                     
                     logger.info("availIPSet size = " + availIPSet.size());
+                    // TODO: Fix the argument to setMaxNodeCount: (availIPSet.size() - 1 ) is the correct one
                     workers.setMaxNodeCount(availIPSet.size() - 2);
                     //workers.setMaxNodeCount(5);
+                    
                     // NOTE: If we have to deal with multiple subnets and allowed ips in future, we have that info in spInfo.getAllIPInfo()
                     
                 }              
                 
             }
-            // TODO: Call auto-IP
+            
             s.autoIP();
         }
         else{ // No SP requested
-            // TODO: Call auto-IP
-            // s.sutoIP();
             s.autoIP();
         }
         
@@ -215,15 +218,15 @@ public class NdlLibManager implements RMConstants{
 
     }
     
-    public String generateNewHadoopRequest(NewRequestInfo newReq, Logger logger){
+    public String generateNewHadoopRequest(NewRequestInfo newReq){
         return null;
     }
     
-    public String generateNewMPIRequest(NewRequestInfo newReq, Logger logger){
+    public String generateNewMPIRequest(NewRequestInfo newReq){
         return null;
     }
     
-    public String generateModifyComputeRequest(ModifyRequestInfo modReq, String currManifest, Logger logger) {
+    public String generateModifyComputeRequest(ModifyRequestInfo modReq, String currManifest) {
         
         Slice s = new Slice();
         s.loadRDF(currManifest);
@@ -274,13 +277,13 @@ public class NdlLibManager implements RMConstants{
         return s.getRequest();
     }   
     
-    public String getSliceManifestStatus(String manifest, Logger logger){
+    public String getSliceManifestStatus(String manifest){
         Slice s = new Slice();
         s.loadRDF(manifest);
         return s.getState();
     }
     
-    public int getNumWorkersInManifest(String manifest, Logger logger){
+    public int getNumWorkersInManifest(String manifest){
         
         Slice s = new Slice();
         s.loadRDF(manifest);
@@ -301,7 +304,7 @@ public class NdlLibManager implements RMConstants{
     
     // Qn: if some are in failed state, what is the overall sliceState ?
     
-    public int getNumActiveWorkersInManifest(String manifest, Logger logger){
+    public int getNumActiveWorkersInManifest(String manifest){
         
         Slice s = new Slice();
         s.loadRDF(manifest);
@@ -322,7 +325,7 @@ public class NdlLibManager implements RMConstants{
         
     }
     
-    public boolean areAllWorkersInManifestActive(String manifest, Logger logger){
+    public boolean areAllWorkersInManifestActive(String manifest){
         
         Slice s = new Slice();
         s.loadRDF(manifest);

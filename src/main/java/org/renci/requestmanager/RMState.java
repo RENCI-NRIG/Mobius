@@ -18,6 +18,7 @@ import java.util.Iterator;
 public class RMState implements Serializable {
 
         private ArrayList<AppRequestInfo> appReqQ = new ArrayList<AppRequestInfo>(); // keeps track of user/application requests (new, modify)
+        private ArrayList<String> sliceIDQ = new ArrayList<String>();
 
         // use output compression
         private static boolean compressOutput = true;
@@ -39,7 +40,7 @@ public class RMState implements Serializable {
         public void setAppReqQ(ArrayList<AppRequestInfo> appReqQ) {
             this.appReqQ = appReqQ;
         }
-
+        
         public void addReqToAppReqQ(AppRequestInfo newReq){
             synchronized(appReqQ){
                 appReqQ.add(newReq);
@@ -51,7 +52,28 @@ public class RMState implements Serializable {
                 return(appReqQ.remove(reqInfo));
             }
         }
+        
+        public ArrayList<String> getSliceIDQ() {
+            return sliceIDQ;
+        }
 
+        public void setSliceIDQ(ArrayList<String> sliceIDQ) {
+            this.sliceIDQ = sliceIDQ;
+        }
+        
+         public void addSliceIDToSliceIDQ(String newSliceID){
+            synchronized(sliceIDQ){
+                sliceIDQ.add(newSliceID);
+            }
+        }
+
+        public boolean deleteSliceIDFromSliceIDQ(String sliceID){
+            synchronized(sliceIDQ){
+                return(sliceIDQ.remove(sliceID));
+            }
+        }
+        
+        
         // manage state of compression of output
         public boolean getCompression() {
         	return compressOutput;
