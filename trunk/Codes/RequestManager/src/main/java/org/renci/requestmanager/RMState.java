@@ -73,6 +73,11 @@ public class RMState implements Serializable {
             }
         }
         
+        public boolean isInSliceIDQ(String sliceID){
+            synchronized(sliceIDQ){
+                return(sliceIDQ.contains(sliceID));
+            }
+        }
         
         // manage state of compression of output
         public boolean getCompression() {

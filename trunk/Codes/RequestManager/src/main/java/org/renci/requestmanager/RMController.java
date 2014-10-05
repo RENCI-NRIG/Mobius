@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 /**
@@ -192,10 +193,16 @@ public class RMController implements RMConstants{
                     
                     // Send request to ExoGENI
                     logger.info("Sending request to ExoGENI...");
+                    OrcaManager orcaManager = new OrcaManager(rmProperties);
+                    orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
                     // sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
-                    logger.info("Done processing new user request");
                     
-                    //TODO: push orcaSliceID to manifest publishing queue
+                    //Push orcaSliceID to manifest publishing queue
+                    rmState = RMState.getInstance();
+                    rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                    logger.info("Added " + orcaSliceID + " to SliceIDQ...");
+                    
+                    logger.info("Done processing new user request");
                     
                 }
 
@@ -208,7 +215,9 @@ public class RMController implements RMConstants{
                     
                     // Getting current manifest from ExoGENI
                     logger.info("Getting manifest from ExoGENI for slice: " + orcaSliceID);
-                    String currManifest = getManifestFromORCA(orcaSliceID);
+                    OrcaManager orcaManager = new OrcaManager(rmProperties);
+                    String currManifest = orcaManager.getManifestFromORCA(orcaSliceID);
+                    
                     if(currManifest == null){
                         logger.error("manifest for slice: " + orcaSliceID + " is null.. modify request not processed..");
                         return "ERROR";
@@ -234,9 +243,17 @@ public class RMController implements RMConstants{
                     }
                     
                     // We have a modify request; Send modify request to ExoGENI
-                    logger.info("Sending modifyComute request to ExoGENI...");
+                    logger.info("Sending modifyComute request to ExoGENI...");                   
+                    orcaManager.sendModifyRequestToORCA(orcaSliceID, ndlModReq);
                     //sendModifyRequestToORCA(orcaSliceID, ndlModReq);                    
                     logger.info("Done processing modifyCompute request");
+                    
+                    // To make sure that manifest data for a slice created by an entity external to RM is also published
+                    // when a modify request for that slice comes to RM
+                    rmState = RMState.getInstance();
+                    if(!rmState.isInSliceIDQ(orcaSliceID)){ // if not in manifest publishing queue already
+                        rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                    }
                     
                     return "SUCCESS";
                     
@@ -244,164 +261,6 @@ public class RMController implements RMConstants{
 
                 private void processLinkReq(LinkRequestInfo linkReq) {
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                }
-
-                /*
-                * Sends ndl request to a specific controller
-                */
-                private void sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
-
-                    if(controllerUrl == null || controllerUrl.isEmpty()){
-                        controllerUrl = RMConstants.defaultControllerUrl;
-                    }
-                    
-                    String createRes = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        createRes = orcaProxy.createSlice(sliceId, createReq);
-                        logger.info("Result for create slice for " + sliceId + " = " + createRes);
-                        System.out.println("Result for modify slice for " + sliceId + " = " + createRes);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA createSlice" + ex);
-                        System.out.println("Exception while calling ORCA createSlice" + ex);
-                        return;
-                    }
-
-                }
-                
-                /*
-                * Sends ndl request to the default controller
-                */
-                private void sendCreateRequestToORCA(String sliceId, String createReq){
-                    
-                    String controllerUrl = RMConstants.defaultControllerUrl;
-                                       
-                    String createRes = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        createRes = orcaProxy.createSlice(sliceId, createReq);
-                        logger.info("Result for create slice for " + sliceId + " = " + createRes);
-                        System.out.println("Result for modify slice for " + sliceId + " = " + createRes);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA createSlice" + ex);
-                        System.out.println("Exception while calling ORCA createSlice" + ex);
-                        return;
-                    }
-
-                }
-                
-                /*
-                * Sends ndl modify request to a specific controller
-                */
-                private void sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
-
-                    if(controllerUrl == null || controllerUrl.isEmpty()){
-                        controllerUrl = RMConstants.defaultControllerUrl;
-                    }
-                    
-                    String modifyRes = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
-                        logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
-                        System.out.println("Result for modify slice for " + sliceId + " = " + modifyRes);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA modifySlice" + ex);
-                        System.out.println("Exception while calling ORCA modifySlice" + ex);
-                        return;
-                    }
-
-                }
-                
-                /*
-                * Sends ndl modify request to the default controller
-                */
-                private void sendModifyRequestToORCA(String sliceId, String modifyReq){
-                    
-                    String controllerUrl = RMConstants.defaultControllerUrl;
-                    
-                    String modifyRes = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
-                        logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
-                        System.out.println("Result for modify slice for " + sliceId + " = " + modifyRes);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA modifySlice" + ex);
-                        System.out.println("Exception while calling ORCA modifySlice" + ex);
-                        return;
-                    }
-
-                }
-                
-                /*
-                * Gets manifest from default controller
-                */               
-                private String getManifestFromORCA(String sliceId){
-
-                    String controllerUrl = RMConstants.defaultControllerUrl;
-                    
-                    String manifest = null;
-                    String sanitizedManifest = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        manifest = orcaProxy.sliceStatus(sliceId);
-                        logger.info("manifest for slice " + sliceId + " = " + manifest);
-                        System.out.println("manifest for slice " + sliceId + " = " + manifest);
-                        sanitizedManifest = sanitizeManifest(manifest);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA sliceStatus" + ex);
-                        System.out.println("Exception while calling ORCA sliceStatus" + ex);
-                        return null;
-                    }
-                    return sanitizedManifest;
-
-                }
-                
-                /*
-                * Gets manifest from a specified controller
-                */
-                private String getManifestFromORCA(String sliceId, String controllerUrl){
-
-                    if(controllerUrl == null || controllerUrl.isEmpty()){
-                        controllerUrl = RMConstants.defaultControllerUrl;
-                    }
-                    
-                    String manifest = null;
-                    String sanitizedManifest = null;
-                    try {
-                        OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
-                        orcaProxy.setControllerUrl(controllerUrl);
-                        manifest = orcaProxy.sliceStatus(sliceId);
-                        logger.info("manifest for slice " + sliceId + " = " + manifest);
-                        System.out.println("manifest for slice " + sliceId + " = " + manifest);
-                        sanitizedManifest = sanitizeManifest(manifest);
-                    } catch (Exception ex) {
-                        logger.error("Exception while calling ORCA sliceStatus" + ex);
-                        System.out.println("Exception while calling ORCA sliceStatus" + ex);
-                        return null;
-                    }
-                    return sanitizedManifest;
-
-                }
-
-                private String sanitizeManifest(String manifest) {
-
-                    if (manifest == null)
-                        return null;
-
-                    int ind = manifest.indexOf("<rdf:RDF");
-                     if (ind > 0)
-                        return manifest.substring(ind);
-                     else
-                        return null;
-
-
                 }
                 
                 

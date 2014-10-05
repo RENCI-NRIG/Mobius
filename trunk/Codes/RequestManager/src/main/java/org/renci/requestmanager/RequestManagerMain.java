@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
+import org.renci.requestmanager.amqp.ManifestPublisher;
 import org.renci.requestmanager.amqp.RequestSubscriber;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
@@ -66,6 +68,14 @@ public class RequestManagerMain
             logger.error("Exception while starting ShadowQSubscriber thread " + ex);
         }
 
+        // Start the ManifestPublisher timer thread
+        try {
+            ManifestPublisher manifestPublisher = new ManifestPublisher(rmProperties); // Invocation of the constructor will start the ManifestPublisher thread
+        } catch (Exception ex) {
+            logger.error("Exception while starting ManifestPublisher thread " + ex);
+        }
+        
+        
         while(true){
             System.out.println("Tick...");
             try {
