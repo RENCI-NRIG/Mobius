@@ -25,7 +25,7 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
     public int determineChangeInNumWorkers(ModifyRequestInfo modReq, String manifest) {
         
         NdlLibManager ndlManager = new NdlLibManager();
-        int numActiveWorkersInManifest = ndlManager.getNumActiveWorkersInManifest(manifest, logger);
+        int numActiveWorkersInManifest = ndlManager.getNumActiveWorkersInManifest(manifest);
         
         int userViewNumActiveWorkers = modReq.getNumCurrentRes();
         int userViewNumWorkersReqdToMeetDeadline = modReq.getNumResReqToMeetDeadline();
