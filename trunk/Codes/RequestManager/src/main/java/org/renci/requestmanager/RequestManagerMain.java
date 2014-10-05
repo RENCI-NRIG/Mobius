@@ -17,11 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
-import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.ManifestPublisher;
 import org.renci.requestmanager.amqp.RequestSubscriber;
-import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 /**
@@ -45,7 +43,7 @@ public class RequestManagerMain
     {
         System.out.println( "Hello World!" );
         Logger logger = Logger.getLogger(new Object() { }.getClass().getEnclosingClass());
-
+        
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
         

@@ -105,8 +105,12 @@ public class RMController implements RMConstants{
                                     if(currAppRequestInfo.getNewReq() != null){ // this is a first time request to create a new slice
                                         
                                         NewRequestInfo newReq = currAppRequestInfo.getNewReq();
-                                        processNewReq(newReq, currOrcaSliceId);
-                                        currAppRequestInfo.setProcessed(true);
+                                        String resultStatus = processNewReq(newReq, currOrcaSliceId);
+                                        // If the create action needs to be delayed, don't set setProcessed to true
+                                        // Only if it is either a success or an error condition, set setProcessed to true
+                                        if(resultStatus.equalsIgnoreCase("SUCCESS") || resultStatus.equalsIgnoreCase("ERROR")){
+                                            currAppRequestInfo.setProcessed(true);
+                                        }
                                         continue;
                                                                                 
                                     }
@@ -156,18 +160,18 @@ public class RMController implements RMConstants{
                 * Processes a new user request, generates appropriate ndl request and sends it to ORCA/ExoGENI
                 */
                 
-                private void processNewReq(NewRequestInfo newReq, String orcaSliceID) {
+                private String processNewReq(NewRequestInfo newReq, String orcaSliceID) {
                     
                     if(newReq == null || orcaSliceID == null || orcaSliceID.isEmpty()){
                         logger.error("newReq or orcaSliceID is null.. new user request not processed..");
-                        return;
+                        return "ERROR";
                     }
                     
                     String requestedTemplateType = newReq.getTemplateType();
                     
                     if (requestedTemplateType == null){
                         logger.error("requestedTemplateType is null.. new user request not processed..");
-                        return;
+                        return "ERROR";
                     }
                     
                     // Depending on the template type, call ndllib to generate appropriate request
@@ -188,21 +192,28 @@ public class RMController implements RMConstants{
                     }
                     else {
                         logger.error("Unsupported requested template type");
-                        return;
+                        return "ERROR";
                     }
                     
                     // Send request to ExoGENI
                     logger.info("Sending request to ExoGENI...");
                     OrcaManager orcaManager = new OrcaManager(rmProperties);
-                    orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
+                    String resultCreate = orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
                     // sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
                     
                     //Push orcaSliceID to manifest publishing queue
-                    rmState = RMState.getInstance();
-                    rmState.addSliceIDToSliceIDQ(orcaSliceID);
-                    logger.info("Added " + orcaSliceID + " to SliceIDQ...");
+                    if(resultCreate != null){
+                        rmState = RMState.getInstance();
+                        rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                        logger.info("Added " + orcaSliceID + " to SliceIDQ...");
+                        logger.info("Done processing new user request");
+                        return "SUCCESS";
+                    }
+                    else{
+                        logger.info("Can't create slice at this moment.. trying again in 30 seconds..");
+                        return "DELAY";
+                    }
                     
-                    logger.info("Done processing new user request");
                     
                 }
 
