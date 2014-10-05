@@ -84,7 +84,8 @@ public class NdlLibManager implements RMConstants{
         // Choose postbootscript for master
         if(newReq.getNewPostbootMaster() == null){ // No postboot script supplied by user; use default postboot script
             logger.info("Using default postboot script for master");
-            master.setPostBootScript(CondorDefaults.getDefaultPostbootMaster());
+            CondorDefaults cd = new CondorDefaults();
+            master.setPostBootScript(cd.getDefaultPostbootMaster());
         }
         else {
             logger.info("Using user-supplied postboot script for master");
@@ -94,7 +95,8 @@ public class NdlLibManager implements RMConstants{
         // Choose postbootscript for workers
         if(newReq.getNewPostbootWorker() == null){ // No postboot script supplied by user; use default postboot script
             logger.info("Using default postboot script for workers");
-            workers.setPostBootScript(CondorDefaults.getDefaultPostbootWorker());
+            CondorDefaults cd = new CondorDefaults();
+            workers.setPostBootScript(cd.getDefaultPostbootWorker());
         }
         else {
             logger.info("Using user-supplied postboot script for workers");
@@ -159,6 +161,7 @@ public class NdlLibManager implements RMConstants{
                 SPMapperClient.SPInfo spInfo = spMapperClient.getSPInfo(stitchPortID);
                 
                 if(spInfo != null){
+                    
                     int label = spInfo.getVlanTagSet().get(0); // get the first available vlan tag
                     String port = spInfo.getPortSet().get(0);
 
@@ -316,7 +319,7 @@ public class NdlLibManager implements RMConstants{
         int numActiveWorkers = 0;
         for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
             logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-            if(!mn.getState().equalsIgnoreCase("Active")){
+            if(mn.getState().equalsIgnoreCase("Active")){
                 numActiveWorkers++;
             }
         }

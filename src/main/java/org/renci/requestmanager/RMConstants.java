@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
@@ -52,16 +53,20 @@ public interface RMConstants {
     
     public enum ComputeDomains {
         
-        RCI("RENCI (Chapel Hill, NC USA) XO Rack"),
-        BBN("BBN/GPO (Boston, MA USA) XO Rack"),
-        Duke("Duke CS (Durham, NC USA) XO Rack"),
-        UNC("UNC BEN (Chapel Hill, NC USA)"),
-        NICTA("NICTA (Sydney, Australia) XO Rack"),
-        FIU("FIU (Miami, FL USA) XO Rack"),
-        UH("UH (Houston, TX USA) XO Rack"),
-        NCSU("NCSU (Raleigh, NC USA) XO Rack"),
+        //BBN("BBN/GPO (Boston, MA USA) XO Rack"),
+        //Duke("Duke CS (Durham, NC USA) XO Rack"),
+        //UNC("UNC BEN (Chapel Hill, NC USA)"),
+        //NICTA("NICTA (Sydney, Australia) XO Rack"),
+        //FIU("FIU (Miami, FL USA) XO Rack"),
+        //UH("UH (Houston, TX USA) XO Rack"),
+        //NCSU("NCSU (Raleigh, NC USA) XO Rack"),
+        //UvA("UvA (Amsterdam, The Netherlands) XO Rack"),
+        
         // TODO : Add more racks here. Or, read it from a configuration file
-        UvA("UvA (Amsterdam, The Netherlands) XO Rack");
+        
+        //UCD("UCD (Davis, CA USA) XO Rack"),
+        RCI("RENCI (Chapel Hill, NC USA) XO Rack");
+        //TAMU("TAMU (College Station, TX, USA) XO Rack");
         
         
         public String name;
@@ -81,16 +86,17 @@ public interface RMConstants {
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
-        private static final String defaultImageUrl = "http://geni-images.renci.org/images/standard/centos/centos6.3-v1.0.11.xml"; // defaul url to image xml file
-        private static final String defaultImageHash = "776f4874420266834c3e56c8092f5ca48a180eed"; // hash of the image xml file
-        private static final String defaultImageName = "Condor-default-image"; // default name of image
-        private static String defaultPostbootMaster = readStringFromFile(""); // default postboot script for master
-        private static String defaultPostbootWorker = readStringFromFile(""); // default postboot script for workers
+        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.1.xml"; // defaul url to image xml file
+        private static final String defaultImageHash = "26cc94aeb339a8223f4ecb95948f2d3ad9ea79e9"; // hash of the image xml file
+        private static final String defaultImageName = "SQ-genovariant-v.1"; // default name of image
+        private String defaultPostbootMaster = readPostboot("default.condor.master.postboot"); // default postboot script for master
+        private String defaultPostbootWorker = readPostboot("default.condor.worker.postboot"); // default postboot script for workers
         private static final int defaultMaxNumWorkers = 256; // default max size of worker nodegroup
         
         private static String readStringFromFile(String filePathStr) {
             
             if(filePathStr == null || filePathStr.isEmpty()){
+                System.out.println("ERROR: Can't read postboot script because file doesn't exist..");
                 return null;
             }
             
@@ -112,29 +118,59 @@ public interface RMConstants {
                     return sb.toString();
 
             } catch (IOException e) {
+                    e.printStackTrace();
                     return null;
             }
             
 	}
         
+        private String readPostboot(String fileName){
+            
+            if(fileName == null || fileName.isEmpty()){
+                System.out.println("ERROR: Can't read postboot script because file doesn't exist..");
+                return null;
+            }
+            
+            try {
+                InputStream is = getClass().getResourceAsStream("/" + fileName);
+                BufferedReader bin = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    while((line = bin.readLine()) != null) {
+                            sb.append(line);
+                            // re-add line separator
+                            sb.append(System.getProperty("line.separator"));
+                    }
+
+                    bin.close();
+
+                    return sb.toString();
+            } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+            }
+            
+        }
+        
         public CondorDefaults(){
             
         }
 
-        public static String getDefaultPostbootMaster() {
+        public String getDefaultPostbootMaster() {
             return defaultPostbootMaster;
         }
 
-        public static void setDefaultPostbootMaster(String defaultPostbootMaster) {
-            CondorDefaults.defaultPostbootMaster = defaultPostbootMaster;
+        public void setDefaultPostbootMaster(String defaultPostbootMaster) {
+            defaultPostbootMaster = defaultPostbootMaster;
         }
 
-        public static String getDefaultPostbootWorker() {
+        public String getDefaultPostbootWorker() {
             return defaultPostbootWorker;
         }
 
         public static void setDefaultPostbootWorker(String defaultPostbootWorker) {
-            CondorDefaults.defaultPostbootWorker = defaultPostbootWorker;
+            defaultPostbootWorker = defaultPostbootWorker;
         }
 
         public static long getDefaultBW() {

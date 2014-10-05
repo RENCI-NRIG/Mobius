@@ -67,19 +67,20 @@ public class RequestTestPublisher {
         JSONObject obj = new JSONObject();
 	// mandatory
         obj.put("requestType", "new");
-        obj.put("req_templateType", "condor_sp");
+        obj.put("req_templateType", "condor");
         obj.put("req_sliceID", "testSlice");
         obj.put("req_wfuuid", "0xcdfvgh");
         
         // optional parameters
-        obj.put("req_numWorkers", 4);
-        obj.put("req_storage", 100);
-        obj.put("req_BW", 100000000);
-        obj.put("req_imageUrl", "image url");
-        obj.put("req_imageHash", "image hash");
-        obj.put("req_imageName", "image name");
-        obj.put("req_postbootMaster", "master postboot script");
-        obj.put("req_postbootWorker", "worker postboot script");
+        
+        obj.put("req_numWorkers", 2);
+        //obj.put("req_storage", 100);
+        //obj.put("req_BW", 100000000);
+        //obj.put("req_imageUrl", "image url");
+        //obj.put("req_imageHash", "image hash");
+        //obj.put("req_imageName", "image name");
+        //obj.put("req_postbootMaster", "master postboot script");
+        //obj.put("req_postbootWorker", "worker postboot script");
         
         // optional link and stitchport info
         

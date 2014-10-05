@@ -27,7 +27,7 @@ public class OrcaManager {
     /*
     * Sends ndl request to a specific controller
     */
-    public void sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
+    public String sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
 
         if(controllerUrl == null || controllerUrl.isEmpty()){
             controllerUrl = RMConstants.defaultControllerUrl;
@@ -39,9 +39,10 @@ public class OrcaManager {
             orcaProxy.setControllerUrl(controllerUrl);
             createRes = orcaProxy.createSlice(sliceId, createReq);
             logger.info("Result for create slice for " + sliceId + " = " + createRes);
+            return createRes;
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA createSlice" + ex);
-            return;
+            return null;
         }
 
     }
@@ -49,7 +50,7 @@ public class OrcaManager {
     /*
     * Sends ndl request to the default controller
     */
-    public void sendCreateRequestToORCA(String sliceId, String createReq){
+    public String sendCreateRequestToORCA(String sliceId, String createReq){
 
         String controllerUrl = RMConstants.defaultControllerUrl;
 
@@ -59,9 +60,10 @@ public class OrcaManager {
             orcaProxy.setControllerUrl(controllerUrl);
             createRes = orcaProxy.createSlice(sliceId, createReq);
             logger.info("Result for create slice for " + sliceId + " = " + createRes);
+            return createRes;
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA createSlice" + ex);
-            return;
+            return null;
         }
 
     }
@@ -69,7 +71,7 @@ public class OrcaManager {
     /*
     * Sends ndl modify request to a specific controller
     */
-    public void sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
+    public String sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
 
         if(controllerUrl == null || controllerUrl.isEmpty()){
             controllerUrl = RMConstants.defaultControllerUrl;
@@ -81,9 +83,10 @@ public class OrcaManager {
             orcaProxy.setControllerUrl(controllerUrl);
             modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
             logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
+            return modifyRes;
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA modifySlice" + ex);
-            return;
+            return null;
         }
 
     }
@@ -91,7 +94,7 @@ public class OrcaManager {
     /*
     * Sends ndl modify request to the default controller
     */
-    public void sendModifyRequestToORCA(String sliceId, String modifyReq){
+    public String sendModifyRequestToORCA(String sliceId, String modifyReq){
 
         String controllerUrl = RMConstants.defaultControllerUrl;
 
@@ -101,9 +104,10 @@ public class OrcaManager {
             orcaProxy.setControllerUrl(controllerUrl);
             modifyRes = orcaProxy.modifySlice(sliceId, modifyReq);
             logger.info("Result for modify slice for " + sliceId + " = " + modifyRes);
+            return modifyRes;
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA modifySlice" + ex);
-            return;
+            return null;
         }
 
     }
