@@ -67,7 +67,7 @@ public class RequestTestPublisher {
         JSONObject obj = new JSONObject();
 	// mandatory
         obj.put("requestType", "new");
-        obj.put("req_templateType", "condor");
+        obj.put("req_templateType", "condor_sp");
         obj.put("req_sliceID", "testSlice");
         obj.put("req_wfuuid", "0xcdfvgh");
         

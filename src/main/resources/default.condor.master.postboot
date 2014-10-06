@@ -2,23 +2,25 @@
 #Site1_SERVER='10.37.71.1'
 
 # TODO: make this template
-MASTER_IP='10.32.8.20'
+MASTER_IP=$Master.get(0).IP("Master-Network")
 
 hostname master
 
+#10.32.8.20
 
 echo  StrictHostKeyChecking no >> /etc/ssh/ssh_config
 
 # replace /etc/hosts
 cat >/etc/hosts <<EOF
-10.32.8.20  master.expnet   master   salt
+$Master.get(0).IP("Master-Network")  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
-
-for i in {21..69}; do
-   name=$(($i - 21))
-   echo `echo 10.32.8.20  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
+START=`echo '$Workers.get(0).IP("Workers-Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
+END=$(($START+200))
+for i in $(seq $START $END); do
+   name=$(($i - $START))
+   echo `echo $Workers.get(0).IP("Workers-Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
 done
 
 echo "" >  /etc/condor/condor_config.local
@@ -38,11 +40,12 @@ LOCAL_BASE=/home/pegasus-user/montage-8-deg
 
 for FILE in dax.xml pegasus.conf replica.catalog sites.xml transformation.catalog; do
     wget -q -O $LOCAL_BASE/${FILE}.tmp $WF_BASE/$FILE  > /dev/null 2>&1
-    sed  's/SLICE_MASTER_HOSTNAME/10.32.8.20/g' $LOCAL_BASE/${FILE}.tmp |  sed  's/SLICE_MASTER_USER/pegasus-user/g'  | sed  's/SLICE_MASTER_HOME/\/home\/pegasus-user\/montage-8-deg/g' > $LOCAL_BASE/${FILE}
+    sed  's/SLICE_MASTER_HOSTNAME/'$Master.get(0).IP("Master-Network")'/g' $LOCAL_BASE/${FILE}.tmp |  sed  's/SLICE_MASTER_USER/pegasus-user/g'  | sed  's/SLICE_MASTER_HOME/\/home\/pegasus-user\/montage-8-deg/g' > $LOCAL_BASE/${FILE}
     
     rm $LOCAL_BASE/${FILE}.tmp
     chown pegasus-user $LOCAL_BASE/$FILE
 done
+
 
 
 
