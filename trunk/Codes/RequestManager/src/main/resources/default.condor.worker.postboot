@@ -1,8 +1,8 @@
 #!/bin/bash
-#Site1_SERVER='10.37.71.1'
+
 
 # TODO: Change this to templated
-MASTER_IP='10.32.8.20'
+MASTER_IP=$Master.get(0).IP("Master-Network")
 
 function testSSH() {
         local user=${1}
@@ -30,14 +30,15 @@ hostname $MY_HOSTNAME
 
 # replace /etc/hosts
 cat >/etc/hosts <<EOF
-10.32.8.20   master.expnet   master   salt
+$Master.get(0).IP("Master-Network")  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
-
-for i in {21..69}; do
-   name=$(($i - 21))
-   echo `echo 10.32.8.20 | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
+START=`echo '$Workers.get(0).IP("Workers-Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
+END=$(($START+200))
+for i in $(seq $START $END); do
+   name=$(($i - $START))
+   echo `echo $Workers.get(0).IP("Workers-Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
 done
 
 echo "" >  /etc/condor/condor_config.local
