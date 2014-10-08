@@ -64,8 +64,8 @@ public class NdlLibManager implements RMConstants{
         // Get a domain randomly from the set of available domains
         int numDomains = ComputeDomains.values().length;
         int pick = new Random().nextInt(numDomains);
-        String domainName1 = ComputeDomains.values()[pick].name;
-        String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name;
+        String domainName1 = ComputeDomains.values()[pick].name; // master domain
+        String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name; 
         
         // Choose domains for master and worker
         if(templateType.contains(MultiSuffix)){ // master and workers requested to be in separate domains
@@ -83,9 +83,16 @@ public class NdlLibManager implements RMConstants{
         
         // Choose postbootscript for master
         if(newReq.getNewPostbootMaster() == null){ // No postboot script supplied by user; use default postboot script
-            logger.info("Using default postboot script for master");
-            CondorDefaults cd = new CondorDefaults();
-            master.setPostBootScript(cd.getDefaultPostbootMaster());
+            if(templateType.contains(MultiSuffix)){ // 
+                logger.info("Using default multi-point postboot script for master");
+                CondorDefaults cd = new CondorDefaults();
+                master.setPostBootScript(cd.getDefaultPostbootMaster_MultiPoint());
+            }
+            else{
+                logger.info("Using default single domain postboot script for master");
+                CondorDefaults cd = new CondorDefaults();
+                master.setPostBootScript(cd.getDefaultPostbootMaster_SingleDomain());
+            }
         }
         else {
             logger.info("Using user-supplied postboot script for master");
@@ -94,9 +101,16 @@ public class NdlLibManager implements RMConstants{
         
         // Choose postbootscript for workers
         if(newReq.getNewPostbootWorker() == null){ // No postboot script supplied by user; use default postboot script
-            logger.info("Using default postboot script for workers");
-            CondorDefaults cd = new CondorDefaults();
-            workers.setPostBootScript(cd.getDefaultPostbootWorker());
+            if(templateType.contains(MultiSuffix)){
+                logger.info("Using default multi-point postboot script for workers");
+                CondorDefaults cd = new CondorDefaults();
+                workers.setPostBootScript(cd.getDefaultPostbootWorker_MultiPoint());
+            }
+            else{
+                logger.info("Using default single domain postboot script for workers");
+                CondorDefaults cd = new CondorDefaults();
+                workers.setPostBootScript(cd.getDefaultPostbootWorker_SingleDomain());
+            }
         }
         else {
             logger.info("Using user-supplied postboot script for workers");
@@ -141,9 +155,23 @@ public class NdlLibManager implements RMConstants{
             // Create new storage node and attach to master node
             // TODO: Handle storage
             StorageNode storage = s.addStorageNode("Storage");
-            Network link = s.addLink("LinkToStorage");
-            storage.stitch(link);
+            BroadcastNetwork storageNet = s.addBroadcastLink("StorageNetwork");
+            InterfaceNode2Net masterStorageIface  = (InterfaceNode2Net) storageNet.stitch(master);
+            InterfaceNode2Net storageStorageIface  = (InterfaceNode2Net) storageNet.stitch(storage);
+            
             // Set properties of storage
+            logger.info("Setting domain for Storage to " + domainName1);
+            storage.setDomain(domainName1); // same as master domain
+            
+            if(newReq.getNewStorage() <= 0){
+                logger.info("Using default amount of storage = " + CondorDefaults.getDefaultStorage());
+                storage.setCapacity(CondorDefaults.getDefaultStorage());
+            }
+            else{
+                logger.info("Using user-supplied amount of storage = " + newReq.getNewStorage());
+                storage.setCapacity(newReq.getNewStorage());
+            }
+            
         }
         
         

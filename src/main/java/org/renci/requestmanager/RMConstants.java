@@ -65,8 +65,8 @@ public interface RMConstants {
         // TODO : Add more racks here. Or, read it from a configuration file
         
         //UCD("UCD (Davis, CA USA) XO Rack"),
-        RCI("RENCI (Chapel Hill, NC USA) XO Rack");
-        //TAMU("TAMU (College Station, TX, USA) XO Rack");
+        RCI("RENCI (Chapel Hill, NC USA) XO Rack"),
+        TAMU("TAMU (College Station, TX, USA) XO Rack");
         
         
         public String name;
@@ -86,11 +86,13 @@ public interface RMConstants {
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
-        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.1.xml"; // defaul url to image xml file
-        private static final String defaultImageHash = "26cc94aeb339a8223f4ecb95948f2d3ad9ea79e9"; // hash of the image xml file
-        private static final String defaultImageName = "SQ-genovariant-v.1"; // default name of image
-        private String defaultPostbootMaster = readPostboot("default.condor.master.postboot"); // default postboot script for master
-        private String defaultPostbootWorker = readPostboot("default.condor.worker.postboot"); // default postboot script for workers
+        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.2/genovariant-0.2.xml"; // defaul url to image xml file
+        private static final String defaultImageHash = "4049f4ea1b92d12e0b2608a9c4cf6afca391e711"; // hash of the image xml file
+        private static final String defaultImageName = "SQ-genovariant-v.2"; // default name of image
+        private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
+        private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
+        private String defaultPostbootWorker_MultiPoint = readPostboot("default.condor.worker.multipoint.postboot"); // default postboot script for workers - multipoint
+        private String defaultPostbootWorker_SingleDomain = readPostboot("default.condor.worker.singledomain.postboot"); // default postboot script for workers - single domain
         private static final int defaultMaxNumWorkers = 256; // default max size of worker nodegroup
         
         private static String readStringFromFile(String filePathStr) {
@@ -157,20 +159,36 @@ public interface RMConstants {
             
         }
 
-        public String getDefaultPostbootMaster() {
-            return defaultPostbootMaster;
+        public String getDefaultPostbootMaster_MultiPoint() {
+            return defaultPostbootMaster_MultiPoint;
         }
 
-        public void setDefaultPostbootMaster(String defaultPostbootMaster) {
-            defaultPostbootMaster = defaultPostbootMaster;
+        public void setDefaultPostbootMaster_MultiPoint(String defaultPostbootMaster_MultiPoint) {
+            this.defaultPostbootMaster_MultiPoint = defaultPostbootMaster_MultiPoint;
         }
 
-        public String getDefaultPostbootWorker() {
-            return defaultPostbootWorker;
+        public String getDefaultPostbootMaster_SingleDomain() {
+            return defaultPostbootMaster_SingleDomain;
         }
 
-        public static void setDefaultPostbootWorker(String defaultPostbootWorker) {
-            defaultPostbootWorker = defaultPostbootWorker;
+        public void setDefaultPostbootMaster_SingleDomain(String defaultPostbootMaster_SingleDomain) {
+            this.defaultPostbootMaster_SingleDomain = defaultPostbootMaster_SingleDomain;
+        }
+
+        public String getDefaultPostbootWorker_MultiPoint() {
+            return defaultPostbootWorker_MultiPoint;
+        }
+
+        public void setDefaultPostbootWorker_MultiPoint(String defaultPostbootWorker_MultiPoint) {
+            this.defaultPostbootWorker_MultiPoint = defaultPostbootWorker_MultiPoint;
+        }
+
+        public String getDefaultPostbootWorker_SingleDomain() {
+            return defaultPostbootWorker_SingleDomain;
+        }
+
+        public void setDefaultPostbootWorker_SingleDomain(String defaultPostbootWorker_SingleDomain) {
+            this.defaultPostbootWorker_SingleDomain = defaultPostbootWorker_SingleDomain;
         }
 
         public static long getDefaultBW() {
