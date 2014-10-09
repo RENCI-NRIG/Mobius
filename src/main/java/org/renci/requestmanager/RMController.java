@@ -175,7 +175,7 @@ public class RMController implements RMConstants{
                     }
                     
                     // Depending on the template type, call ndllib to generate appropriate request
-                    NdlLibManager ndlManager = new NdlLibManager();
+                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
                     String ndlReq = null;
                     
                     if(requestedTemplateType.startsWith(CondorBasicTypeName)){
@@ -235,7 +235,7 @@ public class RMController implements RMConstants{
                     }
                     
                     // Call ndllib to generate modify request
-                    NdlLibManager ndlManager = new NdlLibManager();
+                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
                     String ndlModReq = null;
                     
                     logger.info("Calling ndllib to get sliceStatus for " + orcaSliceID);
