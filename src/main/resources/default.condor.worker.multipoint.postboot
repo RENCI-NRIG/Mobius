@@ -78,3 +78,24 @@ done
 echo  "Restarting Condorm try: $i " >> /tmp/bootscript.out
 echo '/etc/init.d/condor restart' >> /tmp/bootscript.out
 /etc/init.d/condor restart
+
+# Set up NFS
+
+mkdir /mnt/scratch
+
+/etc/init.d/rpcbind restart
+
+echo '$Master.get(0).IP("Master-Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
+
+ while true; do
+      echo attemping mount...
+      PING=`ping -c 1 $Master.get(0).IP("Master-Network") > /dev/null 2>&1`
+        if [ "$?" = "0" ]; then
+           break;
+        fi
+        sleep 5
+    done
+
+sleep 10
+
+mount -a

@@ -245,7 +245,7 @@ public class NdlLibManager implements RMConstants{
                 
                 if(spInfo != null){
                     //TODO: FIX this
-                    int label = spInfo.getVlanTagSet().get(1); // get the first available vlan tag
+                    int label = spInfo.getVlanTagSet().get(0); // get the first available vlan tag
                     String port = spInfo.getPortSet().get(0);
 
                     StitchPort  data       = s.addStitchPort("Data");
