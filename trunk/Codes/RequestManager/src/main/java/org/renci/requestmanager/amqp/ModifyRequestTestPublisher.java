@@ -50,7 +50,7 @@ public class ModifyRequestTestPublisher {
         JSONObject obj = new JSONObject();
 	// mandatory
         obj.put("requestType", "modifyCompute");
-        obj.put("req_sliceID", "testSlice");
+        obj.put("req_sliceID", "testSlice2");
         obj.put("req_wfuuid", "0xcdfvgh");
         obj.put("req_numCurrentRes", 2);
         obj.put("req_numResReqToMeetDeadline", 4);

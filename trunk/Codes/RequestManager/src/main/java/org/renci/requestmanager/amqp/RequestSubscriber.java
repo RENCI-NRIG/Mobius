@@ -68,16 +68,20 @@ public class RequestSubscriber implements Runnable {
                 System.out.println(" [x] Received '" + message + "'");
               
                 // Parse message
-                AppRequestInfo appReq = parseAndCreateAppRequest(message);
-                
-                // Add it to app request queue
-                if(appReq != null){
-                    RMState rmState = RMState.getInstance();
-                    rmState.addReqToAppReqQ(appReq);
-                    logger.info("Added request to appRequestQ...");
+                try {
+                    AppRequestInfo appReq = parseAndCreateAppRequest(message);
+                    // Add it to app request queue
+                    if(appReq != null){
+                        RMState rmState = RMState.getInstance();
+                        rmState.addReqToAppReqQ(appReq);
+                        logger.info("Added request to appRequestQ...");
+                    }
+                    System.out.println("DONE...");
                 }
-                
-                System.out.println("DONE...");
+                catch (Exception ex){
+                    logger.error("Exception while getting message from AMQP queue or while parsing request, continuing..." + ex);
+                    ex.printStackTrace();
+                }
              
             }
             

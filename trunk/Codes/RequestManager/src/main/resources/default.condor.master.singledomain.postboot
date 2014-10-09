@@ -6,7 +6,16 @@ MASTER_IP=$Master.get(0).IP("Network")
 
 hostname master
 
-#10.32.8.20
+# Set up NFS
+mkdir /mnt/scratch
+echo '/var/nfs *(rw,no_root_squash)' > /etc/exports
+/etc/init.d/rpcbind restart
+/etc/init.d/nfs restart
+
+echo '$Master.get(0).IP("Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
+
+mount -a
+
 
 echo  StrictHostKeyChecking no >> /etc/ssh/ssh_config
 

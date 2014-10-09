@@ -88,9 +88,9 @@ public interface RMConstants {
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
-        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.2/genovariant-0.2.xml"; // defaul url to image xml file
-        private static final String defaultImageHash = "4049f4ea1b92d12e0b2608a9c4cf6afca391e711"; // hash of the image xml file
-        private static final String defaultImageName = "SQ-genovariant-v.2"; // default name of image
+        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.3/genovariant-0.3.xml"; // defaul url to image xml file
+        private static final String defaultImageHash = "93425205beef87c3882ecf2dc29801aeb3cde374"; // hash of the image xml file
+        private static final String defaultImageName = "SQ-genovariant-v.3"; // default name of image
         private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
         private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
         private String defaultPostbootWorker_MultiPoint = readPostboot("default.condor.worker.multipoint.postboot"); // default postboot script for workers - multipoint
