@@ -113,7 +113,7 @@ public class ManifestPublisher {
                     }
 
                     OrcaManager orcaManager = new OrcaManager(rmProperties);
-                    NdlLibManager ndlManager = new NdlLibManager();
+                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
                     
                     for(String currSliceID: currSliceIDQ){ // Go through all the slice ids
                         

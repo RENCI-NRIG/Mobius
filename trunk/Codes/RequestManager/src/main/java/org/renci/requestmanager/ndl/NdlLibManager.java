@@ -7,7 +7,10 @@
 package org.renci.requestmanager.ndl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Properties;
 import java.util.Random;
+import java.util.StringTokenizer;
 import orca.ndllib.resources.request.*;
 import orca.ndllib.Slice;
 import org.renci.requestmanager.NewRequestInfo;
@@ -27,7 +30,13 @@ public class NdlLibManager implements RMConstants{
     
     // This is the class responsible for talking to ndlLib and generate requests
     protected Logger logger = null;
+    private static Properties rmProperties = null; // need this for preferred domains
     
+    
+    public NdlLibManager(Properties rmProps){ // constructor required for create requests for getting preferred domains from configuration file
+        logger = Logger.getLogger(this.getClass());
+        this.rmProperties = rmProps;
+    }
     
     public NdlLibManager(){
         logger = Logger.getLogger(this.getClass());
@@ -62,10 +71,56 @@ public class NdlLibManager implements RMConstants{
         }
         
         // Get a domain randomly from the set of available domains
-        int numDomains = ComputeDomains.values().length;
+        
+        //ArrayList<String> preferredDomains = new ArrayList<String> ();
+        //preferredDomains.add("RENCI (Chapel Hill, NC USA) XO Rack");
+        //preferredDomains.add("TAMU (College Station, TX, USA) XO Rack");
+        //preferredDomains.add("UCD (Davis, CA USA) XO Rack");
+        
+        ArrayList<String> preferredDomains = populatePreferredDomains(rmProperties);
+        logger.info("Preferred set of domains = " + preferredDomains);
+        
+        ArrayList<String> finalDomains = new ArrayList<String>();
+        // Get list of all domains from ndllib
+        ArrayList<String> allDomains = new ArrayList<String> (Slice.getDomains());
+        if(allDomains != null && !allDomains.isEmpty()){
+            logger.info("There are " + allDomains.size() + " available domains");
+            logger.info("The available domains from ndllibs are " + allDomains);
+            if(preferredDomains != null && !preferredDomains.isEmpty()){ // there is a set of preferred domains; Use only those
+                for (String pDomain: preferredDomains){
+                    if(allDomains.contains(pDomain)){ // valid preferred domain
+                        finalDomains.add(pDomain);
+                    }
+                }
+            }
+            else{ // no preferred domains
+                finalDomains = allDomains; // all domains can be used
+            }
+        }
+        else{ // ndllib didn't return available domains
+            logger.info("ndllib didn't return available set of domains");
+            if(preferredDomains != null && !preferredDomains.isEmpty()){
+                logger.info("Using preferredDomains in configuration file as final set of domains");
+                finalDomains = preferredDomains; // whatever is specifed through the configuration becomes the finalDomains;l trust preferred domain names
+            }
+            else{
+                logger.error("No valid domains found");
+                logger.error("No unbound request supported yet.. returning null...");
+                return null;
+            }
+        }
+        
+        //int numDomains = ComputeDomains.values().length;
+        //int pick = new Random().nextInt(numDomains);
+        //String domainName1 = ComputeDomains.values()[pick].name; // master domain
+        //String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name; 
+        
+        logger.info("Final set of domains used = " + finalDomains);
+        
+        int numDomains = finalDomains.size();
         int pick = new Random().nextInt(numDomains);
-        String domainName1 = ComputeDomains.values()[pick].name; // master domain
-        String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name; 
+        String domainName1 = finalDomains.get(pick);
+        String domainName2 = finalDomains.get((pick+1)%numDomains);
         
         // Choose domains for master and worker
         if(templateType.contains(MultiSuffix)){ // master and workers requested to be in separate domains
@@ -376,6 +431,31 @@ public class NdlLibManager implements RMConstants{
         return true;
         
     }
+    
+    private ArrayList<String> populatePreferredDomains(Properties rmProps){
+        
+        ArrayList<String> listPreferredDomains = new ArrayList<String> ();
+        if(rmProps == null){
+            logger.error("While populating preferredDomains from rmProperties, rmProperties turned out to be null");
+            return null;
+        }
+        
+        if(rmProps.getProperty(PREFERRED_DOMAINS_STRING_NAME) == null){
+            logger.info("No property called preferredDomains found in rm.properties, .. returning null for preferredDomains..");
+            return null;
+        }
+        else{ // We have some preferred domains
+            String allPreferredDomainsString = rmProps.getProperty(PREFERRED_DOMAINS_STRING_NAME);
+            StringTokenizer st = new StringTokenizer(allPreferredDomainsString, ";"); 
+            while(st.hasMoreTokens()) {  
+                String val = st.nextToken(); 
+                listPreferredDomains.add(val);
+            } 
+            return listPreferredDomains;
+        }
+
+    }
+    
     
     public String generateTestRequest(){
         

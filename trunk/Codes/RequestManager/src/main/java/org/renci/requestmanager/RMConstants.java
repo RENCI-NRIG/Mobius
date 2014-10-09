@@ -28,6 +28,8 @@ public interface RMConstants {
     public String defaultControllerUrl = "https://geni.renci.org:11443/orca/xmlrpc";
     public String defaultSPMapperUrl = "http://url.sp.mapper";
     
+    public String PREFERRED_DOMAINS_STRING_NAME = "preferredDomains";
+    
     public enum RequestTemplates {
         
         CONDOR_POOL(CondorBasicTypeName),
