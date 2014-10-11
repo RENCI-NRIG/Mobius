@@ -6,6 +6,8 @@
 
 package org.renci.requestmanager.ndl;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
@@ -199,7 +201,7 @@ public class NdlLibManager implements RMConstants{
         
         // Choose instance type
         master.setNodeType("XO Large");
-        workers.setNodeType("XO Medium");
+        workers.setNodeType("XO Large");
         
         // At this point basic condor cluster is ready, without IP address assignment
         
@@ -339,11 +341,21 @@ public class NdlLibManager implements RMConstants{
             int numNodesToDelete = (-1)*change;
             for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
                 logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                
                 if(i < numNodesToDelete){
+                    // if killcondorondelete property exists and is true, ssh to worker and kill condor
+                    if(rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME) != null){
+                        String killCondor = rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME);
+                        if(killCondor.equalsIgnoreCase("true")){
+                            logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
+                            doSSHAndKillCondor(mn.getPublicIP());
+                        }
+                    }
                     logger.info("manifestNode: deleting " + mn.getURI());
                     mn.delete();
                     i++;
                 }
+                
             }
         }
         
@@ -456,6 +468,65 @@ public class NdlLibManager implements RMConstants{
 
     }
     
+    private void doSSHAndKillCondor(String publicIP) {
+        
+        String scriptName = rmProperties.getProperty(KILLCONDORONDELETE_SSH_SCRIPTNAME_PROP_NAME);
+        if (scriptName == null || scriptName.isEmpty()){
+            logger.error("No condor delete script specified in rm.properties.. can't ssh and stop condor on worker..");
+            return;
+        }
+        
+        String pathToSSHPrivKey = rmProperties.getProperty(KILLCONDORONDELETE_SSH_PRIVKEY_PROP_NAME);
+        if (pathToSSHPrivKey == null || pathToSSHPrivKey.isEmpty()){
+            logger.error("No ssh priv key path specified in rm.properties.. can't ssh and stop condor on worker..");
+            return;
+        }
+        
+        String sshOpts = "-q -o PreferredAuthentications=publickey -o HostbasedAuthentication=no -o PasswordAuthentication=no -o StrictHostKeyChecking=no";
+        String hostName = publicIP;
+        
+        String sshUserName = rmProperties.getProperty(KILLCONDORONDELETE_SSH_USER_PROP_NAME);
+        if(sshUserName == null || sshUserName.isEmpty()){
+            sshUserName = "root";
+        }
+        
+        logger.info("Using " + sshUserName + " user to ssh to " + publicIP);
+        String sshCmd = "ssh" + " " + sshOpts + " " + "-i" + " " + pathToSSHPrivKey + " " + sshUserName + "@" + hostName + " " + scriptName;
+        logger.info("sshCmd = \n " + sshCmd);
+        
+        try {
+                Runtime rt = Runtime.getRuntime();
+                Process pr = rt.exec(sshCmd);
+ 
+                BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+ 
+                String line=null;
+ 
+                while((line=input.readLine()) != null) {
+                    logger.info(line);
+                }
+ 
+                int exitVal = pr.waitFor();
+                logger.info("ssh command exited with code " + exitVal);
+                if(exitVal != 0){
+                    logger.error("Problem ssh-ing and running command in " + sshUserName + "@" + hostName);
+                    return;
+                }
+                else{
+                    logger.info("Successfully ssh-ed and killed condor daemon on " + hostName);
+                    return;
+                }
+ 
+        } catch(Exception e) {
+            System.out.println(e.toString());
+            e.printStackTrace();
+            logger.error("Exception while running ssh command " + e);
+            return;
+        }
+        
+        
+        
+    }
     
     public String generateTestRequest(){
         

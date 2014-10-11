@@ -28,7 +28,12 @@ public interface RMConstants {
     public String defaultControllerUrl = "https://geni.renci.org:11443/orca/xmlrpc";
     public String defaultSPMapperUrl = "http://url.sp.mapper";
     
-    public String PREFERRED_DOMAINS_STRING_NAME = "preferredDomains";
+    public String PREFERRED_DOMAINS_STRING_NAME = "RM.preferredDomains";
+    
+    public String KILLCONDORONDELETE_PROP_NAME = "RM.killcondorondelete";
+    public String KILLCONDORONDELETE_SSH_USER_PROP_NAME = "RM.killcondorondelete.ssh.user";
+    public String KILLCONDORONDELETE_SSH_PRIVKEY_PROP_NAME = "RM.killcondorondelete.ssh.privkey";
+    public String KILLCONDORONDELETE_SSH_SCRIPTNAME_PROP_NAME = "RM.killcondorondelete.ssh.scriptname";
     
     public enum RequestTemplates {
         
@@ -88,9 +93,9 @@ public interface RMConstants {
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
-        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.3/genovariant-0.3.xml"; // defaul url to image xml file
-        private static final String defaultImageHash = "93425205beef87c3882ecf2dc29801aeb3cde374"; // hash of the image xml file
-        private static final String defaultImageName = "SQ-genovariant-v.3"; // default name of image
+        private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.4/genovariant-0.4.xml"; // defaul url to image xml file
+        private static final String defaultImageHash = "7f675457acdda4e84fa1732e39338315f46fa862"; // hash of the image xml file
+        private static final String defaultImageName = "SQ-genovariant-v.4"; // default name of image
         private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
         private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
         private String defaultPostbootWorker_MultiPoint = readPostboot("default.condor.worker.multipoint.postboot"); // default postboot script for workers - multipoint
