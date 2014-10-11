@@ -20,6 +20,7 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.ManifestPublisher;
 import org.renci.requestmanager.amqp.RequestSubscriber;
+import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 /**
@@ -47,12 +48,17 @@ public class RequestManagerMain
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
         
-//        NdlLibManager ndlManager = new NdlLibManager();
-//        String ndlReq = ndlManager.generateTestRequest();
-//        
-//        sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
-//        
-//        System.exit(0);
+        //NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+        //ndlManager.doSSHAndKillCondor("hpc.renci.org");
+        //System.exit(0);
+        
+        
+        //NdlLibManager ndlManager = new NdlLibManager();
+        //String ndlReq = ndlManager.generateTestRequest();
+        
+        //sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
+        
+        //System.exit(0);
 
         // Start the RMController timer thread
         RMController rmController = new RMController(rmProperties); // Invocation of the constructor will start the RMController thread

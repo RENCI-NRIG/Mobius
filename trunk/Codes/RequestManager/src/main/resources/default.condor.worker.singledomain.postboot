@@ -48,6 +48,7 @@ CONDOR_HOST = master.expnet
 ALLOW_WRITE = *
 HOSTALLOW_READ = *
 HOSTALLOW_WRITE = *
+NUM_CPUS = 1
 EOF
 
 # wait until the master is pingable
