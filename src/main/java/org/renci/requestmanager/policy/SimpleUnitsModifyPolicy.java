@@ -21,11 +21,18 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
         this.logger = logger;
     }
     
+    /*
+    * Determines the change innumber of workers, given the current manifest and the current requirements from application;
+    * It finds the total number of currently active workers and the total number of currently ticketed workers to gauge the current 
+    * total number of potentially active workers
+    */
     @Override
     public int determineChangeInNumWorkers(ModifyRequestInfo modReq, String manifest) {
         
         NdlLibManager ndlManager = new NdlLibManager();
-        int numActiveWorkersInManifest = ndlManager.getNumActiveWorkersInManifest(manifest);
+        int numActiveWorkersInManifest = ndlManager.getNumActiveWorkersInManifest(manifest);        
+        int numTicketedWorkersInManifest = ndlManager.getNumTicketedWorkersInManifest(manifest);
+        int numActivePlusTicketedWorkers = numActiveWorkersInManifest + numTicketedWorkersInManifest;
         
         int userViewNumActiveWorkers = modReq.getNumCurrentRes();
         int userViewNumWorkersReqdToMeetDeadline = modReq.getNumResReqToMeetDeadline();
@@ -36,9 +43,11 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
             return 0;
         }
         
-        logger.info("numActiveWorkersInManifest = " + numActiveWorkersInManifest + " | userViewNumWorkersReqdToMeetDeadline = " + userViewNumWorkersReqdToMeetDeadline + " | userViewNumActiveWorkers = " + userViewNumActiveWorkers);
         
-        return (userViewNumWorkersReqdToMeetDeadline - numActiveWorkersInManifest);
+        logger.info("numActiveWorkersInManifest = " + numActiveWorkersInManifest + " | numTicketedWorkersInManifest = " + numTicketedWorkersInManifest);
+        logger.info("numActivePlusTicketedWorkers = " + numActivePlusTicketedWorkers + " | userViewNumWorkersReqdToMeetDeadline = " + userViewNumWorkersReqdToMeetDeadline + " | userViewNumActiveWorkers = " + userViewNumActiveWorkers);
+        
+        return (userViewNumWorkersReqdToMeetDeadline - numActivePlusTicketedWorkers);
         
     }
     

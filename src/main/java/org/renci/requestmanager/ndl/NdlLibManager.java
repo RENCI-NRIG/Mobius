@@ -337,26 +337,47 @@ public class NdlLibManager implements RMConstants{
         }        
         
         if(change < 0){ // Need to delete some workers           
-            int i = 0;
+            int numDeleted = 0;
             int numNodesToDelete = (-1)*change;
+            
+            // Go through once to delete the "Tickted" ones first
             for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
                 logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                
-                if(i < numNodesToDelete){
-                    // if killcondorondelete property exists and is true, ssh to worker and kill condor
-                    if(rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME) != null){
-                        String killCondor = rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME);
-                        if(killCondor.equalsIgnoreCase("true")){
-                            logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
-                            doSSHAndKillCondor(mn.getPublicIP());
-                        }
-                    }
-                    logger.info("manifestNode: deleting " + mn.getURI());
-                    mn.delete();
-                    i++;
-                }
-                
+                // TODO preferentially delete the ones that are ticketed
+                if(numDeleted < numNodesToDelete){
+                    if(mn.getState().equalsIgnoreCase("Ticketed")){ 
+                        logger.info("deleting Ticketed manifest node: " + mn.getURI());
+                        mn.delete();
+                        numDeleted++;
+                    }                    
+                }                
             }
+            
+            logger.info("Number of Ticketed nodes deleted: " + numDeleted);
+            
+            // Go through one more time to delete the "Active" ones if more need to be deleted
+            for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                // TODO preferentially delete the ones that are ticketed
+                if(numDeleted < numNodesToDelete){
+                    if(mn.getState().equalsIgnoreCase("Active")){ // kill condor only if node is active
+                        // if killcondorondelete property exists and is true, ssh to worker and kill condor
+                        if(rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME) != null){
+                            String killCondor = rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME);
+                            if(killCondor.equalsIgnoreCase("true")){
+                                logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
+                                doSSHAndKillCondor(mn.getPublicIP());
+                            }
+                        }
+                        logger.info("deleting Active manifest node: " + mn.getURI());
+                        mn.delete();
+                        numDeleted++;
+                    }                    
+                }                
+            }
+            
+            logger.info("Total number of nodes deleted: " + numDeleted);
+            
         }
         
         if (change > 0){ // Need to add more workers
@@ -422,6 +443,48 @@ public class NdlLibManager implements RMConstants{
         return numActiveWorkers;
         
     }
+
+    public int getNumTicketedWorkersInManifest(String manifest){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers..");
+            return -1;
+        }
+        int numTicketedWorkers = 0;
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            if(mn.getState().equalsIgnoreCase("Ticketed")){
+                numTicketedWorkers++;
+            }
+        }
+        logger.info("There are " + numTicketedWorkers + " Ticketed worker nodes in the current manifest");
+        return numTicketedWorkers;
+        
+    }    
+
+    public int getNumNascentWorkersInManifest(String manifest){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Workers..");
+            return -1;
+        }
+        int numNascentWorkers = 0;
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            if(mn.getState().equalsIgnoreCase("Nascent")){
+                numNascentWorkers++;
+            }
+        }
+        logger.info("There are " + numNascentWorkers + " Nascent worker nodes in the current manifest");
+        return numNascentWorkers;
+        
+    }    
     
     public boolean areAllWorkersInManifestActive(String manifest){
         

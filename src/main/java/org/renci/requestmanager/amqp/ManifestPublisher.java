@@ -128,11 +128,15 @@ public class ManifestPublisher {
                         // Parse manifest using ndllib
                         logger.info("ManifestPublisher: Parsing manifest data by calling ndlLib");
                         String sliceState = ndlManager.getSliceManifestStatus(currManifest);
-                        int numActiveWorkers = ndlManager.getNumActiveWorkersInManifest(currManifest);
+                        int numActiveWorkers = ndlManager.getNumActiveWorkersInManifest(currManifest);                        
+                        // Get number of workers coming up
+                        int numTicketedWorkers = ndlManager.getNumTicketedWorkersInManifest(currManifest);
+                        int numNascentWorkers = ndlManager.getNumNascentWorkersInManifest(currManifest);
+                        int numProvisioningWorkers = numTicketedWorkers + numNascentWorkers;
                         
                         // Publish relevant data to manifest exchange
                         logger.info("ManifestPublisher: Publishing manifest data to exchange");
-                        publishManifestData(currSliceID, sliceState, numActiveWorkers);
+                        publishManifestData(currSliceID, sliceState, numActiveWorkers, numProvisioningWorkers);
                         
 
                     } // end for 
@@ -147,7 +151,7 @@ public class ManifestPublisher {
 
         }
         
-        private void publishManifestData(String orcaSliceID, String sliceState, int numActiveWorkers){
+        private void publishManifestData(String orcaSliceID, String sliceState, int numActiveWorkers, int numProvisioningWorkers){
             
             Connection connection = null;
             Channel channel = null;
@@ -158,7 +162,7 @@ public class ManifestPublisher {
                 channel.exchangeDeclare(EXCHANGE_NAME, "topic");
 
                 String routingKey = "adamant.manifest." + orcaSliceID;
-                String message = buildMessageManifestResponseData(orcaSliceID, sliceState, numActiveWorkers);
+                String message = buildMessageManifestResponseData(orcaSliceID, sliceState, numActiveWorkers, numProvisioningWorkers);
 
                 channel.basicPublish(EXCHANGE_NAME, routingKey, null, message.getBytes());
                 logger.info(" [x] Sent '" + routingKey + "':'" + message + "'");
@@ -178,7 +182,7 @@ public class ManifestPublisher {
             
         }
         
-        private String buildMessageManifestResponseData(String orcaSliceID, String sliceState, int numActiveWorkers){
+        private String buildMessageManifestResponseData(String orcaSliceID, String sliceState, int numActiveWorkers, int numTicketedWorkers){
         
             // Build a test JSON message
             JSONObject obj = new JSONObject();
@@ -186,7 +190,8 @@ public class ManifestPublisher {
             obj.put("response_orcaSliceID", orcaSliceID);
             obj.put("response_sliceStatus", sliceState);
             obj.put("response_numWorkersReady", numActiveWorkers);
-
+            obj.put("response_numWorkersProvisioning", numTicketedWorkers);
+            
             System.out.println("JSON response = \n" + obj.toJSONString());
 
             return obj.toJSONString();

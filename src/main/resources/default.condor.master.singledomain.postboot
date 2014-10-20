@@ -39,6 +39,7 @@ CONDOR_HOST = master.expnet
 ALLOW_WRITE = *
 HOSTALLOW_READ = *
 HOSTALLOW_WRITE = *
+ALLOW_ADMINISTRATOR = *
 EOF
  
 /etc/init.d/condor restart

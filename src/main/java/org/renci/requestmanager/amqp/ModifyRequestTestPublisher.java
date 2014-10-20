@@ -53,7 +53,7 @@ public class ModifyRequestTestPublisher {
         obj.put("req_sliceID", "testSlice3");
         obj.put("req_wfuuid", "0xcdfvgh");
         obj.put("req_numCurrentRes", 2);
-        obj.put("req_numResReqToMeetDeadline", 1);
+        obj.put("req_numResReqToMeetDeadline", 4);
         
         
         // optional parameters

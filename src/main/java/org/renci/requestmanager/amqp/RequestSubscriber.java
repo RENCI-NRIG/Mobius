@@ -73,8 +73,42 @@ public class RequestSubscriber implements Runnable {
                     // Add it to app request queue
                     if(appReq != null){
                         RMState rmState = RMState.getInstance();
-                        rmState.addReqToAppReqQ(appReq);
-                        logger.info("Added request to appRequestQ...");
+                        
+                        // Check if there is an unprocessed new request for same (sliceID, wfuuid) combo
+                        if(appReq.getNewReq() != null){ // this is a new request
+                            AppRequestInfo existingAppReq = rmState.findAppReqForNewFromAppReqQ(appReq.getOrcaSliceID(), appReq.getNewReq().getWfUuid());
+                            if(existingAppReq == null){ // first unprocessed new req
+                                // Push it to queue
+                                rmState.addReqToAppReqQ(appReq);
+                                logger.info("Added new request to appRequestQ...");
+                            }
+                            else{ // there was already an unprocessed new request for same (sliceID, wfuuid) combo
+                                logger.info("Deleting existing unprocessed new request from appRequestQ...");
+                                rmState.deleteReqFromAppReqQ(existingAppReq); // delete the existing unprocessed new request
+                                // Push it to queue
+                                rmState.addReqToAppReqQ(appReq);
+                                logger.info("Added new request to appRequestQ...");
+                            }
+                        }
+                        
+                        // Checking whether there is an existing unprocessed modify request with same (sliceID, wfuuid) combo
+                        if(appReq.getModifyReq() != null){ // this is a modify request
+                            AppRequestInfo existingAppReq = rmState.findAppReqForModifyFromAppReqQ(appReq.getModifyReq().getOrcaSliceId(), appReq.getModifyReq().getWfUuid());
+                            if(existingAppReq == null){ // first unprocessed modify request
+                                // Push it to queue
+                                rmState.addReqToAppReqQ(appReq);
+                                logger.info("Added modify request to appRequestQ...");
+                            }
+                            else{ // there was already an unprocessed modify request for same (sliceID, wfuuid) combo
+                                rmState.deleteReqFromAppReqQ(existingAppReq); // delete the existing unprocessed modify request
+                                logger.info("Deleting existing unprocessed modify request from appRequestQ...");
+                                // Push it to queue
+                                rmState.addReqToAppReqQ(appReq);
+                                logger.info("Added modify request to appRequestQ...");
+                            }
+                        }
+                        
+                        
                     }
                     System.out.println("DONE...");
                 }
