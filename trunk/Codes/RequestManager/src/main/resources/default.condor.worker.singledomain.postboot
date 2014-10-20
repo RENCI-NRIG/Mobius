@@ -49,6 +49,7 @@ ALLOW_WRITE = *
 HOSTALLOW_READ = *
 HOSTALLOW_WRITE = *
 NUM_CPUS = 1
+ALLOW_ADMINISTRATOR = *
 EOF
 
 # wait until the master is pingable

@@ -53,6 +53,48 @@ public class RMState implements Serializable {
             }
         }
         
+        /*
+        * Returns an AppRequestInfo corresponding to an unprocessed modify request with same (sliceID, wfuuid) combo
+        */
+        public AppRequestInfo findAppReqForModifyFromAppReqQ(String sliceID, String wfuuid){
+            
+            synchronized(appReqQ){
+                for(AppRequestInfo currAppRequestInfo: appReqQ){
+                    if((currAppRequestInfo.getModifyReq() != null) && (!currAppRequestInfo.isProcessed())){ // This AppRequestInfo corresponds to an unprocessed modify request
+                        String existingSliceID = currAppRequestInfo.getModifyReq().getOrcaSliceId();
+                        String existingWfuuid = currAppRequestInfo.getModifyReq().getWfUuid();
+                        if(existingSliceID.equalsIgnoreCase(sliceID) && existingWfuuid.equalsIgnoreCase(wfuuid)){
+                            return currAppRequestInfo;
+                        }
+                    }
+                }
+            }
+            
+            return null;
+            
+        }
+ 
+        /*
+        * Returns an AppRequestInfo corresponding to an unprocessed new request with same (sliceID, wfuuid) combo
+        */
+        public AppRequestInfo findAppReqForNewFromAppReqQ(String sliceID, String wfuuid){
+            
+            synchronized(appReqQ){
+                for(AppRequestInfo currAppRequestInfo: appReqQ){
+                    if((currAppRequestInfo.getNewReq() != null) && (!currAppRequestInfo.isProcessed())){ // This AppRequestInfo corresponds to an unprocessed new request
+                        String existingSliceID = currAppRequestInfo.getOrcaSliceID();
+                        String existingWfuuid = currAppRequestInfo.getNewReq().getWfUuid();
+                        if(existingSliceID.equalsIgnoreCase(sliceID) && existingWfuuid.equalsIgnoreCase(wfuuid)){
+                            return currAppRequestInfo;
+                        }
+                    }
+                }
+            }
+            
+            return null;
+            
+        }        
+        
         public ArrayList<String> getSliceIDQ() {
             return sliceIDQ;
         }

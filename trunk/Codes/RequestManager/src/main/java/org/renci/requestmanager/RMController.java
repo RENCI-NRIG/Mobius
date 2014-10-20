@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
+import org.renci.requestmanager.amqp.ManifestPublisherOnDemand;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
@@ -199,17 +201,25 @@ public class RMController implements RMConstants{
                     logger.info("Sending request to ExoGENI...");
                     OrcaManager orcaManager = new OrcaManager(rmProperties);
                     String resultCreate = orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
-                    // sendCreateRequestToORCA(orcaSliceID, ndlReq);                    
-                    
+                                                            
                     //Push orcaSliceID to manifest publishing queue
                     if(resultCreate != null){
+                        
+                        // Publish manifest on demand
+                        try {
+                            ManifestPublisherOnDemand mPublisherOnDemand = new ManifestPublisherOnDemand(rmProperties);
+                            mPublisherOnDemand.getManifestAndPublishManifestData(orcaSliceID);
+                        } catch (Exception ex) {
+                            logger.error("Exception while publishing manifest on demand " + ex);
+                        }    
+                        
                         rmState = RMState.getInstance();
                         rmState.addSliceIDToSliceIDQ(orcaSliceID);
                         logger.info("Added " + orcaSliceID + " to SliceIDQ...");
                         logger.info("Done processing new user request");
                         return "SUCCESS";
                     }
-                    else{
+                    else{ // there was an exception
                         logger.info("Can't create slice at this moment.. trying again in 30 seconds..");
                         return "DELAY";
                     }
@@ -238,12 +248,15 @@ public class RMController implements RMConstants{
                     NdlLibManager ndlManager = new NdlLibManager(rmProperties);
                     String ndlModReq = null;
                     
+                    // Commenting the next block because we want to allow modify even when the slice is not ready
+                    /*
                     logger.info("Calling ndllib to get sliceStatus for " + orcaSliceID);
                     String sliceStatus = ndlManager.getSliceManifestStatus(currManifest);
                     if(!sliceStatus.equalsIgnoreCase("ready")){ // slice is not ready, don't allow modify actions now
                         logger.info("Slice manifest says that slice is not ready.. Delaying modify actions..");
                         return "DELAY";
                     }
+                    */
                     
                     logger.info("Calling ndllib to generate a modify request for slice: " + orcaSliceID);
                     ndlModReq = ndlManager.generateModifyComputeRequest(modReq, currManifest);
@@ -254,19 +267,32 @@ public class RMController implements RMConstants{
                     }
                     
                     // We have a modify request; Send modify request to ExoGENI
-                    logger.info("Sending modifyComute request to ExoGENI...");                   
-                    orcaManager.sendModifyRequestToORCA(orcaSliceID, ndlModReq);
-                    //sendModifyRequestToORCA(orcaSliceID, ndlModReq);                    
-                    logger.info("Done processing modifyCompute request");
+                    logger.info("Sending modifyComute request to ExoGENI...");                                       
+                    String resultModify = orcaManager.sendModifyRequestToORCA(orcaSliceID, ndlModReq);                    
                     
-                    // To make sure that manifest data for a slice created by an entity external to RM is also published
-                    // when a modify request for that slice comes to RM
-                    rmState = RMState.getInstance();
-                    if(!rmState.isInSliceIDQ(orcaSliceID)){ // if not in manifest publishing queue already
-                        rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                    if(resultModify != null){
+                        
+                        // Publish manifest on demand
+                        try {
+                            ManifestPublisherOnDemand mPublisherOnDemand = new ManifestPublisherOnDemand(rmProperties);
+                            mPublisherOnDemand.getManifestAndPublishManifestData(orcaSliceID);
+                        } catch (Exception ex) {
+                            logger.error("Exception while publishing manifest on demand " + ex);
+                        }                       
+                        
+                        // To make sure that manifest data for a slice created by an entity external to RM is also published
+                        // when a modify request for that slice comes to RM
+                        rmState = RMState.getInstance();
+                        if(!rmState.isInSliceIDQ(orcaSliceID)){ // if not in manifest publishing queue already
+                            rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                        }
+                        logger.info("Done processing modifyCompute request");
+                        return "SUCCESS";
                     }
-                    
-                    return "SUCCESS";
+                    else{ // there was an exception
+                        logger.info("Can't modify slice at this moment... trying again in 30 seconds..");
+                        return "DELAY";
+                    }
                     
                 }
 
