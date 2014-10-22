@@ -19,6 +19,8 @@ public class RMState implements Serializable {
 
         private ArrayList<AppRequestInfo> appReqQ = new ArrayList<AppRequestInfo>(); // keeps track of user/application requests (new, modify)
         private ArrayList<String> sliceIDQ = new ArrayList<String>();
+        private ArrayList<String> nodesToBeDeletedQ = new ArrayList<String>();
+        private Integer numNodesToBeDeleted = new Integer(0);
 
         // use output compression
         private static boolean compressOutput = true;
@@ -118,6 +120,50 @@ public class RMState implements Serializable {
         public boolean isInSliceIDQ(String sliceID){
             synchronized(sliceIDQ){
                 return(sliceIDQ.contains(sliceID));
+            }
+        }
+
+        public ArrayList<String> getNodesToBeDeletedQ() {
+            return nodesToBeDeletedQ;
+        }
+
+        public void setNodesToBeDeletedQ(ArrayList<String> nodesToBeDeletedQ) {
+            this.nodesToBeDeletedQ = nodesToBeDeletedQ;
+        }
+        
+         public void addNodeToNodesToBeDeletedQ(String newNodeURI){
+            synchronized(nodesToBeDeletedQ){
+                nodesToBeDeletedQ.add(newNodeURI);
+            }
+        }
+
+        public boolean deleteNodeFromNodesToBeDeletedQ(String nodeURI){
+            synchronized(nodesToBeDeletedQ){
+                return(nodesToBeDeletedQ.remove(nodeURI));
+            }
+        }
+        
+        public boolean isInNodesToBeDeletedIDQ(String nodeURI){
+            synchronized(nodesToBeDeletedQ){
+                return(nodesToBeDeletedQ.contains(nodeURI));
+            }
+        }
+        
+        public Integer getNumNodesToBeDeleted() {
+            return numNodesToBeDeleted;
+        }
+        
+        public void increaseNumNodesToBeDeleted(){
+            synchronized(numNodesToBeDeleted){
+                int newVal = (numNodesToBeDeleted.intValue() + 1);
+                numNodesToBeDeleted = new Integer(newVal);
+            }
+        }
+        
+        public void decreaseNumNodesToBeDeleted(){
+            synchronized(numNodesToBeDeleted){
+                int newVal = (numNodesToBeDeleted.intValue() - 1);
+                numNodesToBeDeleted = new Integer(newVal);
             }
         }
         

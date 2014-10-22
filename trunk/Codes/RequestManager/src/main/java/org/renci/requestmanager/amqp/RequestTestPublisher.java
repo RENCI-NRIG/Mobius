@@ -62,7 +62,7 @@ public class RequestTestPublisher {
         //obj.put("req_templateType", "condor_sp_multi");
         //obj.put("req_templateType", "condor_storage");
         obj.put("req_templateType", "condor");
-        obj.put("req_sliceID", "testSlice3");
+        obj.put("req_sliceID", "testSlice-gec21-1");
         obj.put("req_wfuuid", "0xcdfvgh");
         
         // optional parameters

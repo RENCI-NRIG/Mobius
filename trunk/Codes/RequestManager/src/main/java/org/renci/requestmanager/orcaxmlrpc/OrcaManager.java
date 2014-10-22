@@ -125,7 +125,8 @@ public class OrcaManager {
             OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
             orcaProxy.setControllerUrl(controllerUrl);
             manifest = orcaProxy.sliceStatus(sliceId);
-            logger.info("manifest for slice " + sliceId + " = " + manifest);
+            //logger.info("manifest for slice " + sliceId + " = " + manifest);
+            logger.info("Obtained manifest for slice: " + sliceId);
             sanitizedManifest = sanitizeManifest(manifest);
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA sliceStatus" + ex);
@@ -150,7 +151,8 @@ public class OrcaManager {
             OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
             orcaProxy.setControllerUrl(controllerUrl);
             manifest = orcaProxy.sliceStatus(sliceId);
-            logger.info("manifest for slice " + sliceId + " = " + manifest);
+            //logger.info("manifest for slice " + sliceId + " = " + manifest);
+            logger.info("Obtained manifest for slice: " + sliceId);
             sanitizedManifest = sanitizeManifest(manifest);
         } catch (Exception ex) {
             logger.error("Exception while calling ORCA sliceStatus" + ex);

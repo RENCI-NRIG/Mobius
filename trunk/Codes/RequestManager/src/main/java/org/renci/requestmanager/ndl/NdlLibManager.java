@@ -21,6 +21,8 @@ import org.renci.requestmanager.RMConstants;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.LinkRequestInfo;
 import org.renci.requestmanager.ModifyRequestInfo;
+import org.renci.requestmanager.RMState;
+import org.renci.requestmanager.orcaxmlrpc.CleanupCondorAndVM;
 import org.renci.requestmanager.policy.IModifyPolicy;
 import org.renci.requestmanager.policy.SimpleUnitsModifyPolicy;
 
@@ -297,7 +299,7 @@ public class NdlLibManager implements RMConstants{
             s.autoIP();
         }
         
-        logger.debug("Generated request = " + "\n" + s.getRequest());
+        //logger.debug("Generated request = " + "\n" + s.getRequest());
         
         // For debugging saving the request to a file in /tmp
         s.save("/tmp/generatedRequest.rdf");
@@ -355,38 +357,65 @@ public class NdlLibManager implements RMConstants{
             
             logger.info("Number of Ticketed nodes deleted: " + numDeleted);
             
+            int numNodesMarkedForFutureDeletion = 0;
+            
             // Go through one more time to delete the "Active" ones if more need to be deleted
             for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
                 logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
                 // TODO preferentially delete the ones that are ticketed
                 if(numDeleted < numNodesToDelete){
-                    if(mn.getState().equalsIgnoreCase("Active")){ // kill condor only if node is active
+                    RMState rmState = RMState.getInstance();
+                    String nodeURI = mn.getURI();
+                    if(mn.getState().equalsIgnoreCase("Active") && !rmState.isInNodesToBeDeletedIDQ(nodeURI)){ // kill condor only if node is active and is not marked to be deleted in future
                         // if killcondorondelete property exists and is true, ssh to worker and kill condor
                         if(rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME) != null){
                             String killCondor = rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME);
                             if(killCondor.equalsIgnoreCase("true")){
-                                logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
-                                doSSHAndKillCondor(mn.getPublicIP());
+                                //logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
+                                //doSSHAndKillCondor(mn.getPublicIP());
+                                //logger.info("deleting Active manifest node: " + mn.getURI());
+                                //mn.delete();
+                                logger.info("marking for future deletion of Active manifest node: " + mn.getURI());
+                                numNodesMarkedForFutureDeletion++;
+                                try {
+                                    String orcaSliceID = modReq.getOrcaSliceId();
+                                    logger.info("Starting thread to cleanup condor and delete VM when condor cleanup is complete...");
+                                    Thread cleanupCondorAndVMThread = new Thread(new CleanupCondorAndVM(rmProperties, orcaSliceID, mn.getPublicIP(), mn.getURI()));
+                                    cleanupCondorAndVMThread.start();
+                                    logger.info("Started cleanup thread...");
+                                } catch (Exception ex) {
+                                    logger.error("Exception while starting cleanup thread " + ex);
+                                }
+                                numDeleted++;
+                            }
+                            else {
+                                logger.info("deleting Active manifest node: " + mn.getURI());
+                                mn.delete();
+                                numDeleted++;
                             }
                         }
-                        logger.info("deleting Active manifest node: " + mn.getURI());
-                        mn.delete();
-                        numDeleted++;
+                        else {
+                            logger.info("deleting Active manifest node: " + mn.getURI());
+                            mn.delete();
+                            numDeleted++;
+                        }                        
                     }                    
                 }                
             }
             
+            logger.info("Number of nodes marked for future deletion: " + numNodesMarkedForFutureDeletion);
             logger.info("Total number of nodes deleted: " + numDeleted);
             
         }
         
+        // TODO fix bug in ndllib ?
         if (change > 0){ // Need to add more workers
             int numWorkers = 0;
             for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
                 logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
                 numWorkers++;
             }
-            logger.info("There are " + numWorkers + "worker nodes in the current manifest");
+            logger.info("There are " + numWorkers + " worker nodes in the current manifest");
             int newNumWorkers = numWorkers + change;
             logger.info("Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers");
             cn.setNodeCount(newNumWorkers);            
