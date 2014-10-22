@@ -16,21 +16,33 @@ public class AppRequestInfo {
     private LinkRequestInfo linkReq; //link request  ; reserved for slice modify support when we add link after slice is up
     private ModifyRequestInfo modifyReq; //modify request
     private NewRequestInfo newReq; // initial request
+    private DeleteRequestInfo deleteReq; // delete request
     private boolean processed; // app request processed or not
 
+    public AppRequestInfo(String orcaSliceID, LinkRequestInfo linkReq, ModifyRequestInfo modifyReq, NewRequestInfo newReq, DeleteRequestInfo deleteReq) {
+        this.orcaSliceID = orcaSliceID;
+        this.linkReq = linkReq;
+        this.modifyReq = modifyReq;
+        this.newReq = newReq;
+        this.deleteReq = deleteReq;
+        this.processed = false;
+    }
+    
     public AppRequestInfo(String orcaSliceID, LinkRequestInfo linkReq, ModifyRequestInfo modifyReq, NewRequestInfo newReq) {
         this.orcaSliceID = orcaSliceID;
         this.linkReq = linkReq;
         this.modifyReq = modifyReq;
         this.newReq = newReq;
+        this.deleteReq = null;
         this.processed = false;
     }
 
-    public AppRequestInfo(String orcaSliceID, LinkRequestInfo linkReq, ModifyRequestInfo modifyReq, NewRequestInfo newReq, boolean processed) {
+    public AppRequestInfo(String orcaSliceID, LinkRequestInfo linkReq, ModifyRequestInfo modifyReq, NewRequestInfo newReq, DeleteRequestInfo deleteReq, boolean processed) {
         this.orcaSliceID = orcaSliceID;
         this.linkReq = linkReq;
         this.modifyReq = modifyReq;
         this.newReq = newReq;
+        this.deleteReq = deleteReq;
         this.processed = processed;
     }
     
@@ -64,6 +76,14 @@ public class AppRequestInfo {
 
     public void setNewReq(NewRequestInfo newReq) {
         this.newReq = newReq;
+    }
+
+    public DeleteRequestInfo getDeleteReq() {
+        return deleteReq;
+    }
+
+    public void setDeleteReq(DeleteRequestInfo deleteReq) {
+        this.deleteReq = deleteReq;
     }
     
     public boolean isProcessed() {

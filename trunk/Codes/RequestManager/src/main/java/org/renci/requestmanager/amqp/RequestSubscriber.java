@@ -17,6 +17,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.renci.requestmanager.AppRequestInfo;
+import org.renci.requestmanager.DeleteRequestInfo;
 import org.renci.requestmanager.LinkRequestInfo;
 import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.NewRequestInfo;
@@ -106,6 +107,12 @@ public class RequestSubscriber implements Runnable {
                                 rmState.addReqToAppReqQ(appReq);
                                 logger.info("Added modify request to appRequestQ...");
                             }
+                        }
+                        
+                        if(appReq.getDeleteReq() != null){ // this is a delete request
+                            // No need to check if there is an existing delete request; I could; but not required
+                            rmState.addReqToAppReqQ(appReq);
+                            logger.info("Added delete request to appRequestQ...");
                         }
                         
                         
@@ -288,7 +295,7 @@ public class RequestSubscriber implements Runnable {
                 newReq.setNewLinkInfo(null);
             }
             
-            appReq = new AppRequestInfo(requestSliceID, null, null, newReq);
+            appReq = new AppRequestInfo(requestSliceID, null, null, newReq, null);
             
             
         }
@@ -363,26 +370,32 @@ public class RequestSubscriber implements Runnable {
                 modifyComputeReq.setNumResUtilMax(-1);
             }
                        
-            appReq = new AppRequestInfo(requestSliceID, null, modifyComputeReq, null);
+            appReq = new AppRequestInfo(requestSliceID, null, modifyComputeReq, null, null);
             
         }
         else if(reqType.equalsIgnoreCase("modifyNetwork")){
             
             // TODO: when we have slice modify
         }
-        
-        /*
-        Long id =  (Long) jsonObject.get("id");
-        System.out.println("The id is: " + id.toString());
-
-        JSONArray lang= (JSONArray) jsonObject.get("languages");
-
-        for(int i=0; i<lang.size(); i++){
-                System.out.println("The " + i + " element of the array: "+lang.get(i));
+        else if(reqType.equalsIgnoreCase("delete")){
+            String requestSliceID = (String) jsonObject.get("req_sliceID");
+            if(requestSliceID == null){
+                logger.error("delete request has to have a req_sliceID");
+                return null;
+            }
+            
+            DeleteRequestInfo deleteReq = new DeleteRequestInfo();
+            deleteReq.setOrcaSliceId(requestSliceID);
+            
+            // Note passing orcaSliceID in both appreqinfo and deletereqinfo; not required
+            appReq = new AppRequestInfo(requestSliceID, null, null, null, deleteReq);
+            
         }
-        */
-        
-        
+        else {
+            logger.error("Unknown request type...");
+            return null;
+        }
+                
         return appReq;
         
     }
