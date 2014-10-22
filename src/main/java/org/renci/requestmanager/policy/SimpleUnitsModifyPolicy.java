@@ -7,6 +7,7 @@ package org.renci.requestmanager.policy;
 
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.ModifyRequestInfo;
+import org.renci.requestmanager.RMState;
 import org.renci.requestmanager.ndl.NdlLibManager;
 
 /**
@@ -25,6 +26,7 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
     * Determines the change innumber of workers, given the current manifest and the current requirements from application;
     * It finds the total number of currently active workers and the total number of currently ticketed workers to gauge the current 
     * total number of potentially active workers
+    * This also takes into account the number of nodes that would be deleted soon
     */
     @Override
     public int determineChangeInNumWorkers(ModifyRequestInfo modReq, String manifest) {
@@ -43,11 +45,14 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
             return 0;
         }
         
+        RMState rmState = RMState.getInstance();
+        int numActiveToBeDeletedWorkers = rmState.getNumNodesToBeDeleted().intValue();
         
         logger.info("numActiveWorkersInManifest = " + numActiveWorkersInManifest + " | numTicketedWorkersInManifest = " + numTicketedWorkersInManifest);
+        logger.info("numActiveToBeDeletedWorkers = " + numActiveToBeDeletedWorkers);
         logger.info("numActivePlusTicketedWorkers = " + numActivePlusTicketedWorkers + " | userViewNumWorkersReqdToMeetDeadline = " + userViewNumWorkersReqdToMeetDeadline + " | userViewNumActiveWorkers = " + userViewNumActiveWorkers);
         
-        return (userViewNumWorkersReqdToMeetDeadline - numActivePlusTicketedWorkers);
+        return (userViewNumWorkersReqdToMeetDeadline - numActivePlusTicketedWorkers + numActiveToBeDeletedWorkers);
         
     }
     
