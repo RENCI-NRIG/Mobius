@@ -113,6 +113,50 @@ public class OrcaManager {
     }
 
     /*
+    * Sends delete request to the default controller
+    */
+    public boolean sendDeleteRequestToORCA(String sliceId, String controllerUrl){
+        
+        if(controllerUrl == null || controllerUrl.isEmpty()){
+            controllerUrl = RMConstants.defaultControllerUrl;
+        }
+
+        boolean deleteRes = false;
+        try {
+            OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+            orcaProxy.setControllerUrl(controllerUrl);
+            deleteRes = orcaProxy.deleteSlice(sliceId);
+            logger.info("Result for delete slice for " + sliceId + " = " + deleteRes);
+            return deleteRes;
+        } catch (Exception ex) {
+            logger.error("Exception while calling ORCA deleteSlice" + ex);
+            return false;
+        }
+        
+    }
+    
+    /*
+    * Sends delete request to the default controller
+    */
+    public boolean sendDeleteRequestToORCA(String sliceId){
+        
+        String controllerUrl = RMConstants.defaultControllerUrl;
+
+        boolean deleteRes = false;
+        try {
+            OrcaSMXMLRPCProxy orcaProxy = new OrcaSMXMLRPCProxy(rmProperties);
+            orcaProxy.setControllerUrl(controllerUrl);
+            deleteRes = orcaProxy.deleteSlice(sliceId);
+            logger.info("Result for delete slice for " + sliceId + " = " + deleteRes);
+            return deleteRes;
+        } catch (Exception ex) {
+            logger.error("Exception while calling ORCA deleteSlice" + ex);
+            return false;
+        }
+        
+    }
+    
+    /*
     * Gets manifest from default controller
     */               
     public String getManifestFromORCA(String sliceId){

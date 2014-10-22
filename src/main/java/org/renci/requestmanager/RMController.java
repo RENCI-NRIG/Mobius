@@ -140,6 +140,17 @@ public class RMController implements RMConstants{
                                     }
                                     
                                     // In future there can be many other kinds of modify requests, which would be handled here
+                                    
+                                    if(currAppRequestInfo.getDeleteReq() != null){ // this is a delete request for an existing slice
+                                        
+                                        DeleteRequestInfo deleteReq = currAppRequestInfo.getDeleteReq();
+                                        String resultStatus = processDeleteReq(deleteReq, currOrcaSliceId);
+                                        // trying delete only once; so no need to conditionally set setProcessed
+                                        currAppRequestInfo.setProcessed(true);
+                                        continue;
+                                                                                
+                                    }
+                                    
                             
                                 }
 
@@ -298,6 +309,23 @@ public class RMController implements RMConstants{
 
                 private void processLinkReq(LinkRequestInfo linkReq) {
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+                
+                private String processDeleteReq(DeleteRequestInfo deleteReq, String orcaSliceID){
+                    
+                    if(deleteReq == null || orcaSliceID == null || orcaSliceID.isEmpty()){
+                        logger.error("deleteReq or orcaSliceID is null.. delete request not processed..");
+                        return "ERROR";
+                    }
+                    // Send delete request to ExoGENI
+                    logger.info("Sending slice delete request to ExoGENI...");
+                    OrcaManager orcaManager = new OrcaManager(rmProperties);
+                    boolean deleteSuccessful = orcaManager.sendDeleteRequestToORCA(orcaSliceID);
+                    if(deleteSuccessful){
+                        return "SUCCESS";
+                    }
+                    
+                    return "ERROR";
                 }
                 
                 
