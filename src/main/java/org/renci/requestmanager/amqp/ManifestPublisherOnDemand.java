@@ -76,15 +76,19 @@ public class ManifestPublisherOnDemand {
         int numTicketedWorkers = ndlManager.getNumTicketedWorkersInManifest(currManifest);
         int numNascentWorkers = ndlManager.getNumNascentWorkersInManifest(currManifest);
         int numProvisioningWorkers = numTicketedWorkers + numNascentWorkers;
-
+        String masterPublicIP = ndlManager.getPublicIPMasterInManifest(currManifest);
+        if(masterPublicIP == null){ // master not yet up
+            masterPublicIP = "unknown";
+        }
+        
         // Publish relevant data to manifest exchange
         logger.info("ManifestPublisherOnDemand: Publishing manifest data to exchange");
-        publishManifestData(orcaSliceID, sliceState, numActiveWorkers, numProvisioningWorkers);
+        publishManifestData(orcaSliceID, sliceState, numActiveWorkers, numProvisioningWorkers, masterPublicIP);
         
     }
     
     
-    private void publishManifestData(String orcaSliceID, String sliceState, int numActiveWorkers, int numProvisioningWorkers){
+    private void publishManifestData(String orcaSliceID, String sliceState, int numActiveWorkers, int numProvisioningWorkers, String masterPublicIP){
 
         Connection connection = null;
         Channel channel = null;
@@ -95,7 +99,7 @@ public class ManifestPublisherOnDemand {
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
 
             String routingKey = "adamant.manifest." + orcaSliceID;
-            String message = buildMessageManifestResponseData(orcaSliceID, sliceState, numActiveWorkers, numProvisioningWorkers);
+            String message = buildMessageManifestResponseData(orcaSliceID, sliceState, numActiveWorkers, numProvisioningWorkers, masterPublicIP);
 
             channel.basicPublish(EXCHANGE_NAME, routingKey, null, message.getBytes());
             logger.info(" [x] Sent '" + routingKey + "':'" + message + "'");
@@ -115,7 +119,7 @@ public class ManifestPublisherOnDemand {
 
     }
 
-    private String buildMessageManifestResponseData(String orcaSliceID, String sliceState, int numActiveWorkers, int numTicketedWorkers){
+    private String buildMessageManifestResponseData(String orcaSliceID, String sliceState, int numActiveWorkers, int numTicketedWorkers, String masterPublicIP){
 
         // Build a test JSON message
         JSONObject obj = new JSONObject();
@@ -124,7 +128,8 @@ public class ManifestPublisherOnDemand {
         obj.put("response_sliceStatus", sliceState);
         obj.put("response_numWorkersReady", numActiveWorkers);
         obj.put("response_numWorkersProvisioning", numTicketedWorkers);
-
+        obj.put("response_masterPublicIP", masterPublicIP);
+        
         System.out.println("JSON response = \n" + obj.toJSONString());
 
         return obj.toJSONString();

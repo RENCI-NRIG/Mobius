@@ -536,6 +536,28 @@ public class NdlLibManager implements RMConstants{
         
     }
     
+    public String getPublicIPMasterInManifest(String manifest){
+        
+        Slice s = new Slice();
+        s.loadRDF(manifest);
+        ComputeNode cn = (ComputeNode) s.getResourceByName("Master");
+        if(cn == null){
+            logger.error("Manifest doesn't have a Nodegroup named Master..");
+            return null;
+        }
+        
+        for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
+            logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+            if(mn.getState().equalsIgnoreCase("Active")){
+                // returns the public IP of the first Active node in Master nodegroup; since there is only one 
+                // master node in the nodegroup, this is fine
+                return mn.getPublicIP();
+            }
+        }
+        
+        return null;        
+    }
+    
     private ArrayList<String> populatePreferredDomains(Properties rmProps){
         
         ArrayList<String> listPreferredDomains = new ArrayList<String> ();
