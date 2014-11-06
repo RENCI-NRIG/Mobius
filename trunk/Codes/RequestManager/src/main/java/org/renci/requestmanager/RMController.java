@@ -296,6 +296,7 @@ public class RMController implements RMConstants{
                         rmState = RMState.getInstance();
                         if(!rmState.isInSliceIDQ(orcaSliceID)){ // if not in manifest publishing queue already
                             rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                            logger.info("Added " + orcaSliceID + " to SliceIDQ...");
                         }
                         logger.info("Done processing modifyCompute request");
                         return "SUCCESS";
@@ -322,6 +323,11 @@ public class RMController implements RMConstants{
                     OrcaManager orcaManager = new OrcaManager(rmProperties);
                     boolean deleteSuccessful = orcaManager.sendDeleteRequestToORCA(orcaSliceID);
                     if(deleteSuccessful){
+                        rmState = RMState.getInstance();
+                        if(rmState.isInSliceIDQ(orcaSliceID)){ // if not in manifest publishing queue already
+                            rmState.deleteSliceIDFromSliceIDQ(orcaSliceID);
+                            logger.info("Removed " + orcaSliceID + " from SliceIDQ...");
+                        }
                         return "SUCCESS";
                     }
                     
