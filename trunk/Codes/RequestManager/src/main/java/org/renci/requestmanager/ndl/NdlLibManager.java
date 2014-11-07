@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.renci.requestmanager.LinkRequestInfo;
 import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.RMState;
+import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.orcaxmlrpc.CleanupCondorAndVM;
 import org.renci.requestmanager.policy.IModifyPolicy;
 import org.renci.requestmanager.policy.SimpleUnitsModifyPolicy;
@@ -403,7 +404,7 @@ public class NdlLibManager implements RMConstants{
                 }                
             }
             
-            logger.info("Number of nodes marked for future deletion: " + numNodesMarkedForFutureDeletion);
+            logger.info("Number of nodes marked for future deletion: " + numNodesMarkedForFutureDeletion);           
             logger.info("Total number of nodes deleted: " + numDeleted);
             
         }

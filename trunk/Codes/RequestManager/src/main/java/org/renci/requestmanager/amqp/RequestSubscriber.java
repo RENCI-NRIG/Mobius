@@ -68,6 +68,16 @@ public class RequestSubscriber implements Runnable {
                 String message = new String(delivery.getBody());
                 System.out.println(" [x] Received '" + message + "'");
               
+                //Publish to display exchange about the request
+                DisplayPublisher dp;
+                try{
+                    dp = new DisplayPublisher(rmProperties);
+                    dp.publishRMMessages(message);
+                }
+                catch (Exception ex){
+                    logger.error("Exception while publishing to display exchange");
+                }
+                
                 // Parse message
                 try {
                     AppRequestInfo appReq = parseAndCreateAppRequest(message);
