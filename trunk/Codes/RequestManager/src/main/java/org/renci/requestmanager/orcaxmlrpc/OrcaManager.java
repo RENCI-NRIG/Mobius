@@ -17,11 +17,21 @@ public class OrcaManager {
     
     private static Properties rmProperties = null;
     
+    private String orcaControllerUrl = null;
+    
     protected Logger logger = null;
     
     public OrcaManager(Properties rmProperties){        
         logger = Logger.getLogger(this.getClass());
-        this.rmProperties = rmProperties;        
+        this.rmProperties = rmProperties;
+        
+        if(rmProperties.getProperty(RMConstants.DEFAULT_CONTROLLERURL_PROP) != null){
+            orcaControllerUrl = rmProperties.getProperty(RMConstants.DEFAULT_CONTROLLERURL_PROP);
+        }
+        else{
+            orcaControllerUrl = RMConstants.defaultControllerUrl;           
+        }
+        logger.info("Using ORCA/ExoGENI controller at " + orcaControllerUrl);
     }
     
     /*
@@ -30,7 +40,7 @@ public class OrcaManager {
     public String sendCreateRequestToORCA(String sliceId, String controllerUrl, String createReq){
 
         if(controllerUrl == null || controllerUrl.isEmpty()){
-            controllerUrl = RMConstants.defaultControllerUrl;
+            controllerUrl = orcaControllerUrl;
         }
 
         String createRes = null;
@@ -52,7 +62,7 @@ public class OrcaManager {
     */
     public String sendCreateRequestToORCA(String sliceId, String createReq){
 
-        String controllerUrl = RMConstants.defaultControllerUrl;
+        String controllerUrl = orcaControllerUrl;
 
         String createRes = null;
         try {
@@ -74,7 +84,7 @@ public class OrcaManager {
     public String sendModifyRequestToORCA(String sliceId, String controllerUrl, String modifyReq){
 
         if(controllerUrl == null || controllerUrl.isEmpty()){
-            controllerUrl = RMConstants.defaultControllerUrl;
+            controllerUrl = orcaControllerUrl;
         }
 
         String modifyRes = null;
@@ -96,7 +106,7 @@ public class OrcaManager {
     */
     public String sendModifyRequestToORCA(String sliceId, String modifyReq){
 
-        String controllerUrl = RMConstants.defaultControllerUrl;
+        String controllerUrl = orcaControllerUrl;
 
         String modifyRes = null;
         try {
@@ -118,7 +128,7 @@ public class OrcaManager {
     public boolean sendDeleteRequestToORCA(String sliceId, String controllerUrl){
         
         if(controllerUrl == null || controllerUrl.isEmpty()){
-            controllerUrl = RMConstants.defaultControllerUrl;
+            controllerUrl = orcaControllerUrl;
         }
 
         boolean deleteRes = false;
@@ -140,7 +150,7 @@ public class OrcaManager {
     */
     public boolean sendDeleteRequestToORCA(String sliceId){
         
-        String controllerUrl = RMConstants.defaultControllerUrl;
+        String controllerUrl = orcaControllerUrl;
 
         boolean deleteRes = false;
         try {
@@ -161,7 +171,7 @@ public class OrcaManager {
     */               
     public String getManifestFromORCA(String sliceId){
 
-        String controllerUrl = RMConstants.defaultControllerUrl;
+        String controllerUrl = orcaControllerUrl;
 
         String manifest = null;
         String sanitizedManifest = null;
@@ -186,7 +196,7 @@ public class OrcaManager {
     public String getManifestFromORCA(String sliceId, String controllerUrl){
 
         if(controllerUrl == null || controllerUrl.isEmpty()){
-            controllerUrl = RMConstants.defaultControllerUrl;
+            controllerUrl = orcaControllerUrl;
         }
 
         String manifest = null;

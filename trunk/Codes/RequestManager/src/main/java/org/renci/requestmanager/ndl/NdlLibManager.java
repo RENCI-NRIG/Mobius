@@ -407,9 +407,18 @@ public class NdlLibManager implements RMConstants{
             logger.info("Number of nodes marked for future deletion: " + numNodesMarkedForFutureDeletion);           
             logger.info("Total number of nodes deleted: " + numDeleted);
             
+            // Publish to display exchange, the modify action
+            DisplayPublisher dp;
+            try {
+                dp = new DisplayPublisher(rmProperties);
+                dp.publishInfraMessages(modReq.getOrcaSliceId(), "#workers deleted now = " + (numDeleted - numNodesMarkedForFutureDeletion) + " | #workers marked for future deletion = " + numNodesMarkedForFutureDeletion + " for slice: " + modReq.getOrcaSliceId());
+            } catch (Exception ex) {
+                logger.error("Exception while publishing to display exchange");
+            }
+            
+            
         }
         
-        // TODO fix bug in ndllib ?
         if (change > 0){ // Need to add more workers
             int numWorkers = 0;
             for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
@@ -419,7 +428,18 @@ public class NdlLibManager implements RMConstants{
             logger.info("There are " + numWorkers + " worker nodes in the current manifest");
             int newNumWorkers = numWorkers + change;
             logger.info("Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers");
-            cn.setNodeCount(newNumWorkers);            
+            cn.setNodeCount(newNumWorkers); 
+            
+            // Publish to display exchange, the modify action
+            DisplayPublisher dp;
+            try {
+                dp = new DisplayPublisher(rmProperties);
+                dp.publishInfraMessages(modReq.getOrcaSliceId(), "Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers " + " for slice: " + modReq.getOrcaSliceId());
+            } catch (Exception ex) {
+                logger.error("Exception while publishing to display exchange");
+            }
+            
+            
         }     
         
         s.save("/tmp/generatedModifyRequest.rdf");

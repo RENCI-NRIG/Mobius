@@ -43,15 +43,21 @@ public class RequestTestPublisher implements RMConstants{
                                 .hasArg()
                                 .withDescription( "requested number of workers" )
                                 .create( "numworkers" );
+        Option stitchportid    = OptionBuilder.withArgName( "stitchportID" )
+                                .hasArg()
+                                .withDescription( "requested stitchport identifier (optional)" )
+                                .create( "stitchportid" );
         
         options.addOption( requesttype );
         options.addOption( sliceid );
         options.addOption( numworkers );
+        options.addOption( stitchportid );
         
         CommandLineParser parser = new GnuParser();
         String orcaSliceID = null;
         String requestTemplateType = null;
         int numWorkers = RMConstants.CondorDefaults.getDefaultNumWorkers();
+        String stitchportID = null;
         try {
             // parse the command line arguments
             CommandLine line = parser.parse( options, argv );
@@ -78,6 +84,10 @@ public class RequestTestPublisher implements RMConstants{
                 numWorkers = Integer.parseInt(line.getOptionValue( "numworkers" ));
             }
             
+            if(line.hasOption("stitchportid")){
+                stitchportID = line.getOptionValue( "stitchportid" );
+            }
+            
         }
         catch( ParseException exp ) {
             // oops, something went wrong
@@ -92,7 +102,7 @@ public class RequestTestPublisher implements RMConstants{
         }
         
         
-        String message = buildMessageNewRequest(requestTemplateType, orcaSliceID, numWorkers);
+        String message = buildMessageNewRequest(requestTemplateType, orcaSliceID, numWorkers, stitchportID);
         
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("gaul.isi.edu");
@@ -123,7 +133,7 @@ public class RequestTestPublisher implements RMConstants{
         
     }
     
-    private static String buildMessageNewRequest(String requestTemplateType, String orcaSliceID, int numWorkers){
+    private static String buildMessageNewRequest(String requestTemplateType, String orcaSliceID, int numWorkers, String stitchportID){
         
         // Build a test JSON message
         JSONObject obj = new JSONObject();
@@ -153,6 +163,12 @@ public class RequestTestPublisher implements RMConstants{
         //obj.put("req_linkID", "0xghlkjh");
         //obj.put("req_linkBW", new Long(100000000));
         //obj.put("req_stitchportID", "Cenic@ION");
+        
+        if(stitchportID != null){
+            obj.put("req_stitchportID", stitchportID);
+            obj.put("req_linkID", "0xghlkjh");
+            obj.put("req_BW", 100000000);
+        }
         
         System.out.println("JSON request = \n" + obj.toJSONString());
                 
