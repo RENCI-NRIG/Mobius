@@ -35,6 +35,8 @@ public interface RMConstants {
     public String KILLCONDORONDELETE_SSH_PRIVKEY_PROP_NAME = "RM.killcondorondelete.ssh.privkey";
     public String KILLCONDORONDELETE_SSH_SCRIPTNAME_PROP_NAME = "RM.killcondorondelete.ssh.scriptname";
     
+    public String DEFAULT_CONTROLLERURL_PROP = "RM.defaultcontrollerurl";
+    
     public enum RequestTemplates {
         
         CONDOR_POOL(CondorBasicTypeName),
@@ -90,7 +92,7 @@ public interface RMConstants {
     
     public class CondorDefaults{
         
-        private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s
+        private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s 
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
         private static final String defaultImageUrl = "http://geni-images.renci.org/images/anirban/adamant/genovariant-0.10/genovariant-0.10.xml"; // defaul url to image xml file

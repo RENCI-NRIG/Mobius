@@ -11,6 +11,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import java.util.Properties;
+import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -291,6 +292,18 @@ public class RequestSubscriber implements Runnable {
             }
             else if(jsonObject.containsKey("req_linkID") && jsonObject.containsKey("req_stitchportID")){
                 String requestLinkID = (String) jsonObject.get("req_linkID");
+                String requestStitchportID = (String) jsonObject.get("req_stitchportID");
+                
+                LinkRequestInfo linkInfo = new LinkRequestInfo();
+                linkInfo.setLinkId(requestLinkID);
+                linkInfo.setLinkBandwidth(-1);
+                linkInfo.setStitchPortID(requestStitchportID);
+                linkInfo.setWfUuid(requestWfuuid);
+                
+                newReq.setNewLinkInfo(linkInfo);
+            }
+            else if(jsonObject.containsKey("req_stitchportID")){
+                String requestLinkID = UUID.randomUUID().toString();
                 String requestStitchportID = (String) jsonObject.get("req_stitchportID");
                 
                 LinkRequestInfo linkInfo = new LinkRequestInfo();
