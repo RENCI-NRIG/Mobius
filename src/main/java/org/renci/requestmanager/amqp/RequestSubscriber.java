@@ -58,6 +58,10 @@ public class RequestSubscriber implements Runnable {
             Channel channel = connection.createChannel();
 
             channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+            
+            // Purging anything in the queue from old runs
+            channel.queuePurge(QUEUE_NAME);
+            
             System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
             QueueingConsumer consumer = new QueueingConsumer(channel);
@@ -287,6 +291,8 @@ public class RequestSubscriber implements Runnable {
                 linkInfo.setStitchPortID(requestStitchportID);
                 linkInfo.setWfUuid(requestWfuuid);
                 
+                logger.info("*******: stitchportID received = " + requestStitchportID);
+                
                 newReq.setNewLinkInfo(linkInfo);
                 
             }
@@ -300,6 +306,8 @@ public class RequestSubscriber implements Runnable {
                 linkInfo.setStitchPortID(requestStitchportID);
                 linkInfo.setWfUuid(requestWfuuid);
                 
+                logger.info("*******: stitchportID received = " + requestStitchportID);
+                
                 newReq.setNewLinkInfo(linkInfo);
             }
             else if(jsonObject.containsKey("req_stitchportID")){
@@ -312,9 +320,13 @@ public class RequestSubscriber implements Runnable {
                 linkInfo.setStitchPortID(requestStitchportID);
                 linkInfo.setWfUuid(requestWfuuid);
                 
+                logger.info("*******: stitchportID received = " + requestStitchportID);
+                
                 newReq.setNewLinkInfo(linkInfo);
             }
             else {
+                
+                logger.info("*******: stitchportID received = null");
                 newReq.setNewLinkInfo(null);
             }
             
