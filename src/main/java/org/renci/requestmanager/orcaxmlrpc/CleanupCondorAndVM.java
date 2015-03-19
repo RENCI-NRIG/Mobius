@@ -13,6 +13,7 @@ import orca.ndllib.resources.request.ComputeNode;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.RMConstants;
 import org.renci.requestmanager.RMState;
+import org.renci.requestmanager.amqp.DisplayPublisher;
 
 
 /**
@@ -88,7 +89,16 @@ public class CleanupCondorAndVM implements Runnable, RMConstants{
                 String modReq = s.getRequest();
                  if(modReq != null){
                      // We have a modify request; Send modify request to ExoGENI
-                    logger.info("CLEANUP: Sending modifyCompute request to ExoGENI...");                                       
+                    logger.info("CLEANUP: Sending modifyCompute request to ExoGENI...");
+                    
+                    DisplayPublisher dp;
+                    try {
+                        dp = new DisplayPublisher(rmProperties);
+                        dp.publishInfraMessages(orcaSliceID, "CLEANUP: Sending modifyCompute request (delete node) to ExoGENI...");
+                    } catch (Exception ex) {
+                        logger.error("Exception while publishing to display exchange");
+                    }
+                                        
                     String resultModify = orcaManager.sendModifyRequestToORCA(orcaSliceID, modReq);
                     if(resultModify == null){ // Exception
                         logger.error("CLEANUP: could not kill VM in ExoGENI/ORCA");

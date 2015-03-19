@@ -76,6 +76,10 @@
                             <mainClass>org.renci.requestmanager.amqp.RequestTestPublisher</mainClass>
                             <name>testrequester</name>
                          </program>
+                         <program>
+                            <mainClass>org.renci.requestmanager.amqp.DisplaySubscriber</mainClass>
+                            <name>displaySubscriber</name>
+                         </program>
                       </programs>
                       <daemons>
                          <daemon>
