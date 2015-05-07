@@ -192,4 +192,36 @@
         </dependency>
 
   </dependencies>
+
+         <repositories>
+                <repository>
+                       <id>geni-orca-snapshot</id>
+                       <name>ORCA Snapshots repo</name>
+                       <url>http://ci-dev.renci.org/nexus/content/repositories/geni-orca-snapshot</url>
+                       <snapshots>
+                               <enabled>true</enabled>
+                               <updatePolicy>always</updatePolicy>
+                       </snapshots>
+                </repository>
+                <repository>
+                        <id>geni-orca-libs</id>
+                        <name>Orca Project Maven Repository</name>
+                        <url>http://ci-dev.renci.org/nexus/content/repositories/geni-orca-libs</url>
+                </repository>
+        </repositories>
+
+        <distributionManagement>
+               <snapshotRepository>
+                       <id>geni-orca-snapshot</id>
+                       <name>Orca Project Maven Snapshot Repository</name>
+                       <url>http://ci-dev.renci.org/nexus/content/repositories/geni-orca-snapshot/</url>
+               </snapshotRepository>
+               <repository>
+                       <id>geni-orca-libs</id>
+                       <name>Orca Project Maven Release Repository</name>
+                       <url>http://ci-dev.renci.org/nexus/content/repositories/geni-orca-libs</url>
+               </repository>
+       </distributionManagement>	
+
+
 </project>
