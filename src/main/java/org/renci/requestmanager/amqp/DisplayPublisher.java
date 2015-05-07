@@ -75,11 +75,13 @@ public class DisplayPublisher {
         // TODO: Read from rmProps the following properties
         
         factory = new ConnectionFactory();
-        factory.setHost("gaul.isi.edu");
+	//factory.setHost("gaul.isi.edu");
+        factory.setHost("stewie.isi.edu");
         factory.setPort(5671);
         factory.useSslProtocol();
         factory.setUsername("anirban");
-        factory.setPassword("adamant123");  
+        //factory.setPassword("adamant123");
+        factory.setPassword("panorama123");
                
         EXCHANGE_NAME = "testDisplayExchange"; // populated from rmProps
         
