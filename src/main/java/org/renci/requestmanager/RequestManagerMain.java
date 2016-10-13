@@ -23,6 +23,14 @@ import org.renci.requestmanager.amqp.RequestSubscriber;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
+//Test ahab
+
+import orca.ahab.libndl.Slice;
+//import orca.ahab.libndl.TestDriver;
+import orca.ahab.libndl.LIBNDL;
+import orca.ahab.libndl.extras.PriorityNetwork;
+import org.renci.requestmanager.ndl.AhabManager;
+
 /**
  * Hello world!
  *
@@ -43,10 +51,30 @@ public class RequestManagerMain
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
-        Logger logger = Logger.getLogger(new Object() { }.getClass().getEnclosingClass());
         
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
+        
+	// Test AHAB
+
+	//LIBNDL.setLogger();
+        
+        //String[] argsAhab = new String[]{"/Users/anirban/.ssl/geni-anirban.pem"};
+        //int count = 3;
+        //String sliceName="anirban.sdx.1";
+        //AhabManager.buildSDX(argsAhab, sliceName, count);
+	//TestDriver.testNewSlice1("/Users/anirban/.ssl/geni-anirban.pem");
+          
+	
+        AhabManager ahabManager = new AhabManager(rmProperties);
+        String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx.1");
+        System.out.println(resultStatus);
+        System.exit(0);
+
+	// End Test AHAB
+
+        Logger logger = Logger.getLogger(new Object() { }.getClass().getEnclosingClass());
+        
         
         //NdlLibManager ndlManager = new NdlLibManager(rmProperties);
         //ndlManager.doSSHAndKillCondor("hpc.renci.org");

@@ -173,6 +173,18 @@
                 <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
+        <dependency>
+                <groupId>orca.ahab</groupId>
+                <artifactId>libtransport</artifactId>
+                <version>0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+                <groupId>orca.ahab</groupId>
+                <artifactId>libndl</artifactId>
+                <version>0.1-SNAPSHOT</version>
+        </dependency>
+
         <dependency> 
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>

@@ -405,13 +405,71 @@ public class RequestSubscriber implements Runnable {
             else {
                 modifyComputeReq.setNumResUtilMax(-1);
             }
-                       
+            
+            modifyComputeReq.setModifyType(reqType);
+            
             appReq = new AppRequestInfo(requestSliceID, null, modifyComputeReq, null, null);
             
         }
         else if(reqType.equalsIgnoreCase("modifyNetwork")){
             
             // TODO: when we have slice modify
+            // check mandatory fields for modifyNetwork
+            String requestSliceID = (String) jsonObject.get("req_sliceID");
+            if(requestSliceID == null){
+                logger.error("modifyNetwork request has to have a req_sliceID");
+                return null;
+            }
+            
+            String requestWfuuid = (String) jsonObject.get("req_wfuuid");
+            if(requestWfuuid == null){
+                logger.error("modifyNetwork request has to have a req_wfuuid");
+                return null;
+            }
+            
+            String requestEndpointSrc = null;
+            if(!jsonObject.containsKey("req_endpointSrc")){
+                logger.error("modifyNetwork request has to have a req_endpointSrc");
+                return null;
+            }
+            else {
+                requestEndpointSrc = (String) jsonObject.get("req_endpointSrc");
+                logger.info("requestEndpointSrc = " + requestEndpointSrc);
+            }
+            
+            String requestEndpointDst = null;
+            if(!jsonObject.containsKey("req_endpointDst")){
+                logger.error("modifyNetwork request has to have a req_endpointDst");
+                return null;
+            }
+            else {
+                requestEndpointDst = (String) jsonObject.get("req_endpointDst");
+                logger.info("requestEndpointDst = " + requestEndpointDst);
+            }
+            
+           
+            int reqFlowPriority = -1;
+            if(!jsonObject.containsKey("req_flowPriority")){
+                logger.error("modifyNetwork request has to have a req_flowPriority");
+                return null;
+            }
+            else {
+                Long requestFlowPriority = (Long) jsonObject.get("req_flowPriority");
+                logger.info("requestFlowPriority = " + requestFlowPriority.intValue());
+                reqFlowPriority = requestFlowPriority.intValue();
+            }
+            
+            ModifyRequestInfo modifyNetworkReq = new ModifyRequestInfo();
+            modifyNetworkReq.setOrcaSliceId(requestSliceID);
+            modifyNetworkReq.setWfUuid(requestWfuuid);
+            modifyNetworkReq.setEndpointSrc(requestEndpointSrc);
+            modifyNetworkReq.setEndpointDst(requestEndpointDst);
+            modifyNetworkReq.setFlowPriority(reqFlowPriority);
+            
+            modifyNetworkReq.setModifyType(reqType);
+            
+            appReq = new AppRequestInfo(requestSliceID, null, modifyNetworkReq, null, null);
+            
         }
         else if(reqType.equalsIgnoreCase("delete")){
             String requestSliceID = (String) jsonObject.get("req_sliceID");

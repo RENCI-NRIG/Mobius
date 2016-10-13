@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.amqp.ManifestPublisherOnDemand;
+import org.renci.requestmanager.ndl.AhabManager;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
@@ -121,12 +122,25 @@ public class RMController implements RMConstants{
                                     if(currAppRequestInfo.getModifyReq() != null){ // this is a modify request for an existing slice
                                         
                                         ModifyRequestInfo modReq = currAppRequestInfo.getModifyReq();
-                                        String resultStatus = processModifyComputeReq(modReq, currOrcaSliceId);
-                                        // If the modify action needs to be delayed, don't set setProcessed to true
-                                        // Only if it is either a success or an error condition, set setProcessed to true
-                                        if(resultStatus.equalsIgnoreCase("SUCCESS") || resultStatus.equalsIgnoreCase("ERROR")){
-                                            currAppRequestInfo.setProcessed(true);
+                                        String modifyType = modReq.getModifyType();
+                                        if(modifyType.equalsIgnoreCase("modifyCompute")){
+                                            String resultStatus = processModifyComputeReq(modReq, currOrcaSliceId);
+                                            // If the modify action needs to be delayed, don't set setProcessed to true
+                                            // Only if it is either a success or an error condition, set setProcessed to true
+                                            if(resultStatus.equalsIgnoreCase("SUCCESS") || resultStatus.equalsIgnoreCase("ERROR")){
+                                                currAppRequestInfo.setProcessed(true);
+                                            }
                                         }
+                                        
+                                        if(modifyType.equalsIgnoreCase("modifyNetwork")){
+                                            String resultStatus = processModifyNetworkReq(modReq, currOrcaSliceId);
+                                            // If the modify action needs to be delayed, don't set setProcessed to true
+                                            // Only if it is either a success or an error condition, set setProcessed to true
+                                            if(resultStatus.equalsIgnoreCase("SUCCESS") || resultStatus.equalsIgnoreCase("ERROR")){
+                                                currAppRequestInfo.setProcessed(true);
+                                            }
+                                        }
+                                        
                                         continue;
                                                                                 
                                     }
@@ -172,6 +186,7 @@ public class RMController implements RMConstants{
                 
                 /*
                 * Processes a new user request, generates appropriate ndl request and sends it to ORCA/ExoGENI
+                * Uses ndlLib; Need to use ahab in future
                 */
                 
                 private String processNewReq(NewRequestInfo newReq, String orcaSliceID) {
@@ -188,66 +203,81 @@ public class RMController implements RMConstants{
                         return "ERROR";
                     }
                     
-                    // Depending on the template type, call ndllib to generate appropriate request
-                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
-                    String ndlReq = null;
-                    
-                    if(requestedTemplateType.startsWith(CondorBasicTypeName)){
-                        logger.info("Calling ndllib to generate a request with basic type = " + CondorBasicTypeName);
-                        ndlReq = ndlManager.generateNewCondorRequest(newReq);
-                    }
-                    else if(requestedTemplateType.startsWith(HadoopBasicTypeName)){
-                        logger.info("Calling ndllib to generate a request with basic type = " + HadoopBasicTypeName);
-                        ndlReq = ndlManager.generateNewHadoopRequest(newReq);
-                    }
-                    else if(requestedTemplateType.startsWith(MPIBasicTypeName)){
-                        logger.info("Calling ndllib to generate a request with basic type = " + MPIBasicTypeName);
-                        ndlReq = ndlManager.generateNewMPIRequest(newReq);
+                    if(requestedTemplateType.startsWith(SDXCondorBasicTypeName)){
+                        
+                        AhabManager ahabManager = new AhabManager(rmProperties);
+                        logger.info("Calling ahab to create slice for a request with basic type = " + SDXCondorBasicTypeName);
+                        String resultStatus = ahabManager.processNewSDXCondor(newReq, orcaSliceID);
+                        if (resultStatus != null){
+                            return "SUCCESS";
+                        }
+                        else{
+                            return "ERROR";
+                        }
                     }
                     else {
-                        logger.error("Unsupported requested template type");
-                        return "ERROR";
-                    }
-                    
-                    // Send request to ExoGENI
-                    logger.info("Sending request to ExoGENI...");
-                    
-                    DisplayPublisher dp;
-                    try {
-                        dp = new DisplayPublisher(rmProperties);
-                        dp.publishInfraMessages(orcaSliceID, "Sending request for new slice: " + orcaSliceID + " to ExoGENI...");
-                    } catch (Exception ex) {
-                        logger.error("Exception while publishing to display exchange");
-                    }
-                                        
-                    OrcaManager orcaManager = new OrcaManager(rmProperties);
-                    String resultCreate = orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
-                                                            
-                    //Push orcaSliceID to manifest publishing queue
-                    if(resultCreate != null){
-                        
-                        // Publish manifest on demand
+                        // Depending on the template type, call ndllib to generate appropriate request
+                        NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+                        String ndlReq = null;
+
+                        if(requestedTemplateType.startsWith(CondorBasicTypeName)){
+                            logger.info("Calling ndllib to generate a request with basic type = " + CondorBasicTypeName);
+                            ndlReq = ndlManager.generateNewCondorRequest(newReq);
+                        }
+                        else if(requestedTemplateType.startsWith(HadoopBasicTypeName)){
+                            logger.info("Calling ndllib to generate a request with basic type = " + HadoopBasicTypeName);
+                            ndlReq = ndlManager.generateNewHadoopRequest(newReq);
+                        }
+                        else if(requestedTemplateType.startsWith(MPIBasicTypeName)){
+                            logger.info("Calling ndllib to generate a request with basic type = " + MPIBasicTypeName);
+                            ndlReq = ndlManager.generateNewMPIRequest(newReq);
+                        }
+                        else {
+                            logger.error("Unsupported requested template type");
+                            return "ERROR";
+                        }
+
+                        // Send request to ExoGENI
+                        logger.info("Sending request to ExoGENI...");
+
+                        DisplayPublisher dp;
                         try {
-                            ManifestPublisherOnDemand mPublisherOnDemand = new ManifestPublisherOnDemand(rmProperties);
-                            mPublisherOnDemand.getManifestAndPublishManifestData(orcaSliceID);
+                            dp = new DisplayPublisher(rmProperties);
+                            dp.publishInfraMessages(orcaSliceID, "Sending request for new slice: " + orcaSliceID + " to ExoGENI...");
                         } catch (Exception ex) {
-                            logger.error("Exception while publishing manifest on demand " + ex);
-                        }    
-                        
-                        rmState = RMState.getInstance();
-                        rmState.addSliceIDToSliceIDQ(orcaSliceID);
-                        logger.info("Added " + orcaSliceID + " to SliceIDQ...");
-                        logger.info("Done processing new user request");
-                        return "SUCCESS";
-                    }
-                    else{ // there was an exception
-                        logger.info("Can't create slice at this moment.. trying again in 30 seconds..");
-                        return "DELAY";
-                    }
-                    
+                            logger.error("Exception while publishing to display exchange");
+                        }
+
+                        OrcaManager orcaManager = new OrcaManager(rmProperties);
+                        String resultCreate = orcaManager.sendCreateRequestToORCA(orcaSliceID, ndlReq);
+
+                        //Push orcaSliceID to manifest publishing queue
+                        if(resultCreate != null){
+
+                            // Publish manifest on demand
+                            try {
+                                ManifestPublisherOnDemand mPublisherOnDemand = new ManifestPublisherOnDemand(rmProperties);
+                                mPublisherOnDemand.getManifestAndPublishManifestData(orcaSliceID);
+                            } catch (Exception ex) {
+                                logger.error("Exception while publishing manifest on demand " + ex);
+                            }    
+
+                            rmState = RMState.getInstance();
+                            rmState.addSliceIDToSliceIDQ(orcaSliceID);
+                            logger.info("Added " + orcaSliceID + " to SliceIDQ...");
+                            logger.info("Done processing new user request");
+                            return "SUCCESS";
+                        }
+                        else{ // there was an exception
+                            logger.info("Can't create slice at this moment.. trying again in 30 seconds..");
+                            return "DELAY";
+                        }
+                    }                    
                     
                 }
-
+                
+                // This uses ndlLib; Need to use AHAB in future
+                
                 private String processModifyComputeReq(ModifyRequestInfo modReq, String orcaSliceID) {
                     
                     if(modReq == null || orcaSliceID == null || orcaSliceID.isEmpty()){
@@ -336,6 +366,22 @@ public class RMController implements RMConstants{
                     
                 }
 
+                // This uses AHAB
+                private String processModifyNetworkReq(ModifyRequestInfo modReq, String orcaSliceID) {
+                    
+                    if(modReq == null || orcaSliceID == null || orcaSliceID.isEmpty()){
+                        logger.error("modReq or orcaSliceID is null.. modify request not processed..");
+                        return "ERROR";
+                    }
+                    
+                    // Call ahab manager function to actuate network modification
+                    AhabManager ahabManager = new AhabManager(rmProperties);
+                    
+                    String ndlModReq = null;
+                    
+                    return null;
+                }
+                
                 private void processLinkReq(LinkRequestInfo linkReq) {
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
                 }
