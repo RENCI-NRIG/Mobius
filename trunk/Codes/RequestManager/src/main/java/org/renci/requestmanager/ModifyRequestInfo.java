@@ -14,11 +14,22 @@ public class ModifyRequestInfo {
     
     private String wfUuid; // workflow unique id
     private String orcaSliceId; // orca sliceID
+    
+    //type of modify
+    private String modifyType; // 'modifyCompute' or 'modifyNetwork'
+    
+    //These are for compute elasticity (ADAMANT)
     private int deadline; // time from unix epoch
     private int numCurrentRes; // number of compute resources that application thinks is available now
     private int deadlineDiff; // +/- seconds by which application thinks it will miss deadline
     private int numResReqToMeetDeadline; // // number of compute resources that application thinks it needs to meet deadline
     private int numResUtilMax; // number of compute resources that application thinks can utilize 100% for the next hour
+    
+    //These are for flow elasticity (sdx control)
+    private String endpointSrc; // source site for data flow
+    private String endpointDst; // destination site for data flow
+    private int flowPriority; // priority of the flow
+    //Other QoS parameters later
 
     public String getWfUuid() {
         return wfUuid;
@@ -34,6 +45,14 @@ public class ModifyRequestInfo {
 
     public void setOrcaSliceId(String orcaSliceId) {
         this.orcaSliceId = orcaSliceId;
+    }
+
+    public String getModifyType() {
+        return modifyType;
+    }
+
+    public void setModifyType(String modifyType) {
+        this.modifyType = modifyType;
     }
     
     public int getDeadline() {
@@ -74,6 +93,30 @@ public class ModifyRequestInfo {
 
     public void setNumResUtilMax(int numResUtilMax) {
         this.numResUtilMax = numResUtilMax;
+    }
+
+    public String getEndpointSrc() {
+        return endpointSrc;
+    }
+
+    public void setEndpointSrc(String endpointSrc) {
+        this.endpointSrc = endpointSrc;
+    }
+
+    public String getEndpointDst() {
+        return endpointDst;
+    }
+
+    public void setEndpointDst(String endpointDst) {
+        this.endpointDst = endpointDst;
+    }
+
+    public int getFlowPriority() {
+        return flowPriority;
+    }
+
+    public void setFlowPriority(int flowPriority) {
+        this.flowPriority = flowPriority;
     }
     
     

@@ -21,6 +21,7 @@ public interface RMConstants {
     public String CondorBasicTypeName = "condor";
     public String HadoopBasicTypeName = "hadoop";
     public String MPIBasicTypeName = "mpi";
+    public String SDXCondorBasicTypeName = "sdxcondor";
     public String SPSuffix = "_sp"; // stitch port suffix
     public String StorageSuffix = "_storage"; // storage suffix
     public String MultiSuffix = "_multi"; // *multi ones are where master and workers are in different domains
@@ -36,6 +37,14 @@ public interface RMConstants {
     public String KILLCONDORONDELETE_SSH_SCRIPTNAME_PROP_NAME = "RM.killcondorondelete.ssh.scriptname";
     
     public String DEFAULT_CONTROLLERURL_PROP = "RM.defaultcontrollerurl";
+    
+    public String USER_CERTFILE_PATH_PROP = "RM.user.certFilePath";
+    public String USER_CERTKEYFILE_PATH_PROP = "RM.user.certKeyFilePath";
+    public String USER_KEYPASS_PROP = "RM.user.keyPass";
+    
+    public String USER_SSHKEY_PATH_PROP ="RM.user.sshKeyPath";
+    
+    
     
     public enum RequestTemplates {
         
@@ -231,6 +240,171 @@ public interface RMConstants {
         
         
     }
+    
+    public class SDXHTCondorDefaults{
+        
+        private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s 
+        private static final int defaultStorage = 100; //100GB
+        private static final int defaultNumWorkers = 4; // default number of condor worker vms
+        private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.2/genome-0.2.xml"; // defaul url to image xml file
+        private String defaultImageHash = "bff2c4eef5ebfc0713e781df7bd0ae26851381a1"; // hash of the image xml file
+        private String defaultImageName = "genome-0.2"; // default name of image
+        private String defaultImageType = "XO Extra large";
+        private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
+        private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
+        private String defaultPostbootWorker_MultiPoint = readPostboot("default.condor.worker.multipoint.postboot"); // default postboot script for workers - multipoint
+        private String defaultPostbootWorker_SingleDomain = readPostboot("default.condor.worker.singledomain.postboot"); // default postboot script for workers - single domain
+        private static final int defaultMaxNumWorkers = 256; // default max size of worker nodegroup
+        
+        private static String readStringFromFile(String filePathStr) {
+            
+            if(filePathStr == null || filePathStr.isEmpty()){
+                System.out.println("ERROR: Can't read postboot script because file doesn't exist..");
+                return null;
+            }
+            
+            File path = new File(filePathStr);
+            try {
+                    FileInputStream is = new FileInputStream(path);
+                    BufferedReader bin = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    while((line = bin.readLine()) != null) {
+                            sb.append(line);
+                            // re-add line separator
+                            sb.append(System.getProperty("line.separator"));
+                    }
+
+                    bin.close();
+
+                    return sb.toString();
+
+            } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+            }
+            
+	}
+        
+        private String readPostboot(String fileName){
+            
+            if(fileName == null || fileName.isEmpty()){
+                System.out.println("ERROR: Can't read postboot script because file doesn't exist..");
+                return null;
+            }
+            
+            try {
+                InputStream is = getClass().getResourceAsStream("/" + fileName);
+                BufferedReader bin = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    while((line = bin.readLine()) != null) {
+                            sb.append(line);
+                            // re-add line separator
+                            sb.append(System.getProperty("line.separator"));
+                    }
+
+                    bin.close();
+
+                    return sb.toString();
+            } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+            }
+            
+        }
+        
+        public String getPostbootMaster(int i){
+            
+            String fileName = "masterPostboot.sh" + "." + i;
+            
+            return readPostboot(fileName);
+            
+        }
+        
+        public String getPostbootWorker(int i){
+            
+            String fileName = "workerPostboot.sh" + "." + i;
+            
+            return readPostboot(fileName);
+            
+        }
+        
+        
+        public SDXHTCondorDefaults(){
+            
+        }
+
+        public String getDefaultPostbootMaster_MultiPoint() {
+            return defaultPostbootMaster_MultiPoint;
+        }
+
+        public void setDefaultPostbootMaster_MultiPoint(String defaultPostbootMaster_MultiPoint) {
+            this.defaultPostbootMaster_MultiPoint = defaultPostbootMaster_MultiPoint;
+        }
+
+        public String getDefaultPostbootMaster_SingleDomain() {
+            return defaultPostbootMaster_SingleDomain;
+        }
+
+        public void setDefaultPostbootMaster_SingleDomain(String defaultPostbootMaster_SingleDomain) {
+            this.defaultPostbootMaster_SingleDomain = defaultPostbootMaster_SingleDomain;
+        }
+
+        public String getDefaultPostbootWorker_MultiPoint() {
+            return defaultPostbootWorker_MultiPoint;
+        }
+
+        public void setDefaultPostbootWorker_MultiPoint(String defaultPostbootWorker_MultiPoint) {
+            this.defaultPostbootWorker_MultiPoint = defaultPostbootWorker_MultiPoint;
+        }
+
+        public String getDefaultPostbootWorker_SingleDomain() {
+            return defaultPostbootWorker_SingleDomain;
+        }
+
+        public void setDefaultPostbootWorker_SingleDomain(String defaultPostbootWorker_SingleDomain) {
+            this.defaultPostbootWorker_SingleDomain = defaultPostbootWorker_SingleDomain;
+        }
+
+        public static long getDefaultBW() {
+            return defaultBW;
+        }
+
+        public static int getDefaultStorage() {
+            return defaultStorage;
+        }
+
+        public static int getDefaultNumWorkers() {
+            return defaultNumWorkers;
+        }
+
+        public String getDefaultImageUrl() {
+            return defaultImageUrl;
+        }
+
+        public String getDefaultImageHash() {
+            return defaultImageHash;
+        }
+
+        public String getDefaultImageName() {
+            return defaultImageName;
+        }
+
+        public String getDefaultImageType() {
+            return defaultImageType;
+        }
+        
+        public static int getDefaultMaxNumWorkers() {
+            return defaultMaxNumWorkers;
+        }
+        
+        
+        
+    }
+    
     
     // TODO Hadoop and MPI defaults
         
