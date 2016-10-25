@@ -73,15 +73,15 @@ public class RequestSubscriber implements Runnable {
                 String message = new String(delivery.getBody());
                 System.out.println(" [x] Received '" + message + "'");
               
-                //Publish to display exchange about the request
-                DisplayPublisher dp;
-                try{
-                    dp = new DisplayPublisher(rmProperties);
-                    dp.publishRMMessages(message);
-                }
-                catch (Exception ex){
-                    logger.error("Exception while publishing to display exchange");
-                }
+//                //Publish to display exchange about the request
+//                DisplayPublisher dp;
+//                try{
+//                    dp = new DisplayPublisher(rmProperties);
+//                    dp.publishRMMessages(message);
+//                }
+//                catch (Exception ex){
+//                    logger.error("Exception while publishing to display exchange");
+//                }
                 
                 // Parse message
                 try {
@@ -109,19 +109,29 @@ public class RequestSubscriber implements Runnable {
                         
                         // Checking whether there is an existing unprocessed modify request with same (sliceID, wfuuid) combo
                         if(appReq.getModifyReq() != null){ // this is a modify request
-                            AppRequestInfo existingAppReq = rmState.findAppReqForModifyFromAppReqQ(appReq.getModifyReq().getOrcaSliceId(), appReq.getModifyReq().getWfUuid());
-                            if(existingAppReq == null){ // first unprocessed modify request
-                                // Push it to queue
-                                rmState.addReqToAppReqQ(appReq);
-                                logger.info("Added modify request to appRequestQ...");
+                            
+                            if (appReq.getModifyReq().getModifyType().equalsIgnoreCase("modifyCompute")){ // modifyCompute
+                                AppRequestInfo existingAppReq = rmState.findAppReqForModifyFromAppReqQ(appReq.getModifyReq().getOrcaSliceId(), appReq.getModifyReq().getWfUuid());
+                                if(existingAppReq == null){ // first unprocessed modify request
+                                    // Push it to queue
+                                    rmState.addReqToAppReqQ(appReq);
+                                    logger.info("Added modify compute request to appRequestQ...");
+                                }
+                                else{ // there was already an unprocessed modify request for same (sliceID, wfuuid) combo
+                                    rmState.deleteReqFromAppReqQ(existingAppReq); // delete the existing unprocessed modify request
+                                    logger.info("Deleting existing unprocessed modify compute request from appRequestQ...");
+                                    // Push it to queue
+                                    rmState.addReqToAppReqQ(appReq);
+                                    logger.info("Added modify compute request to appRequestQ...");
+                                }                                
                             }
-                            else{ // there was already an unprocessed modify request for same (sliceID, wfuuid) combo
-                                rmState.deleteReqFromAppReqQ(existingAppReq); // delete the existing unprocessed modify request
-                                logger.info("Deleting existing unprocessed modify request from appRequestQ...");
-                                // Push it to queue
+                            
+                            // All modifyNetwork requests pushed to the appReq queue
+                            if (appReq.getModifyReq().getModifyType().equalsIgnoreCase("modifyNetwork")){ // modifyNetwork
                                 rmState.addReqToAppReqQ(appReq);
-                                logger.info("Added modify request to appRequestQ...");
+                                logger.info("Added modify network request to appRequestQ...");
                             }
+                            
                         }
                         
                         if(appReq.getDeleteReq() != null){ // this is a delete request
@@ -162,7 +172,8 @@ public class RequestSubscriber implements Runnable {
         factory.useSslProtocol();
         factory.setUsername("anirban");
         //factory.setPassword("adamant123");
-        factory.setPassword("panorama123");       
+        factory.setPassword("panorama123");
+        factory.setVirtualHost("panorama");
         QUEUE_NAME = "testRequestQ"; // populated from rmProps
         
     }
@@ -448,23 +459,47 @@ public class RequestSubscriber implements Runnable {
             }
             
            
-            int reqFlowPriority = -1;
+            String requestFlowPriority = null;
             if(!jsonObject.containsKey("req_flowPriority")){
                 logger.error("modifyNetwork request has to have a req_flowPriority");
                 return null;
             }
             else {
-                Long requestFlowPriority = (Long) jsonObject.get("req_flowPriority");
-                logger.info("requestFlowPriority = " + requestFlowPriority.intValue());
-                reqFlowPriority = requestFlowPriority.intValue();
+                requestFlowPriority = (String) jsonObject.get("req_flowPriority");
+                logger.info("requestFlowPriority = " + requestFlowPriority);
             }
+            
+            String requestExchangeName = null;
+            if(jsonObject.containsKey("req_exchange")){
+                requestExchangeName = (String) jsonObject.get("req_exchange");
+                logger.info("requestExchangeName = " + requestExchangeName);
+            }
+            
+            String requestBindingKey = null;
+            if(jsonObject.containsKey("req_bindingKey")){
+                requestBindingKey = (String) jsonObject.get("req_bindingKey");
+                logger.info("requestBindingKey = " + requestBindingKey);
+            }
+            
+//            int reqFlowPriority = -1;
+//            if(!jsonObject.containsKey("req_flowPriority")){
+//                logger.error("modifyNetwork request has to have a req_flowPriority");
+//                return null;
+//            }
+//            else {
+//                Long requestFlowPriority = (Long) jsonObject.get("req_flowPriority");
+//                logger.info("requestFlowPriority = " + requestFlowPriority.intValue());
+//                reqFlowPriority = requestFlowPriority.intValue();
+//            }
             
             ModifyRequestInfo modifyNetworkReq = new ModifyRequestInfo();
             modifyNetworkReq.setOrcaSliceId(requestSliceID);
             modifyNetworkReq.setWfUuid(requestWfuuid);
             modifyNetworkReq.setEndpointSrc(requestEndpointSrc);
             modifyNetworkReq.setEndpointDst(requestEndpointDst);
-            modifyNetworkReq.setFlowPriority(reqFlowPriority);
+            modifyNetworkReq.setFlowPriority(Integer.parseInt(requestFlowPriority));
+            modifyNetworkReq.setExchangeName(requestExchangeName);
+            modifyNetworkReq.setBindingKey(requestBindingKey);
             
             modifyNetworkReq.setModifyType(reqType);
             

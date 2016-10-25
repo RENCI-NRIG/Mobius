@@ -29,6 +29,9 @@ public class ModifyRequestInfo {
     private String endpointSrc; // source site for data flow
     private String endpointDst; // destination site for data flow
     private int flowPriority; // priority of the flow
+    private String exchangeName; // name of amqp exchange where notification needs to be sent
+    private String bindingKey; // amqp binding key for the notification
+    
     //Other QoS parameters later
 
     public String getWfUuid() {
@@ -117,6 +120,22 @@ public class ModifyRequestInfo {
 
     public void setFlowPriority(int flowPriority) {
         this.flowPriority = flowPriority;
+    }
+
+    public String getExchangeName() {
+        return exchangeName;
+    }
+
+    public void setExchangeName(String exchangeName) {
+        this.exchangeName = exchangeName;
+    }
+
+    public String getBindingKey() {
+        return bindingKey;
+    }
+
+    public void setBindingKey(String bindingKey) {
+        this.bindingKey = bindingKey;
     }
     
     

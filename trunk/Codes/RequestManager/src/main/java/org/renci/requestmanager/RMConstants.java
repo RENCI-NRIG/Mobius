@@ -249,6 +249,9 @@ public interface RMConstants {
         private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.2/genome-0.2.xml"; // defaul url to image xml file
         private String defaultImageHash = "bff2c4eef5ebfc0713e781df7bd0ae26851381a1"; // hash of the image xml file
         private String defaultImageName = "genome-0.2"; // default name of image
+        private String defaultDataImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-data-0.2/genome-data-0.2.xml"; // defaul url to image xml file
+        private String defaultDataImageHash = "f98504bfd8c16b50ae388ab2a7fadeb9e72c9f5c"; // hash of the image xml file
+        private String defaultDataImageName = "genome-data-0.2"; // default name of image
         private String defaultImageType = "XO Extra large";
         private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
         private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
@@ -332,6 +335,14 @@ public interface RMConstants {
             
         }
         
+        public String getPostbootDataNode(){
+            
+            String fileName = "dataPostboot.sh";
+            
+            return readPostboot(fileName);
+            
+        }
+        
         
         public SDXHTCondorDefaults(){
             
@@ -399,6 +410,18 @@ public interface RMConstants {
         
         public static int getDefaultMaxNumWorkers() {
             return defaultMaxNumWorkers;
+        }
+
+        public String getDefaultDataImageUrl() {
+            return defaultDataImageUrl;
+        }
+
+        public String getDefaultDataImageHash() {
+            return defaultDataImageHash;
+        }
+
+        public String getDefaultDataImageName() {
+            return defaultDataImageName;
         }
         
         

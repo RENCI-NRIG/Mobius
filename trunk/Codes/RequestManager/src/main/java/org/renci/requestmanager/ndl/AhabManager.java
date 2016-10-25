@@ -5,6 +5,7 @@
  */
 package org.renci.requestmanager.ndl;
 
+import com.google.common.collect.Table;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,6 +15,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -45,6 +47,7 @@ import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMConstants;
 import static org.renci.requestmanager.RMConstants.PREFERRED_DOMAINS_STRING_NAME;
+import org.renci.requestmanager.RMState;
 
 /**
  *
@@ -55,6 +58,8 @@ public class AhabManager implements RMConstants{
         // This is the class responsible for talking to ahab and generate requests
         protected Logger logger = null;
         private static Properties rmProperties = null; // need this for preferred domains
+        
+        protected RMState rmState = null;
 
 
         public AhabManager(Properties rmProps){ // constructor required for create requests for getting preferred domains from configuration file
@@ -67,13 +72,99 @@ public class AhabManager implements RMConstants{
         }
 
         
-        public String processModifyNetwork(ModifyRequestInfo modReq, String orcaSliceID){
-            return null;
+        public String processModifyNetworkTest(ModifyRequestInfo modReq, String orcaSliceID){
+            
+            String pemLocation = rmProperties.getProperty(USER_CERTKEYFILE_PATH_PROP);
+            String controllerUrl = rmProperties.getProperty(DEFAULT_CONTROLLERURL_PROP);
+            
+            ISliceTransportAPIv1 sliceProxy = getSliceProxy(pemLocation, controllerUrl);
+            String sliceName =  orcaSliceID;
+            
+            Slice currSlice = getSlice(sliceProxy, sliceName);
+            
+            if(currSlice == null){
+                logger.error("processModifyNetwork: Couldn't get AHAB Slice object for ORCA slice: " + orcaSliceID);
+                return "ERROR";
+            }
+            
+            currSlice.refresh();
+            PriorityNetwork sdn = PriorityNetwork.get(currSlice, "PegasusHTCondorSDX");
+            sdn.QoS_setDefaultPriority(10);
+            
+            String sourceEndPoint = modReq.getEndpointSrc();
+            String destEndPoint = modReq.getEndpointDst();
+            int flowPriority = modReq.getFlowPriority();
+            
+            //sdn.QoS_setPriority(sourceEndPoint, destEndPoint, flowPriority);
+            sdn.QoS_setPriority("S0", destEndPoint, flowPriority);
+            sdn.QoS_setPriority("S0", "S2", 20);
+            sdn.QoS_commit();
+            
+            return "SUCCESS";
+            
         }
-        	
+
+        
+        public String processModifyNetwork(String orcaSliceID){
+            
+            
+            logger.info("AhabManager: Called processModifyNetwork()...");
+            
+            String pemLocation = rmProperties.getProperty(USER_CERTKEYFILE_PATH_PROP);
+            String controllerUrl = rmProperties.getProperty(DEFAULT_CONTROLLERURL_PROP);
+            
+            ISliceTransportAPIv1 sliceProxy = getSliceProxy(pemLocation, controllerUrl);
+            String sliceName =  orcaSliceID;
+            
+            Slice currSlice = getSlice(sliceProxy, sliceName);
+            
+            if(currSlice == null){
+                logger.error("processModifyNetwork: Couldn't get AHAB Slice object for ORCA slice: " + orcaSliceID);
+                return "ERROR";
+            }
+            
+            currSlice.refresh();
+            PriorityNetwork sdn = PriorityNetwork.get(currSlice, "PegasusHTCondorSDX");
+            
+            logger.info("AhabManager: processModifyNetwork(): Setting default QoS priority...");
+            sdn.QoS_setDefaultPriority(10);
+            
+            // Go through all <src, dst, priority> tuples in crossSitePriority in RMState and set priorities in the priority network
+            
+            rmState = RMState.getInstance();
+            
+            Table<String, String, String> crossSiteFlowPriorityMap = rmState.getCrossSitePriority();
+            for (Map.Entry<String, Map<String,String>> outer : crossSiteFlowPriorityMap.rowMap().entrySet()) {
+                
+                for (Map.Entry<String, String> inner : outer.getValue().entrySet()) {
+                    
+                    String endPointSrc = outer.getKey();
+                    String endPointDst = inner.getKey();
+                    String flowPriority = inner.getValue();
+                    
+                    logger.info("AhabManager: processModifyNetwork(): Setting QoS priority between " + endPointSrc + " and " + endPointDst + " as " + Integer.parseInt(flowPriority));
+                    
+                    // TODO: remove this hack after resolving naming of data node
+                    if(endPointSrc.equalsIgnoreCase("data")){
+                        endPointSrc = "S0";
+                    }
+                    
+                    sdn.QoS_setPriority(endPointSrc, endPointDst, Integer.parseInt(flowPriority));
+                    
+                }
+            }
+            
+            sdn.QoS_commit();
+            
+            return "SUCCESS";
+            
+        }        
+        
         public String processNewSDXCondor(NewRequestInfo newReq, String orcaSliceID){
         
                 System.out.println("processNewSDXCondor: START");
+                
+                // TODO: Get the names of the prongs from rmProperties; Those will be the names that would be used while generating DAX
 
 		//String pemLocation = "/Users/anirban/.ssl/geni-anirban.pem";
                 //String sshKeyLocation = "/Users/anirban/.ssh/id_rsa.pub";
@@ -107,7 +198,10 @@ public class AhabManager implements RMConstants{
 		
 		Slice s = Slice.create(sliceProxy, sctx, sliceName);
 		
-		PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX");
+		//PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX"); // billion would be a gigabit; this is overall bandwidth of the slice
+                
+                // Put OpenFlowSDXController VM at WVN and 1 Gigabit
+                PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", "WVN (UCS-B series rack in Morgantown, WV, USA)", 1000000000); 
                 
                 ArrayList<String> preferredDomains = populatePreferredDomains(rmProperties);
                 logger.info("Preferred set of domains = " + preferredDomains);
@@ -153,14 +247,34 @@ public class AhabManager implements RMConstants{
                         
                         String nodeDomain=preferredDomains.get(i);			
 			
-                        if(i < 0){ // data site condition TODO
+                        if(i == 0){ // data site condition
+                            
+                            String newDataNodeName = "data";
+                            
+                            String dataNodeImageURL = d.getDefaultDataImageUrl();
+                            String dataNodeImageHash = d.getDefaultDataImageHash();
+                            String dataNodeImageShortName = d.getDefaultDataImageName();
+                            String dataNodeNodeType = d.getDefaultImageType();
+                            String dataNodePostBootScript = d.getPostbootDataNode();
+                            
+                            ComputeNode dataNode = s.addComputeNode(newDataNodeName);
+                            dataNode.setImage(dataNodeImageURL,dataNodeImageHash,dataNodeImageShortName);
+                            dataNode.setNodeType(dataNodeNodeType);
+                            dataNode.setDomain(nodeDomain);
+                            dataNode.setPostBootScript(dataNodePostBootScript);
+                            
+                            String dataIP = "172.16.1.200";
+                            String dataSite = "S"+i;
+                            //String dataSite = "data";
+                            
+                            sdn.addNode(dataNode,dataSite,dataIP,"255.255.0.0");
                             
                         }
-                        else {
-                            for (int j = 0; j < 2; j++){
-                                    
-                                
+                        else { // condor pool 
+                            for (int j = 0; j < 5; j++){ // loop through (master + workers) ; 0th is master rest are workers
+                                                                    
                                     String newNodeName = null;
+                                    
                                     if(j == 0){
                                         newNodeName = "master"+i;
                                     }
@@ -188,7 +302,7 @@ public class AhabManager implements RMConstants{
                                     
                                     String site = "S"+i;
                                     
-                                    sdn.addNode(node,site,ip);
+                                    sdn.addNode(node,site,ip,"255.255.0.0"); //"255.255.0.0"
                             }
                         }
                         
@@ -311,7 +425,7 @@ public class AhabManager implements RMConstants{
 				String site = "S"+i;
 				String ip = "172.16."+i+"."+(100+j);
 
-				sdn.addNode(node,site,ip);
+				sdn.addNode(node,site,ip,"255.255.0.0");
 			}
 		}
                 

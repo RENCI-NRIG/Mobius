@@ -6,6 +6,8 @@
 
 package org.renci.requestmanager;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ public class RMState implements Serializable {
         private ArrayList<String> sliceIDQ = new ArrayList<String>();
         private ArrayList<String> nodesToBeDeletedQ = new ArrayList<String>();
         private Integer numNodesToBeDeleted = new Integer(0);
+        
+        private Table<String, String, String> crossSitePriority = HashBasedTable.create(); // a table for flow priority
 
         // use output compression
         private static boolean compressOutput = true;
@@ -42,6 +46,14 @@ public class RMState implements Serializable {
         public void setAppReqQ(ArrayList<AppRequestInfo> appReqQ) {
             this.appReqQ = appReqQ;
         }
+
+        public Table<String, String, String> getCrossSitePriority() {
+            return crossSitePriority;
+        }
+
+        public void setCrossSitePriority(Table<String, String, String> crossSitePriority) {
+            this.crossSitePriority = crossSitePriority;
+        }       
         
         public void addReqToAppReqQ(AppRequestInfo newReq){
             synchronized(appReqQ){
@@ -54,6 +66,24 @@ public class RMState implements Serializable {
                 return(appReqQ.remove(reqInfo));
             }
         }
+        
+        public void addPriorityToCrossSitePriority(String endPointSrc, String endPointDst, String flowPriority){
+            synchronized(crossSitePriority){
+                crossSitePriority.put(endPointSrc, endPointDst, flowPriority);
+            }
+        }
+        
+        public String findPriorityForEndpointPairFromCrossSitePriority(String endPointSrc, String endPointDst){
+            
+            synchronized(crossSitePriority){
+                if(crossSitePriority.contains(endPointSrc, endPointDst)){
+                    return crossSitePriority.get(endPointSrc, endPointDst);
+                }
+            }
+            
+            return null;
+        }
+        
         
         /*
         * Returns an AppRequestInfo corresponding to an unprocessed modify request with same (sliceID, wfuuid) combo

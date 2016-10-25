@@ -10,14 +10,14 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.amqp.ManifestPublisherOnDemand;
 import org.renci.requestmanager.ndl.AhabManager;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
-import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
+
+import org.renci.requestmanager.amqp.FlowPrioritySetupPublisher;
 
 /**
  *
@@ -43,7 +43,7 @@ public class RMController implements RMConstants{
                 logger.info("RMController created..");
 
                 this.rmProperties = rmProps;
-
+                
 		Timer timer = null;
 		synchronized(timers) {
 			if (noStart)
@@ -374,12 +374,62 @@ public class RMController implements RMConstants{
                         return "ERROR";
                     }
                     
-                    // Call ahab manager function to actuate network modification
-                    AhabManager ahabManager = new AhabManager(rmProperties);
+                    // check if priority for the current endpoints is same as the priority of the endpoints in RMState
+                    // if not, call ahab to set that; set it in RMState; publish a response to amqp exchange
+                    // if yes, publish a response to amqp exchange
                     
-                    String ndlModReq = null;
                     
-                    return null;
+                    String reqEndPointSrc = modReq.getEndpointSrc();
+                    String reqEndPointDst = modReq.getEndpointDst();
+                    
+                    logger.info("RMController:processModifyNetworkReq(): Requesting to make flow priority between " + reqEndPointSrc + " and " + reqEndPointDst + " as " + Integer.toString(modReq.getFlowPriority()));
+                    
+                    boolean actuateNetworkModification = false;
+                    
+                    rmState = RMState.getInstance();
+                    
+                    String currPriority = rmState.findPriorityForEndpointPairFromCrossSitePriority(reqEndPointSrc, reqEndPointDst);
+                    if(currPriority == null){ // first time for this pair of end points
+                        logger.info("Setting priority for endpoints for the first time between " + reqEndPointSrc + " and " + reqEndPointDst + " as " + Integer.toString(modReq.getFlowPriority()));
+                        rmState.addPriorityToCrossSitePriority(reqEndPointSrc, reqEndPointDst, Integer.toString(modReq.getFlowPriority()));
+                        actuateNetworkModification = true; // need to call ahab
+                    }
+                    else {
+                        if(!currPriority.equalsIgnoreCase(Integer.toString(modReq.getFlowPriority()))){ // current priority is different from requested priority
+                            logger.info("Updating priority for endpoints between " + reqEndPointSrc + " and " + reqEndPointDst + " to " + Integer.toString(modReq.getFlowPriority()));
+                            rmState.addPriorityToCrossSitePriority(reqEndPointSrc, reqEndPointDst, Integer.toString(modReq.getFlowPriority()));
+                            actuateNetworkModification = true; // need to call ahab
+                        }
+                        logger.info("No need to call ahab to change priority...");
+                    }
+                    
+                    if(actuateNetworkModification){
+                        
+                        // Call ahab manager function to actuate network modification
+                        AhabManager ahabManager = new AhabManager(rmProperties);
+                    
+                        // AhabManager.getSliceProxy -> AhabManager.getSlice -> PriorityNetwork -> modification
+                    
+                        logger.info("Calling AHAB to satisfy QoS priorities");
+                        //String modifyNetworkStatus = ahabManager.processModifyNetworkTest(modReq, orcaSliceID);  
+                        String modifyNetworkStatus = ahabManager.processModifyNetwork(orcaSliceID);
+                        logger.info("processModifyNetwork returned " + modifyNetworkStatus);
+                                              
+                    }
+                                        
+                    // modReq has the endpoints, priorities, sliceID, wfuuid, and info about the routingKey, exchange name 
+                    
+                    // publish a response using routingKey, exchange name when modification is complete
+                    logger.info("Sending a response to the priority exchange that the requested priority has been set");
+                    try {
+                        FlowPrioritySetupPublisher flowPriorityPublisher = new FlowPrioritySetupPublisher(rmProperties);
+                        flowPriorityPublisher.publishFlowPrioritySetupComplete(modReq.getExchangeName(), modReq.getBindingKey());
+                    } catch (Exception ex) {
+                        logger.error("Exception while publishing to priority exchange");
+                    }                    
+                    
+                    return "SUCCESS";
+                    
                 }
                 
                 private void processLinkReq(LinkRequestInfo linkReq) {
