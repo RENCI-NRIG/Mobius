@@ -30,6 +30,8 @@ ALLOW_WRITE = *
 HOSTALLOW_READ = *
 HOSTALLOW_WRITE = *
 UID_DOMAIN=adamant
+ALLOW_NEGOTIATOR = *
+ALLOW_NEGOTIATOR_SCHEDD = *
 EOF
  
 /etc/init.d/condor restart

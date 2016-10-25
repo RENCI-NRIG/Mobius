@@ -65,28 +65,17 @@ public class RequestManagerMain
         //AhabManager.buildSDX(argsAhab, sliceName, count);
 	//TestDriver.testNewSlice1("/Users/anirban/.ssl/geni-anirban.pem");
           
-	
+	// Code to start SDX + HTCondor slice
         AhabManager ahabManager = new AhabManager(rmProperties);
         String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx.1");
         System.out.println(resultStatus);
-        System.exit(0);
+        // End Code to start SDX + HTCondor slice
+        
+        //System.exit(0);
 
 	// End Test AHAB
 
         Logger logger = Logger.getLogger(new Object() { }.getClass().getEnclosingClass());
-        
-        
-        //NdlLibManager ndlManager = new NdlLibManager(rmProperties);
-        //ndlManager.doSSHAndKillCondor("hpc.renci.org");
-        //System.exit(0);
-        
-        
-        //NdlLibManager ndlManager = new NdlLibManager();
-        //String ndlReq = ndlManager.generateTestRequest();
-        
-        //sendCreateRequestToORCA("test-anirban", "https://rci-hn.renci.exogeni.net:11443/orca/xmlrpc", ndlReq);
-        
-        //System.exit(0);
 
         // Start the RMController timer thread
         RMController rmController = new RMController(rmProperties); // Invocation of the constructor will start the RMController thread
@@ -101,11 +90,11 @@ public class RequestManagerMain
         }
 
         // Start the ManifestPublisher timer thread
-        try {
-            ManifestPublisher manifestPublisher = new ManifestPublisher(rmProperties); // Invocation of the constructor will start the ManifestPublisher thread
-        } catch (Exception ex) {
-            logger.error("Exception while starting ManifestPublisher thread " + ex);
-        }
+        //try {
+        //    ManifestPublisher manifestPublisher = new ManifestPublisher(rmProperties); // Invocation of the constructor will start the ManifestPublisher thread
+        //} catch (Exception ex) {
+        //    logger.error("Exception while starting ManifestPublisher thread " + ex);
+        //}
         
         
         while(true){
