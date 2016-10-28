@@ -245,7 +245,7 @@ public interface RMConstants {
         
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s 
         private static final int defaultStorage = 100; //100GB
-        private static final int defaultNumWorkers = 4; // default number of condor worker vms
+        private static final int defaultNumWorkers = 2; // default number of condor worker vms
         private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.2/genome-0.2.xml"; // defaul url to image xml file
         private String defaultImageHash = "bff2c4eef5ebfc0713e781df7bd0ae26851381a1"; // hash of the image xml file
         private String defaultImageName = "genome-0.2"; // default name of image

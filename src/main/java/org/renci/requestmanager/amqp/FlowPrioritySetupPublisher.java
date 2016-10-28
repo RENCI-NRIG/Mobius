@@ -10,6 +10,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import java.util.Properties;
 import org.apache.log4j.Logger;
+import org.renci.requestmanager.RMState;
 
 
 /**
@@ -34,7 +35,7 @@ public class FlowPrioritySetupPublisher {
 
         this.rmProperties = rmProps;
 
-        setupAMQPFactory(rmProperties);
+        //setupAMQPFactory(rmProperties);
     }
     
     private void setupAMQPFactory(Properties rmProps) throws Exception{
@@ -61,6 +62,10 @@ public class FlowPrioritySetupPublisher {
         Channel channel = null;
 
         try {
+            
+            RMState rmState = RMState.getInstance();
+            factory = rmState.getFactory();
+            
             connection = factory.newConnection();
             channel = connection.createChannel();
 
@@ -87,6 +92,49 @@ public class FlowPrioritySetupPublisher {
             }
         }        
                 
+    }
+    
+    public static void main(String[] argv) throws Exception{
+        System.out.println("Hello Anirban");
+        
+        ConnectionFactory factory = new ConnectionFactory();
+                //factory.setHost("gaul.isi.edu");
+                factory.setHost("stewie.isi.edu");
+                factory.setPort(5671);
+                factory.useSslProtocol();
+                factory.setUsername("anirban");
+                //factory.setPassword("adamant123");
+                factory.setPassword("panorama123");
+                factory.setVirtualHost("panorama");        
+        
+        Connection connection = null;
+
+        try {
+            for(int i = 0; i < 20; i++){
+                
+                connection = factory.newConnection();
+                System.out.println("Done creating connection " + i);
+                //try {
+                //    Thread.sleep(1*1000);                 //1000 milliseconds is one second.
+                //} catch(InterruptedException ex) {  
+                //    Thread.currentThread().interrupt();
+                //}
+                connection.close();
+            }
+        } 
+        catch  (Exception e) {
+            System.out.println("Exception sending OK to exchange after network modify actions: " + e);
+            e.printStackTrace();
+        }
+        finally {
+            if (connection != null) {
+              try {
+                connection.close();
+              }
+              catch (Exception ignore) {}
+            }
+        }
+              
     }
     
     

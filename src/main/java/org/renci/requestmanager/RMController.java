@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.amqp.ManifestPublisherOnDemand;
@@ -18,6 +19,7 @@ import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 
 import org.renci.requestmanager.amqp.FlowPrioritySetupPublisher;
+import org.renci.requestmanager.amqp.SetupAMQPConnection;
 
 /**
  *
@@ -43,6 +45,13 @@ public class RMController implements RMConstants{
                 logger.info("RMController created..");
 
                 this.rmProperties = rmProps;
+                
+                // This sets up a new AMQP connection factory and saves it in RMState for later use
+                try {
+                    SetupAMQPConnection newConn = new SetupAMQPConnection(rmProps);
+                } catch (Exception ex) {
+                    logger.error("Error in setting up AMQP Connection Factory " + ex);
+                }
                 
 		Timer timer = null;
 		synchronized(timers) {
@@ -428,6 +437,8 @@ public class RMController implements RMConstants{
                         logger.error("Exception while publishing to priority exchange");
                     }                    
                     
+                    //sleep(5);
+                    
                     return "SUCCESS";
                     
                 }
@@ -456,6 +467,14 @@ public class RMController implements RMConstants{
                     }
                     
                     return "ERROR";
+                }
+                
+                public  void sleep(int sec){
+                    try {
+                        Thread.sleep(sec*1000);                 //1000 milliseconds is one second.
+                    } catch(InterruptedException ex) {  
+                        Thread.currentThread().interrupt();
+                    }
                 }
                 
                 
