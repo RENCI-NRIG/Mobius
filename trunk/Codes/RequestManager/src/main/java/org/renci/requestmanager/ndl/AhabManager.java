@@ -271,7 +271,7 @@ public class AhabManager implements RMConstants{
                             
                         }
                         else { // condor pool 
-                            for (int j = 0; j < 5; j++){ // loop through (master + workers) ; 0th is master rest are workers
+                            for (int j = 0; j < (1 + SDXHTCondorDefaults.getDefaultNumWorkers()); j++){ // loop through (master + workers) ; 0th is master rest are workers
                                                                     
                                     String newNodeName = null;
                                     

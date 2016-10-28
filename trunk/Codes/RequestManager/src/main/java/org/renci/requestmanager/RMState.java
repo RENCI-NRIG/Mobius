@@ -8,6 +8,7 @@ package org.renci.requestmanager;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class RMState implements Serializable {
         private ArrayList<String> sliceIDQ = new ArrayList<String>();
         private ArrayList<String> nodesToBeDeletedQ = new ArrayList<String>();
         private Integer numNodesToBeDeleted = new Integer(0);
+        private ConnectionFactory factory = new ConnectionFactory();
         
         private Table<String, String, String> crossSitePriority = HashBasedTable.create(); // a table for flow priority
 
@@ -39,6 +41,14 @@ public class RMState implements Serializable {
             return fINSTANCE;
         }
 
+        public ConnectionFactory getFactory() {
+            return factory;
+        }
+
+        public void setFactory(ConnectionFactory factory) {
+            this.factory = factory;
+        }
+        
         public ArrayList<AppRequestInfo> getAppReqQ() {
             return appReqQ;
         }

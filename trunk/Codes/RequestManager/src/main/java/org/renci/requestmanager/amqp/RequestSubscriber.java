@@ -46,13 +46,18 @@ public class RequestSubscriber implements Runnable {
         
         this.rmProperties = rmProps;
         
-        setupAMQPFactory(rmProperties);
+        QUEUE_NAME = "testRequestQ";
+        
+        //setupAMQPFactory(rmProperties);
         
     }    
 
     public void run() {
         
         try {
+            
+            RMState rmState = RMState.getInstance();
+            factory = rmState.getFactory();
             
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
@@ -88,7 +93,8 @@ public class RequestSubscriber implements Runnable {
                     AppRequestInfo appReq = parseAndCreateAppRequest(message);
                     // Add it to app request queue
                     if(appReq != null){
-                        RMState rmState = RMState.getInstance();
+                        //RMState rmState = RMState.getInstance();
+                        rmState = RMState.getInstance();
                         
                         // Check if there is an unprocessed new request for same (sliceID, wfuuid) combo
                         if(appReq.getNewReq() != null){ // this is a new request
