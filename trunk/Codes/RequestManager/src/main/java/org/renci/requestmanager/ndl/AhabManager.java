@@ -201,7 +201,9 @@ public class AhabManager implements RMConstants{
 		//PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX"); // billion would be a gigabit; this is overall bandwidth of the slice
                 
                 // Put OpenFlowSDXController VM at WVN and 1 Gigabit
-                PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", "WVN (UCS-B series rack in Morgantown, WV, USA)", 1000000000); 
+                //PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", "WVN (UCS-B series rack in Morgantown, WV, USA)", 1000000000); 
+                //PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", "WVN (UCS-B series rack in Morgantown, WV, USA)", 500000000);
+                PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", rmProperties.getProperty(SDX_DEFAULT_SDXCONTROLLER_DOMAIN_PROP), 500000000);
                 
                 ArrayList<String> preferredDomains = populatePreferredDomains(rmProperties);
                 logger.info("Preferred set of domains = " + preferredDomains);
@@ -213,7 +215,10 @@ public class AhabManager implements RMConstants{
                 
                 s.commit(10,10);
                 
+                sleep(30);
+                
                 while(true){
+                                           
 			s.refresh();
 	
 			sdn = PriorityNetwork.get(s,"PegasusHTCondorSDX");

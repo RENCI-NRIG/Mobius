@@ -44,6 +44,14 @@ public interface RMConstants {
     
     public String USER_SSHKEY_PATH_PROP ="RM.user.sshKeyPath";
     
+    public String AMQP_SERVER_NAME_PROP ="RM.amqp.server.name";
+    public String AMQP_SERVER_PORT_PROP ="RM.amqp.server.port";
+    public String AMQP_SERVER_SSL_PROP ="RM.amqp.server.ssl";
+    public String AMQP_USER_NAME_PROP = "RM.amqp.user.name";
+    public String AMQP_USER_PASSWORD_PROP ="RM.amqp.user.password";
+    public String AMQP_VIRTUAL_HOST_PROP ="RM.amqp.virtualhost";
+    
+    public String SDX_DEFAULT_SDXCONTROLLER_DOMAIN_PROP ="RM.sdx.default.sdxcontroller.domain";
     
     
     public enum RequestTemplates {

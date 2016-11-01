@@ -66,9 +66,9 @@ public class RequestManagerMain
 	//TestDriver.testNewSlice1("/Users/anirban/.ssl/geni-anirban.pem");
           
 	// Code to start SDX + HTCondor slice
-        //AhabManager ahabManager = new AhabManager(rmProperties);
-        //String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx.1");
-        //System.out.println(resultStatus);
+        AhabManager ahabManager = new AhabManager(rmProperties);
+        String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx.2");
+        System.out.println(resultStatus);
         // End Code to start SDX + HTCondor slice
         
         //System.exit(0);

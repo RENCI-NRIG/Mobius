@@ -98,14 +98,21 @@ public class FlowPrioritySetupPublisher {
         System.out.println("Hello Anirban");
         
         ConnectionFactory factory = new ConnectionFactory();
-                //factory.setHost("gaul.isi.edu");
-                factory.setHost("stewie.isi.edu");
-                factory.setPort(5671);
-                factory.useSslProtocol();
+                
+//                factory.setHost("stewie.isi.edu");
+//                factory.setPort(5671);
+//                factory.useSslProtocol();
+//                factory.setUsername("anirban");
+//                factory.setPassword("panorama123");
+//                factory.setVirtualHost("panorama");   
+                
+                factory.setHost("147.72.248.11");
+                factory.setPort(5672);
+                //factory.useSslProtocol();
                 factory.setUsername("anirban");
-                //factory.setPassword("adamant123");
                 factory.setPassword("panorama123");
-                factory.setVirtualHost("panorama");        
+                factory.setVirtualHost("panorama");
+                
         
         Connection connection = null;
 
@@ -114,11 +121,11 @@ public class FlowPrioritySetupPublisher {
                 
                 connection = factory.newConnection();
                 System.out.println("Done creating connection " + i);
-                //try {
-                //    Thread.sleep(1*1000);                 //1000 milliseconds is one second.
-                //} catch(InterruptedException ex) {  
-                //    Thread.currentThread().interrupt();
-                //}
+                try {
+                    Thread.sleep(1*1000);                 //1000 milliseconds is one second.
+                } catch(InterruptedException ex) {  
+                    Thread.currentThread().interrupt();
+                }
                 connection.close();
             }
         } 
