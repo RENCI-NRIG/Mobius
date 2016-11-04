@@ -16,6 +16,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.ManifestPublisher;
@@ -66,9 +68,14 @@ public class RequestManagerMain
 	//TestDriver.testNewSlice1("/Users/anirban/.ssl/geni-anirban.pem");
           
 	// Code to start SDX + HTCondor slice
-        AhabManager ahabManager = new AhabManager(rmProperties);
-        String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx.2");
-        System.out.println(resultStatus);
+        if(rmProperties.getProperty(RMConstants.SDX_DEFAULT_CREATESLICE_PROP) != null){
+            if(rmProperties.getProperty(RMConstants.SDX_DEFAULT_CREATESLICE_PROP).equalsIgnoreCase("true")){
+                AhabManager ahabManager = new AhabManager(rmProperties);
+                String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+                String resultStatus = ahabManager.processNewSDXCondor(null, "anirban.sdx."+timeStamp);
+                System.out.println(resultStatus);
+            }
+        }
         // End Code to start SDX + HTCondor slice
         
         //System.exit(0);

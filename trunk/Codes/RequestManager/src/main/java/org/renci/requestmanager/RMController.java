@@ -20,6 +20,7 @@ import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 
 import org.renci.requestmanager.amqp.FlowPrioritySetupPublisher;
 import org.renci.requestmanager.amqp.SetupAMQPConnection;
+import org.renci.requestmanager.ndl.SDXHTCondorCreatorThread;
 
 /**
  *
@@ -214,15 +215,16 @@ public class RMController implements RMConstants{
                     
                     if(requestedTemplateType.startsWith(SDXCondorBasicTypeName)){
                         
-                        AhabManager ahabManager = new AhabManager(rmProperties);
-                        logger.info("Calling ahab to create slice for a request with basic type = " + SDXCondorBasicTypeName);
-                        String resultStatus = ahabManager.processNewSDXCondor(newReq, orcaSliceID);
-                        if (resultStatus != null){
-                            return "SUCCESS";
+                        try {
+                            Thread sdxCondorThread = new Thread(new SDXHTCondorCreatorThread(rmProperties, newReq, orcaSliceID));
+                            sdxCondorThread.start();
+                            logger.info("Started thread to create new SDX HTCondor slice...");
+                        } catch (Exception ex) {
+                            logger.error("Exception while starting SDXHTCondorCreator thread " + ex);
                         }
-                        else{
-                            return "ERROR";
-                        }
+                        
+                        return "SUCCESS";
+                        
                     }
                     else {
                         // Depending on the template type, call ndllib to generate appropriate request

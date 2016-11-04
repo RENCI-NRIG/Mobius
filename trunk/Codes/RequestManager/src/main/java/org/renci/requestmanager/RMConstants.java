@@ -52,6 +52,7 @@ public interface RMConstants {
     public String AMQP_VIRTUAL_HOST_PROP ="RM.amqp.virtualhost";
     
     public String SDX_DEFAULT_SDXCONTROLLER_DOMAIN_PROP ="RM.sdx.default.sdxcontroller.domain";
+    public String SDX_DEFAULT_CREATESLICE_PROP ="RM.sdx.default.createSlice";
     
     
     public enum RequestTemplates {
@@ -254,12 +255,18 @@ public interface RMConstants {
         private static final long defaultBW = 100000000 ; //100Mb/s TODO: check #0s 
         private static final int defaultStorage = 100; //100GB
         private static final int defaultNumWorkers = 2; // default number of condor worker vms
-        private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.2/genome-0.2.xml"; // defaul url to image xml file
-        private String defaultImageHash = "bff2c4eef5ebfc0713e781df7bd0ae26851381a1"; // hash of the image xml file
-        private String defaultImageName = "genome-0.2"; // default name of image
-        private String defaultDataImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-data-0.2/genome-data-0.2.xml"; // defaul url to image xml file
-        private String defaultDataImageHash = "f98504bfd8c16b50ae388ab2a7fadeb9e72c9f5c"; // hash of the image xml file
-        private String defaultDataImageName = "genome-data-0.2"; // default name of image
+        //private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.2/genome-0.2.xml"; // defaul url to image xml file
+        //private String defaultImageHash = "bff2c4eef5ebfc0713e781df7bd0ae26851381a1"; // hash of the image xml file
+        //private String defaultImageName = "genome-0.2"; // default name of image
+        private String defaultImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-0.3/genome-0.3.xml"; // defaul url to image xml file
+        private String defaultImageHash = "7f15dda620d6ee2082062373e7df115e124fa4d8"; // hash of the image xml file
+        private String defaultImageName = "genome-0.3"; // default name of image
+        //private String defaultDataImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-data-0.2/genome-data-0.2.xml"; // defaul url to image xml file
+        //private String defaultDataImageHash = "f98504bfd8c16b50ae388ab2a7fadeb9e72c9f5c"; // hash of the image xml file
+        //private String defaultDataImageName = "genome-data-0.2"; // default name of image
+        private String defaultDataImageUrl = "http://geni-images.renci.org/images/anirban/panorama/genome-data-0.3/genome-data-0.3.xml"; // defaul url to image xml file
+        private String defaultDataImageHash = "6e8240204858aa7ba9496bd728ef2b83f05d4521"; // hash of the image xml file
+        private String defaultDataImageName = "genome-data-0.3"; // default name of image
         private String defaultImageType = "XO Extra large";
         private String defaultPostbootMaster_MultiPoint = readPostboot("default.condor.master.multipoint.postboot"); // default postboot script for master - multipoint
         private String defaultPostbootMaster_SingleDomain = readPostboot("default.condor.master.singledomain.postboot"); // default postboot script for master - single domain
