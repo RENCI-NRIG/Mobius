@@ -1,3 +1,6 @@
+cd ../ahab
+mvn clean install -DskipTests
+cd ../RequestManager
 mvn clean install -DskipTests
 mvn package appassembler:generate-daemons
 mvn package appassembler:assemble
