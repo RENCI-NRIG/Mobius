@@ -105,13 +105,19 @@ public class RequestTestPublisher implements RMConstants{
         String message = buildMessageNewRequest(requestTemplateType, orcaSliceID, numWorkers, stitchportID);
         
         ConnectionFactory factory = new ConnectionFactory();
-	//factory.setHost("gaul.isi.edu");
-        factory.setHost("stewie.isi.edu");
-        factory.setPort(5671);
-        factory.useSslProtocol();
+        
+        factory.setHost("147.72.248.11");
+        factory.setPort(5672);
         factory.setUsername("anirban");
-        //factory.setPassword("adamant123");
         factory.setPassword("panorama123");
+        factory.setVirtualHost("panorama");
+        
+        //factory.setHost("stewie.isi.edu");
+        //factory.setPort(5671);
+        //factory.useSslProtocol();
+        //factory.setUsername("anirban");
+        //factory.setPassword("panorama123");
+        //factory.setVirtualHost("panorama");
 
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
