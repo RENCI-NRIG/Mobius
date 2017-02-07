@@ -21,13 +21,11 @@ public class ShadowQTestPublisher {
         public static void main(String[] argv) throws Exception {
 
             ConnectionFactory factory = new ConnectionFactory();
-	    //factory.setHost("gaul.isi.edu");
-            factory.setHost("stewie.isi.edu");
+            factory.setHost("XXXX.isi.edu");
             factory.setPort(5671);
             factory.useSslProtocol();
-            factory.setUsername("anirban");
-            //factory.setPassword("adamant123");
-            factory.setPassword("panorama123");
+            factory.setUsername("xxxxxx");
+            factory.setPassword("yyyyyy");
 
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();

@@ -42,8 +42,7 @@ public class SetupAMQPConnection implements RMConstants{
             logger.info("AMQP host: " + rmProps.getProperty(AMQP_SERVER_NAME_PROP));
         }
         else{
-            factory.setHost("stewie.isi.edu");
-            logger.info("AMQP host: " + "stewie.isi.edu");
+            logger.error("AMQP hostname missing");
         }
         
         if(rmProps.getProperty(AMQP_SERVER_PORT_PROP) != null){
@@ -51,8 +50,7 @@ public class SetupAMQPConnection implements RMConstants{
             logger.info("AMQP port: " + Integer.parseInt(rmProps.getProperty(AMQP_SERVER_PORT_PROP)));
         }
         else{
-            factory.setPort(5671); 
-            logger.info("AMQP port: 5671");
+            logger.error("AMQP port number missing");
         }
         
         if(rmProps.getProperty(AMQP_SERVER_SSL_PROP) != null){
@@ -74,8 +72,7 @@ public class SetupAMQPConnection implements RMConstants{
             logger.info("AMQP user: " + rmProps.getProperty(AMQP_USER_NAME_PROP));
         }
         else{
-            factory.setUsername("anirban");
-            logger.info("AMQP user: " + "anirban");
+            logger.error("AMQP username missing");
         }
         
         if(rmProps.getProperty(AMQP_USER_PASSWORD_PROP) != null){
@@ -83,8 +80,7 @@ public class SetupAMQPConnection implements RMConstants{
             logger.info("AMQP password: " + rmProps.getProperty(AMQP_USER_PASSWORD_PROP));
         }
         else{
-            factory.setPassword("panorama123");
-            logger.info("AMQP password: " + "panorama123");
+            logger.error("AMQP password missing");
         }
         
         if(rmProps.getProperty(AMQP_VIRTUAL_HOST_PROP) != null){
@@ -92,16 +88,8 @@ public class SetupAMQPConnection implements RMConstants{
             logger.info("AMQP virtualhost: " + rmProps.getProperty(AMQP_VIRTUAL_HOST_PROP));
         }
         else{
-            factory.setVirtualHost("panorama");
-            logger.info("AMQP virtualhost: " + "panorama");
+            logger.info("AMQP virtualhost missing");
         }
-        
-//        factory.setHost("stewie.isi.edu");
-//        factory.setPort(5671);
-//        factory.useSslProtocol();
-//        factory.setUsername("anirban");
-//        factory.setPassword("panorama123");
-//        factory.setVirtualHost("panorama");
         
         rmState.setFactory(factory);
         
