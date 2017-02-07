@@ -48,8 +48,6 @@ public class RequestSubscriber implements Runnable {
         
         QUEUE_NAME = "testRequestQ";
         
-        //setupAMQPFactory(rmProperties);
-        
     }    
 
     public void run() {
@@ -163,26 +161,7 @@ public class RequestSubscriber implements Runnable {
         }
         
     }
-    
-    /*
-    * Sets up AMQP factory for making connections
-    */
-    private void setupAMQPFactory(Properties rmProps) throws Exception{
-        
-        // TODO: Read from rmProps the following properties
-        
-        factory = new ConnectionFactory();
-        //factory.setHost("gaul.isi.edu");
-        factory.setHost("stewie.isi.edu");
-        factory.setPort(5671);
-        factory.useSslProtocol();
-        factory.setUsername("anirban");
-        //factory.setPassword("adamant123");
-        factory.setPassword("panorama123");
-        factory.setVirtualHost("panorama");
-        QUEUE_NAME = "testRequestQ"; // populated from rmProps
-        
-    }
+
     
     private AppRequestInfo parseAndCreateAppRequest(String amqpMesg){
         

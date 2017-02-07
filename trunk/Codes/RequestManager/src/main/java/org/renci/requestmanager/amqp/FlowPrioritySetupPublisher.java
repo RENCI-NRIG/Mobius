@@ -21,8 +21,6 @@ public class FlowPrioritySetupPublisher {
 
         
     protected Logger logger = null;
-
-    private static Properties rmProperties = null;
     
     protected ConnectionFactory factory = null;
     private static String EXCHANGE_NAME = null;    
@@ -33,28 +31,8 @@ public class FlowPrioritySetupPublisher {
         logger = Logger.getLogger(this.getClass());
         logger.info("FlowPrioritySetupPublisher created..");
 
-        this.rmProperties = rmProps;
-
-        //setupAMQPFactory(rmProperties);
     }
-    
-    private void setupAMQPFactory(Properties rmProps) throws Exception{
         
-        // TODO: Read from rmProps the following properties
-        
-        factory = new ConnectionFactory();
-	//factory.setHost("gaul.isi.edu");
-        factory.setHost("stewie.isi.edu");
-        factory.setPort(5671);
-        factory.useSslProtocol();
-        factory.setUsername("anirban");
-        //factory.setPassword("adamant123");
-        factory.setPassword("panorama123");
-        factory.setVirtualHost("panorama");
-               
-        EXCHANGE_NAME = "priority"; // populated from rmProps
-        
-    }    
     
     public void publishFlowPrioritySetupComplete(String exchangeName, String routingKey){
 
@@ -95,23 +73,21 @@ public class FlowPrioritySetupPublisher {
     }
     
     public static void main(String[] argv) throws Exception{
-        System.out.println("Hello Anirban");
         
         ConnectionFactory factory = new ConnectionFactory();
-                
-//                factory.setHost("stewie.isi.edu");
-//                factory.setPort(5671);
-//                factory.useSslProtocol();
-//                factory.setUsername("anirban");
-//                factory.setPassword("panorama123");
-//                factory.setVirtualHost("panorama");   
-                
-                factory.setHost("147.72.248.11");
-                factory.setPort(5672);
-                //factory.useSslProtocol();
-                factory.setUsername("anirban");
-                factory.setPassword("panorama123");
-                factory.setVirtualHost("panorama");
+        
+        // TODO: change these properties before testing main method
+        
+        factory.setHost("abcd.isi.edu");
+        factory.setPort(5671);
+        factory.useSslProtocol();
+
+        //factory.setHost("XXX.72.248.11");
+        //factory.setPort(5672);
+
+        factory.setUsername("XXXXXX");
+        factory.setPassword("YYYYYY");
+        factory.setVirtualHost("ZZZZZZ");
                 
         
         Connection connection = null;

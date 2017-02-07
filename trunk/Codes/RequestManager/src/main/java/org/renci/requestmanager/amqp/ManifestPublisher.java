@@ -17,6 +17,7 @@ import java.util.TimerTask;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.renci.requestmanager.AppRequestInfo;
+import org.renci.requestmanager.RMConstants;
 import org.renci.requestmanager.RMState;
 import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
@@ -26,7 +27,7 @@ import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
  * @author anirban
  * This class is responsible for publishing manifests to an exchange
  */
-public class ManifestPublisher {
+public class ManifestPublisher implements RMConstants{
     
     private static ArrayList<Timer> timers = new ArrayList<Timer>();
     
@@ -67,16 +68,62 @@ public class ManifestPublisher {
     */
     private void setupAMQPFactory(Properties rmProps) throws Exception{
         
-        // TODO: Read from rmProps the following properties
-        
         factory = new ConnectionFactory();
-        //factory.setHost("gaul.isi.edu");
-        factory.setHost("stewie.isi.edu");
-        factory.setPort(5671);
-        factory.useSslProtocol();
-        factory.setUsername("anirban");
-        //factory.setPassword("adamant123");
-        factory.setPassword("panorama123");       
+        
+        if(rmProps.getProperty(AMQP_SERVER_NAME_PROP) != null){
+            factory.setHost(rmProps.getProperty(AMQP_SERVER_NAME_PROP));
+            logger.info("AMQP host: " + rmProps.getProperty(AMQP_SERVER_NAME_PROP));
+        }
+        else{
+            logger.error("AMQP hostname missing");
+        }
+        
+        if(rmProps.getProperty(AMQP_SERVER_PORT_PROP) != null){
+            factory.setPort(Integer.parseInt(rmProps.getProperty(AMQP_SERVER_PORT_PROP)));
+            logger.info("AMQP port: " + Integer.parseInt(rmProps.getProperty(AMQP_SERVER_PORT_PROP)));
+        }
+        else{
+            logger.error("AMQP port number missing");
+        }
+        
+        if(rmProps.getProperty(AMQP_SERVER_SSL_PROP) != null){
+            String useSSLString = rmProps.getProperty(AMQP_SERVER_SSL_PROP);
+            if(useSSLString.equalsIgnoreCase("true")){
+                factory.useSslProtocol();
+                logger.info("AMQP useSSL: " + "true");
+            }
+            else{
+                logger.info("AMQP useSSL: " + "false");
+            }
+        }
+        else{
+            logger.info("AMQP useSSL: " + "false");
+        }
+        
+        if(rmProps.getProperty(AMQP_USER_NAME_PROP) != null){
+            factory.setUsername(rmProps.getProperty(AMQP_USER_NAME_PROP));
+            logger.info("AMQP user: " + rmProps.getProperty(AMQP_USER_NAME_PROP));
+        }
+        else{
+            logger.error("AMQP username missing");
+        }
+        
+        if(rmProps.getProperty(AMQP_USER_PASSWORD_PROP) != null){
+            factory.setPassword(rmProps.getProperty(AMQP_USER_PASSWORD_PROP));
+            logger.info("AMQP password: " + rmProps.getProperty(AMQP_USER_PASSWORD_PROP));
+        }
+        else{
+            logger.error("AMQP password missing");
+        }
+        
+        if(rmProps.getProperty(AMQP_VIRTUAL_HOST_PROP) != null){
+            factory.setVirtualHost(rmProps.getProperty(AMQP_VIRTUAL_HOST_PROP));
+            logger.info("AMQP virtualhost: " + rmProps.getProperty(AMQP_VIRTUAL_HOST_PROP));
+        }
+        else{
+            logger.info("AMQP virtualhost missing");
+        }
+           
         EXCHANGE_NAME = "testManifestExchange"; // populated from rmProps
         
     }    
