@@ -369,7 +369,8 @@ public class AhabManager implements RMConstants{
 		
 		Slice s = Slice.create(sliceProxy, sctx, sliceName);
 		
-		PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX");
+		String controllerSite = "WVN (UCS-B series rack in Morgantown, WV, USA)";
+		PriorityNetwork sdn = PriorityNetwork.create(s, "PegasusHTCondorSDX", controllerSite);
                 
                 ArrayList<String> preferredDomains = populatePreferredDomains(rmProperties);
                 logger.info("Preferred set of domains = " + preferredDomains);
