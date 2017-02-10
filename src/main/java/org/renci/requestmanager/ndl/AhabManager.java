@@ -17,19 +17,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.renci.ahab.libndl.Slice;
 import org.renci.ahab.libndl.extras.PriorityNetwork;
+import org.renci.ahab.libndl.resources.manifest.Node;
+import org.renci.ahab.libndl.resources.request.BroadcastNetwork;
 import org.renci.ahab.libndl.resources.request.ComputeNode;
+import org.renci.ahab.libndl.resources.request.Interface;
+import org.renci.ahab.libndl.resources.request.StitchPort;
+import org.renci.ahab.libndl.resources.request.StorageNode;
 import org.renci.ahab.libtransport.*;
 import org.renci.ahab.libtransport.util.ContextTransportException;
 import org.renci.ahab.libtransport.util.SSHAccessTokenFileFactory;
 import org.renci.ahab.libtransport.util.TransportException;
 import org.renci.ahab.libtransport.util.UtilTransportException;
 import org.renci.ahab.libtransport.xmlrpc.XMLRPCProxyFactory;
+import org.renci.requestmanager.LinkRequestInfo;
 import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMConstants;
@@ -147,6 +154,10 @@ public class AhabManager implements RMConstants{
             
         }        
         
+        
+        /*
+        This creates a basic PegasusHTCondorSDX slice
+        */
         public String processNewSDXCondor(NewRequestInfo newReq, String orcaSliceID){
         
                 System.out.println("processNewSDXCondor: START");
@@ -580,4 +591,498 @@ public class AhabManager implements RMConstants{
 		}
 		return "";
 	}
+        
+        /*
+        This method generates a HTCondor pool request with various parameters passed through NewRequestInfo
+        */
+        public String generateNewCondorRequest(NewRequestInfo newReq, String orcaSliceID){
+
+
+            System.out.println("generateNewCondorRequest: START");
+
+
+            String pemLocation = rmProperties.getProperty(USER_CERTKEYFILE_PATH_PROP);
+            String sshKeyLocation = rmProperties.getProperty(USER_SSHKEY_PATH_PROP);
+            String controllerUrl = rmProperties.getProperty(DEFAULT_CONTROLLERURL_PROP);
+
+            String sliceName =  orcaSliceID;
+
+
+            ISliceTransportAPIv1 sliceProxy = getSliceProxy(pemLocation, controllerUrl);		
+
+            //SSH context
+            SliceAccessContext<SSHAccessToken> sctx = new SliceAccessContext<>();
+            try {
+                SSHAccessTokenFileFactory fac;
+                fac = new SSHAccessTokenFileFactory(sshKeyLocation, false);
+
+                SSHAccessToken t = fac.getPopulatedToken();			
+                sctx.addToken("root", "root", t);
+                sctx.addToken("root", t);
+            } catch (UtilTransportException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+
+
+
+            Slice s = Slice.create(sliceProxy, sctx, sliceName);
+
+
+            // Parse what fields are present in newReq and generate appropriate ndl request
+            String templateType = newReq.getTemplateType();
+            logger.debug("Start generating ndl request for request type : " + templateType);
+
+            // Basic master-worker topology for Condor Pool
+            ComputeNode master     = s.addComputeNode("Master");
+            ComputeNode workers    = s.addComputeNode("Workers");
+            BroadcastNetwork net   = s.addBroadcastLink("Network");
+
+            Interface masterIface  = net.stitch(master);
+            Interface workersIface = net.stitch(workers);
+
+            // Find if user requested particular image
+            // if any of the image attibutes is null, use default image
+            if(newReq.getNewImageUrl() == null || newReq.getNewImageHash() == null || newReq.getNewImageName() == null){ 
+                logger.info("Using image: " + CondorDefaults.getDefaultImageUrl() + " | " + CondorDefaults.getDefaultImageHash() + " | " + CondorDefaults.getDefaultImageName());
+                master.setImage(CondorDefaults.getDefaultImageUrl(), CondorDefaults.getDefaultImageHash(), CondorDefaults.getDefaultImageName());            
+                workers.setImage(CondorDefaults.getDefaultImageUrl(), CondorDefaults.getDefaultImageHash(), CondorDefaults.getDefaultImageName()); 
+            }
+            else {
+                logger.info("Using image: " + newReq.getNewImageUrl() + " | " + newReq.getNewImageHash()+ " | " + newReq.getNewImageName());
+                master.setImage(newReq.getNewImageUrl(), newReq.getNewImageHash(), newReq.getNewImageName());
+                workers.setImage(newReq.getNewImageUrl(), newReq.getNewImageHash(), newReq.getNewImageName());
+            }
+
+            // Get a domain randomly from the set of available domains
+
+            //ArrayList<String> preferredDomains = new ArrayList<String> ();
+            //preferredDomains.add("RENCI (Chapel Hill, NC USA) XO Rack");
+            //preferredDomains.add("TAMU (College Station, TX, USA) XO Rack");
+            //preferredDomains.add("UCD (Davis, CA USA) XO Rack");
+
+            ArrayList<String> preferredDomains = populatePreferredDomains(rmProperties);
+            logger.info("Preferred set of domains = " + preferredDomains);
+
+            ArrayList<String> finalDomains = new ArrayList<String>();
+            // Get list of all domains from ndllib
+            ArrayList<String> allDomains = new ArrayList<String> (Slice.getDomains());
+            if(allDomains != null && !allDomains.isEmpty()){
+                logger.info("There are " + allDomains.size() + " available domains");
+                logger.info("The available domains from ndllibs are " + allDomains);
+                if(preferredDomains != null && !preferredDomains.isEmpty()){ // there is a set of preferred domains; Use only those
+                    for (String pDomain: preferredDomains){
+                        if(allDomains.contains(pDomain)){ // valid preferred domain
+                            finalDomains.add(pDomain);
+                        }
+                    }
+                }
+                else{ // no preferred domains
+                    finalDomains = allDomains; // all domains can be used
+                }
+            }
+            else{ // ndllib didn't return available domains
+                logger.info("ndllib didn't return available set of domains");
+                if(preferredDomains != null && !preferredDomains.isEmpty()){
+                    logger.info("Using preferredDomains in configuration file as final set of domains");
+                    finalDomains = preferredDomains; // whatever is specifed through the configuration becomes the finalDomains;l trust preferred domain names
+                }
+                else{
+                    logger.error("No valid domains found");
+                    logger.error("No unbound request supported yet.. returning null...");
+                    return null;
+                }
+            }
+
+            //int numDomains = ComputeDomains.values().length;
+            //int pick = new Random().nextInt(numDomains);
+            //String domainName1 = ComputeDomains.values()[pick].name; // master domain
+            //String domainName2 = ComputeDomains.values()[(pick+1)%numDomains].name; 
+
+            logger.info("Final set of domains used = " + finalDomains);
+
+            int numDomains = finalDomains.size();
+            int pick = new Random().nextInt(numDomains);
+            String domainName1 = finalDomains.get(pick);
+            String domainName2 = finalDomains.get((pick+1)%numDomains);
+
+            // Choose domains for master and worker
+            if(templateType.contains(MultiSuffix)){ // master and workers requested to be in separate domains
+                logger.info("Using master domain = " + domainName1);
+                logger.info("Using workers domain = " + domainName2);
+                master.setDomain(domainName1);
+                workers.setDomain(domainName2);
+            }
+            else { // master and worker in the same domain
+                logger.info("Using master domain = " + domainName1);
+                logger.info("Using workers domain = " + domainName1);
+                master.setDomain(domainName1);
+                workers.setDomain(domainName1);
+            }
+
+            // Choose postbootscript for master
+            if(newReq.getNewPostbootMaster() == null){ // No postboot script supplied by user; use default postboot script
+                if(templateType.contains(MultiSuffix)){ // 
+                    logger.info("Using default multi-point postboot script for master");
+                    CondorDefaults cd = new CondorDefaults();
+                    master.setPostBootScript(cd.getDefaultPostbootMaster_MultiPoint());
+                }
+                else{
+                    logger.info("Using default single domain postboot script for master");
+                    CondorDefaults cd = new CondorDefaults();
+                    master.setPostBootScript(cd.getDefaultPostbootMaster_SingleDomain());
+                }
+            }
+            else {
+                logger.info("Using user-supplied postboot script for master");
+                master.setPostBootScript(newReq.getNewPostbootMaster());
+            }
+
+            // Choose postbootscript for workers
+            if(newReq.getNewPostbootWorker() == null){ // No postboot script supplied by user; use default postboot script
+                if(templateType.contains(MultiSuffix)){
+                    logger.info("Using default multi-point postboot script for workers");
+                    CondorDefaults cd = new CondorDefaults();
+                    workers.setPostBootScript(cd.getDefaultPostbootWorker_MultiPoint());
+                }
+                else{
+                    logger.info("Using default single domain postboot script for workers");
+                    CondorDefaults cd = new CondorDefaults();
+                    workers.setPostBootScript(cd.getDefaultPostbootWorker_SingleDomain());
+                }
+            }
+            else {
+                logger.info("Using user-supplied postboot script for workers");
+                workers.setPostBootScript(newReq.getNewPostbootWorker());
+            }
+
+            // Choose number of workers, max nodecount 
+            if(newReq.getNewCompRes() <= 0){
+                logger.info("Using default number of workers = " + CondorDefaults.getDefaultNumWorkers());
+                workers.setNodeCount(CondorDefaults.getDefaultNumWorkers());
+            }
+            else{
+                logger.info("Using user-supplied number of workers = " + newReq.getNewCompRes());
+                workers.setNodeCount(newReq.getNewCompRes());            
+            }
+
+            workers.setMaxNodeCount(CondorDefaults.getDefaultMaxNumWorkers());
+
+            master.setNodeCount(1);
+            master.setMaxNodeCount(1);
+
+            // Choose bandwidth between compute resources
+            if(newReq.getNewBandwidth() <= 0){
+                logger.info("Using default bandwidth between compute resources = " + CondorDefaults.getDefaultBW());
+                net.setBandwidth(CondorDefaults.getDefaultBW());
+            }
+            else{
+                logger.info("Using user-supplied bandwidth between compute resources = " + newReq.getNewBandwidth());
+                net.setBandwidth(newReq.getNewBandwidth());
+            }
+
+            // Choose instance type
+            master.setNodeType("XO Large");
+            workers.setNodeType("XO Large");
+
+            // At this point basic condor cluster is ready, without IP address assignment
+
+            // Now add storage or stitchports, if either is requested
+
+            // Storage: TODO: Ask Paul how to do this
+            if(templateType.contains(StorageSuffix)){ //Storage is requested
+                // Create new storage node and attach to master node
+                // TODO: Handle storage
+                BroadcastNetwork storageNet = s.addBroadcastLink("StorageNetwork");
+                StorageNode storage = s.addStorageNode("Storage");
+
+                Interface masterStorageIface  = storageNet.stitch(master);
+                Interface storageStorageIface  = storageNet.stitch(storage);
+
+                // Set properties of storage
+                logger.info("Setting domain for Storage to " + domainName1);
+                storage.setDomain(domainName1); // same as master domain
+
+                if(newReq.getNewStorage() <= 0){
+                    logger.info("Using default amount of storage = " + CondorDefaults.getDefaultStorage());
+                    storage.setCapacity(CondorDefaults.getDefaultStorage());
+                }
+                else{
+                    logger.info("Using user-supplied amount of storage = " + newReq.getNewStorage());
+                    storage.setCapacity(newReq.getNewStorage());
+                }
+
+            }
+
+
+            // Stitchport + autoIP
+            if(templateType.contains(SPSuffix)){ // Stitchport requested
+
+                logger.info("request includes request for stitchport");
+                // TODO: Read LinkRequestInfo inside newReq; query SP mapper and get these properties
+
+                LinkRequestInfo linkReq = newReq.getNewLinkInfo();
+                if(linkReq != null){
+                    String stitchPortID = linkReq.getStitchPortID();
+
+                    SPMapperClient spMapperClient = new SPMapperClient(logger);
+                    SPMapperClient.SPInfo spInfo = spMapperClient.getSPInfo(stitchPortID);
+
+                    if(spInfo != null){
+                        //TODO: FIX this
+                        int label = spInfo.getVlanTagSet().get(0); // get the first available vlan tag
+                        String port = spInfo.getPortSet().get(0);
+
+                        StitchPort  data       = s.addStitchPort("Data", Integer.toString(label),port,10000000000l);
+                        Interface dataIface    = net.stitch(data);
+
+                        logger.info("Using stitchport vlan tag = " + label);
+                        logger.info("Using stitchport port urn = " + port);
+
+                        // set bandwidth with stitchport bandwidth if that is more then the bandwidth of broadcast network                
+                        if(linkReq.getLinkBandwidth() > 0 && linkReq.getLinkBandwidth() > net.getBandwidth()){
+                            logger.info("Using user-supplied link to SP bandwidth as the slice bandwidth");
+                            net.setBandwidth(linkReq.getLinkBandwidth());
+                        }
+
+                        // TODO: put constraints on auto-IP
+                        ArrayList<String> subnetSet = spInfo.getSubnetSet();
+                        String firstSubnet = subnetSet.get(0); // "10.32.8.0/24"
+                        String firstSubnetNetwork = firstSubnet.split("/")[0]; // "10.32.8.0"
+                        String firstSubnetMask = firstSubnet.split("/")[1]; // "24"
+                        logger.info("passing " + firstSubnetNetwork + " and " + firstSubnetMask + " to ndllib's setIPSubnet");
+                        net.setIPSubnet(firstSubnetNetwork, Integer.parseInt(firstSubnetMask));
+
+                        net.clearAvailableIPs(); 
+                        ArrayList<String> availIPSet = spInfo.getAllowedIPSetFirstSubnet();
+                        logger.info(" passing to ndllib as available IPs: " + availIPSet);
+                        for (String ip: availIPSet){
+                            net.addAvailableIP(ip);
+                        }
+
+                        logger.info("availIPSet size = " + availIPSet.size());
+                        // TODO: Fix the argument to setMaxNodeCount: (availIPSet.size() - 1 ) is the correct one
+                        workers.setMaxNodeCount(availIPSet.size() - 2);
+                        //workers.setMaxNodeCount(5);
+
+                        // NOTE: If we have to deal with multiple subnets and allowed ips in future, we have that info in spInfo.getAllIPInfo()
+
+                    }              
+
+                }
+
+                s.autoIP();
+            }
+            else{ // No SP requested
+                s.autoIP();
+            }
+
+            //logger.debug("Generated request = " + "\n" + s.getRequest());
+
+            // For debugging saving the request to a file in /tmp
+            //s.save("/tmp/generatedRequest.rdf");
+
+            return (s.getRequest());        
+
+        }        
+        
+        public String generateNewHadoopRequest(NewRequestInfo newReq){
+            return null;
+        }
+    
+        public String generateNewMPIRequest(NewRequestInfo newReq){
+            return null;
+        }
+        
+        
+        public String getSliceManifestStatus(String manifest){
+                        
+            Slice s = Slice.loadManifest(manifest);
+            // TODO: Looks like s.getState() is not implemented
+            return s.getState();
+            
+            
+        }
+        
+        public int getNumWorkersInManifest(String manifest){
+        
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Workers..");
+                return -1;
+            }
+            int numWorkers = 0;
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                numWorkers++;
+            }
+            logger.info("There are " + numWorkers + " worker nodes in the current manifest");
+            return numWorkers;
+        
+        }
+        
+        public int getNumActiveWorkersInManifest(String manifest){
+
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Workers..");
+                return -1;
+            }
+            int numActiveWorkers = 0;
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(mn.getState().equalsIgnoreCase("Active")){
+                    numActiveWorkers++;
+                }
+            }
+            logger.info("There are " + numActiveWorkers + " Active worker nodes in the current manifest");
+            return numActiveWorkers;
+
+        }        
+        
+        public int getNumTicketedWorkersInManifest(String manifest){
+        
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Workers..");
+                return -1;
+            }
+            int numTicketedWorkers = 0;
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(mn.getState().equalsIgnoreCase("Ticketed")){
+                    numTicketedWorkers++;
+                }
+            }
+            logger.info("There are " + numTicketedWorkers + " Ticketed worker nodes in the current manifest");
+            return numTicketedWorkers;
+        
+        }    
+
+        public int getNumNascentWorkersInManifest(String manifest){
+
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Workers..");
+                return -1;
+            }
+            int numNascentWorkers = 0;
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(mn.getState().equalsIgnoreCase("Nascent")){
+                    numNascentWorkers++;
+                }
+            }
+            logger.info("There are " + numNascentWorkers + " Nascent worker nodes in the current manifest");
+            return numNascentWorkers;
+
+        }    
+    
+        public boolean areAllWorkersInManifestActive(String manifest){
+
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Workers..");
+                return false;
+            }
+
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(!mn.getState().equalsIgnoreCase("Active")){
+                    return false;
+                }
+            }
+            // Code gets here when all are "Active"
+            return true;
+
+        }
+        
+        public String getPublicIPMasterInManifest(String manifest){
+        
+            Slice s = Slice.loadManifest(manifest);
+            ComputeNode cn = (ComputeNode) s.getResourceByName("Master");
+            if(cn == null){
+                logger.error("Manifest doesn't have a Nodegroup named Master..");
+                return null;
+            }
+
+            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
+                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
+                if(mn.getState().equalsIgnoreCase("Active")){
+                    // returns the public IP of the first Active node in Master nodegroup; since there is only one 
+                    // master node in the nodegroup, this is fine
+                    return mn.getPublicIP();
+                }
+            }
+
+            return null;        
+        }
+        
+        
+        private void doSSHAndKillCondor(String publicIP) {
+        
+            String scriptName = rmProperties.getProperty(KILLCONDORONDELETE_SSH_SCRIPTNAME_PROP_NAME);
+            if (scriptName == null || scriptName.isEmpty()){
+                logger.error("No condor delete script specified in rm.properties.. can't ssh and stop condor on worker..");
+                return;
+            }
+
+            String pathToSSHPrivKey = rmProperties.getProperty(KILLCONDORONDELETE_SSH_PRIVKEY_PROP_NAME);
+            if (pathToSSHPrivKey == null || pathToSSHPrivKey.isEmpty()){
+                logger.error("No ssh priv key path specified in rm.properties.. can't ssh and stop condor on worker..");
+                return;
+            }
+
+            String sshOpts = "-q -o PreferredAuthentications=publickey -o HostbasedAuthentication=no -o PasswordAuthentication=no -o StrictHostKeyChecking=no";
+            String hostName = publicIP;
+
+            String sshUserName = rmProperties.getProperty(KILLCONDORONDELETE_SSH_USER_PROP_NAME);
+            if(sshUserName == null || sshUserName.isEmpty()){
+                sshUserName = "root";
+            }
+
+            logger.info("Using " + sshUserName + " user to ssh to " + publicIP);
+            String sshCmd = "ssh" + " " + sshOpts + " " + "-i" + " " + pathToSSHPrivKey + " " + sshUserName + "@" + hostName + " " + scriptName;
+            logger.info("sshCmd = \n " + sshCmd);
+
+            try {
+                    Runtime rt = Runtime.getRuntime();
+                    Process pr = rt.exec(sshCmd);
+
+                    BufferedReader input = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+
+                    String line=null;
+
+                    while((line=input.readLine()) != null) {
+                        logger.info(line);
+                    }
+
+                    int exitVal = pr.waitFor();
+                    logger.info("ssh command exited with code " + exitVal);
+                    if(exitVal != 0){
+                        logger.error("Problem ssh-ing and running command in " + sshUserName + "@" + hostName);
+                        return;
+                    }
+                    else{
+                        logger.info("Successfully ssh-ed and killed condor daemon on " + hostName);
+                        return;
+                    }
+
+            } catch(Exception e) {
+                System.out.println(e.toString());
+                e.printStackTrace();
+                logger.error("Exception while running ssh command " + e);
+                return;
+            }
+        
+        
+        
+        }
+        
 }
