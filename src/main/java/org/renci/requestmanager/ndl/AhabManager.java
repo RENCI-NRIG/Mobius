@@ -635,13 +635,35 @@ public class AhabManager implements RMConstants{
             logger.debug("Start generating ndl request for request type : " + templateType);
 
             // Basic master-worker topology for Condor Pool
-            ComputeNode master     = s.addComputeNode("Master");
-            ComputeNode workers    = s.addComputeNode("Workers");
+            //ComputeNode master     = s.addComputeNode("Master");
+            //ComputeNode workers    = s.addComputeNode("Workers");
+            //BroadcastNetwork net   = s.addBroadcastLink("Network");
+
+            //Interface masterIface  = net.stitch(master);
+            //Interface workersIface = net.stitch(workers);
+
+            int workersNodeGroupSize = 0;
+            // Choose number of workers, max nodecount 
+            if(newReq.getNewCompRes() <= 0){
+                logger.info("Using default number of workers = " + CondorDefaults.getDefaultNumWorkers());
+                workersNodeGroupSize = CondorDefaults.getDefaultNumWorkers();
+            }
+            else{
+                logger.info("Using user-supplied number of workers = " + newReq.getNewCompRes());
+                workersNodeGroupSize = newReq.getNewCompRes();          
+            }
+
+            // Basic master-worker topology for Condor Pool
             BroadcastNetwork net   = s.addBroadcastLink("Network");
-
+            ComputeNode master  = s.addComputeNode("Master");
             Interface masterIface  = net.stitch(master);
-            Interface workersIface = net.stitch(workers);
-
+            // This will create the required number of workers and plumb them to the broadcast network, net
+            NodeGroup workers = new NodeGroup(workersNodeGroupSize, "Workers", s, net);  
+                        
+            workers.setMaxNodeCount(CondorDefaults.getDefaultMaxNumWorkers());
+            master.setNodeCount(1);
+            master.setMaxNodeCount(1);
+                        
             // Find if user requested particular image
             // if any of the image attibutes is null, use default image
             if(newReq.getNewImageUrl() == null || newReq.getNewImageHash() == null || newReq.getNewImageName() == null){ 
@@ -756,21 +778,6 @@ public class AhabManager implements RMConstants{
                 logger.info("Using user-supplied postboot script for workers");
                 workers.setPostBootScript(newReq.getNewPostbootWorker());
             }
-
-            // Choose number of workers, max nodecount 
-            if(newReq.getNewCompRes() <= 0){
-                logger.info("Using default number of workers = " + CondorDefaults.getDefaultNumWorkers());
-                workers.setNodeCount(CondorDefaults.getDefaultNumWorkers());
-            }
-            else{
-                logger.info("Using user-supplied number of workers = " + newReq.getNewCompRes());
-                workers.setNodeCount(newReq.getNewCompRes());            
-            }
-
-            workers.setMaxNodeCount(CondorDefaults.getDefaultMaxNumWorkers());
-
-            master.setNodeCount(1);
-            master.setMaxNodeCount(1);
 
             // Choose bandwidth between compute resources
             if(newReq.getNewBandwidth() <= 0){

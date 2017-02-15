@@ -40,7 +40,7 @@ public class AhabManagerTest {
         System.out.println("Request generated: " + "\n" + condorRequest);
         
         try {
-            FileUtils.writeStringToFile(new File("/Users/anirbanmandal/Documents/RENCI-research/Codes/mobius/Mobius/condorrequest.txt"), condorRequest);
+            FileUtils.writeStringToFile(new File("/tmp/condorrequest.rdf"), condorRequest);
             
             // assert statements
             //assertEquals("10 x 0 must be 0", 0, tester.multiply(10, 0));
@@ -49,11 +49,38 @@ public class AhabManagerTest {
         } catch (IOException ex) {
             Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+                
     }
     
     
-        /**
+    @Test
+    public void testHTCondorRequestMultiPoint() {
+            
+        processPreferences();
+            
+        AhabManager ahabManager = new AhabManager(rmProps); // MyClass is tested
+        
+        NewRequestInfo newReq = new NewRequestInfo("wfuuidxxxx", "condor_multi", 2, -1, -1, null);
+        
+        String condorRequest = ahabManager.generateNewCondorRequest(newReq, "anirban.condor.multi");
+
+        System.out.println("Request generated: " + "\n" + condorRequest);
+        
+        try {
+            FileUtils.writeStringToFile(new File("/tmp/condorrequest.multipoint.rdf"), condorRequest);
+            
+            // assert statements
+            //assertEquals("10 x 0 must be 0", 0, tester.multiply(10, 0));
+            //assertEquals("0 x 10 must be 0", 0, tester.multiply(0, 10));
+            //assertEquals("0 x 0 must be 0", 0, tester.multiply(0, 0));
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+                
+    }
+    
+    
+    /**
      * Read and process preferences file
      */
     protected static void processPreferences() {
