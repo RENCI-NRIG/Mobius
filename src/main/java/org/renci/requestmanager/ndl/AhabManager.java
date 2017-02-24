@@ -12,6 +12,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +30,12 @@ import org.renci.ahab.libndl.resources.manifest.Node;
 import org.renci.ahab.libndl.resources.request.BroadcastNetwork;
 import org.renci.ahab.libndl.resources.request.ComputeNode;
 import org.renci.ahab.libndl.resources.request.Interface;
+import org.renci.ahab.libndl.resources.request.InterfaceNode2Net;
+import org.renci.ahab.libndl.resources.request.Network;
 import org.renci.ahab.libndl.resources.request.StitchPort;
 import org.renci.ahab.libndl.resources.request.StorageNode;
+import org.renci.ahab.libndl.util.IP4Assign;
+import org.renci.ahab.libndl.util.IP4Subnet;
 import org.renci.ahab.libtransport.*;
 import org.renci.ahab.libtransport.util.ContextTransportException;
 import org.renci.ahab.libtransport.util.SSHAccessTokenFileFactory;
@@ -42,6 +48,10 @@ import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMConstants;
 import static org.renci.requestmanager.RMConstants.PREFERRED_DOMAINS_STRING_NAME;
 import org.renci.requestmanager.RMState;
+import org.renci.requestmanager.amqp.DisplayPublisher;
+import org.renci.requestmanager.orcaxmlrpc.CleanupCondorAndVM;
+import org.renci.requestmanager.policy.IModifyPolicy;
+import org.renci.requestmanager.policy.SimpleUnitsModifyPolicy;
 
 /**
  *
@@ -658,6 +668,7 @@ public class AhabManager implements RMConstants{
             ComputeNode master  = s.addComputeNode("Master");
             Interface masterIface  = net.stitch(master);
             // This will create the required number of workers and plumb them to the broadcast network, net
+            // The nodes in the nodegroup will be named "Workers-0", "Workers-1", and so on
             NodeGroup workers = new NodeGroup(workersNodeGroupSize, "Workers", s, net);  
                         
             workers.setMaxNodeCount(CondorDefaults.getDefaultMaxNumWorkers());
@@ -903,10 +914,332 @@ public class AhabManager implements RMConstants{
         }
         
         
+        public String generateModifyComputeRequest(ModifyRequestInfo modReq, String currManifest) {
+        
+            Slice s = Slice.loadManifest(currManifest);
+
+            //logger.debug("SliceState = " + s.getState());
+
+            // Run policy to determine change in number of workers
+            IModifyPolicy modPolicy = new SimpleUnitsModifyPolicy(logger);
+            int change = modPolicy.determineChangeInNumWorkers(modReq, currManifest);
+
+            if(change == 0){
+                logger.info("Modify policy determined that no new nodes should be added, and no existing node should be deleted");
+                return null;
+            }        
+
+            if(change < 0){ // Need to delete some workers           
+                int numDeleted = 0;
+                int numNodesToDelete = (-1)*change;
+
+                // Go through once to delete the "Tickted" ones first
+                for (ComputeNode cn : s.getComputeNodes()){
+                    if(cn.getName().contains("Workers")){
+                        //assuming getURL() returns a unique string for the node
+                        logger.info("computeNode: " + cn.getURL() + ", state = " + cn.getState()); 
+                        if(numDeleted < numNodesToDelete){
+                            if(cn.getState().equalsIgnoreCase("Ticketed")){ 
+                                logger.info("deleting Ticketed worker node: " + cn.getURL());
+                                cn.delete();
+                                numDeleted++;
+                            }                    
+                        }
+                    }
+                }
+
+                logger.info("Number of Ticketed nodes deleted: " + numDeleted);
+
+                int numNodesMarkedForFutureDeletion = 0;
+
+                // Go through one more time to delete the "Active" ones if more need to be deleted
+                for (ComputeNode cn : s.getComputeNodes()){
+                    if(cn.getName().contains("Workers")){
+                        logger.info("computeNode: " + cn.getURL() + ", state = " + cn.getState());
+                        if(numDeleted < numNodesToDelete){
+                            RMState rmState = RMState.getInstance();
+                            String nodeURL = cn.getURL();
+                            if(cn.getState().equalsIgnoreCase("Active") && !rmState.isInNodesToBeDeletedIDQ(nodeURL)){ // kill condor only if node is active and is not marked to be deleted in future
+                                // if killcondorondelete property exists and is true, ssh to worker and kill condor
+                                if(rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME) != null){
+                                    String killCondor = rmProperties.getProperty(KILLCONDORONDELETE_PROP_NAME);
+                                    if(killCondor.equalsIgnoreCase("true")){
+                                        //logger.info("Doing ssh to " + mn.getPublicIP() + " to kill condor daemons");
+                                        //doSSHAndKillCondor(mn.getPublicIP());
+                                        //logger.info("deleting Active manifest node: " + mn.getURI());
+                                        //mn.delete();
+                                        logger.info("marking for future deletion of Active manifest node: " + cn.getURL());
+                                        numNodesMarkedForFutureDeletion++;
+                                        try {
+                                            String orcaSliceID = modReq.getOrcaSliceId();
+                                            logger.info("Starting thread to cleanup condor and delete VM when condor cleanup is complete...");
+                                            Thread cleanupCondorAndVMThread = new Thread(new CleanupCondorAndVM(rmProperties, orcaSliceID, cn.getManagementIP(), cn.getURL()));
+                                            cleanupCondorAndVMThread.start();
+                                            logger.info("Started cleanup thread...");
+                                        } catch (Exception ex) {
+                                            logger.error("Exception while starting cleanup thread " + ex);
+                                        }
+                                        numDeleted++;
+                                    }
+                                    else {
+                                        logger.info("deleting Active manifest node: " + cn.getURL());
+                                        cn.delete();
+                                        numDeleted++;
+                                    }
+                                }
+                                else {
+                                    logger.info("deleting Active manifest node: " + cn.getURL());
+                                    cn.delete();
+                                    numDeleted++;
+                                }                        
+                            } // end-if active and not marked for future deletion                   
+                        } // end-if numDeleted < numNodesToDelete
+                    } // end-if Worker node
+                } // end-for all compute nodes in slice
+
+                logger.info("Number of nodes marked for future deletion: " + numNodesMarkedForFutureDeletion);           
+                logger.info("Total number of nodes deleted: " + numDeleted);
+
+                // Publish to display exchange, the modify action
+                DisplayPublisher dp;
+                try {
+                    dp = new DisplayPublisher(rmProperties);
+                    dp.publishInfraMessages(modReq.getOrcaSliceId(), "#workers deleted now = " + (numDeleted - numNodesMarkedForFutureDeletion) + " | #workers marked for future deletion = " + numNodesMarkedForFutureDeletion + " for slice: " + modReq.getOrcaSliceId());
+                } catch (Exception ex) {
+                    logger.error("Exception while publishing to display exchange");
+                }
+
+
+            }
+
+            if (change > 0){ // Need to add more workers
+                int numWorkers = 0;
+                for (ComputeNode cn : s.getComputeNodes()){
+                    if(cn.getName().contains("Workers")){
+                        logger.info("computeNode: " + cn.getURL() + ", state = " + cn.getState());
+                        numWorkers++;
+                    }
+                }
+                logger.info("There are " + numWorkers + " worker nodes in the current manifest");
+                int newNumWorkers = numWorkers + change;
+                logger.info("Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers");
+                //cn.setNodeCount(newNumWorkers);
+                
+                addNewWorkersToNodeGroupInSlice(s, currManifest, change);
+
+                // Publish to display exchange, the modify action
+                DisplayPublisher dp;
+                try {
+                    dp = new DisplayPublisher(rmProperties);
+                    dp.publishInfraMessages(modReq.getOrcaSliceId(), "Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers " + " for slice: " + modReq.getOrcaSliceId());
+                } catch (Exception ex) {
+                    logger.error("Exception while publishing to display exchange");
+                }
+
+
+            }     
+
+            //s.save("/tmp/generatedModifyRequest.rdf");
+            return s.getRequest();
+        }
+        
+        
+        public void addNewWorkersToNodeGroupInSlice(String manifest){
+            Slice s = Slice.loadManifest(manifest);
+            addNewWorkersToNodeGroupInSlice(s, manifest, 1);
+        }
+        
+        public void addNewWorkersToNodeGroupInSlice(Slice s, String manifest, int count) {
+            
+            BroadcastNetwork net = null;
+            for(BroadcastNetwork bn: s.getBroadcastLinks()){
+                if(bn.getName().contains("Network")){
+                    net = bn;
+                }
+            }
+            
+            if(net == null){
+                logger.error("Couldn't find broadcast network called 'Network'");
+                return;
+            }
+           
+            
+            // Obtain list of IP addresses for new nodes to be added
+            
+            ArrayList<IPNetmask> existingIPNetMaskListInSlice = null;
+                
+            // These will be used to assign IP addresses to the new nodes
+            ArrayList<String> newIPList = new ArrayList<String> ();
+            String newMask = null;
+            
+            // We have to recreate the ipSubnet for both stitchport and no stitchport case
+            IP4Subnet ipSubnet = null;
+            IP4Assign ipAssign = new IP4Assign();
+            
+            if(s.getStitchPorts() == null || s.getStitchPorts().size() <= 0){ // No stitchports
+                
+                try {
+                    ipSubnet = ipAssign.getAvailableSubnet(CondorDefaults.getDefaultMaxNumWorkers()); // 256 is the default max number of workers
+                    ipSubnet.markIPUsed(ipSubnet.getStartIP());
+                } catch (Exception e){
+                    logger.warn("allocateSubnet warning: " + e);
+                }
+
+                if(ipSubnet != null){                    
+                    //ipSubnet.markIPUsed("172.16.0.1");
+                    //ipSubnet.markIPUsed("172.16.0.2");
+                    //ipSubnet.markIPUsed("172.16.0.3");
+                    
+                    // Mark ips in compute nodes in manifest as used
+                    existingIPNetMaskListInSlice = getDataPlaneIPAddressesOfComputeNodes(manifest);
+                    for(IPNetmask ip_nmask: existingIPNetMaskListInSlice){
+                        ipSubnet.markIPUsed(ip_nmask.getIP());
+                    }
+                                        
+                    int maskLength = ipSubnet.getMaskLength();
+                    newMask = IP4Subnet.netmaskIntToString(maskLength);
+                    
+                    for (int j = 0; j < count; j++){
+                        String newIP = ipSubnet.getFreeIPs(1).getHostAddress();                    
+                        logger.info("new IP address = " + newIP + " | new mask = " + newMask);
+                        newIPList.add(newIP);
+                    }
+                    
+                }
+            }
+            else{ // there is a stitchport
+                                
+                // Recreate ipSubnet from manifest compute nodes and stitchport information
+                // mark master and worker IPs as used
+                // Then get free IP addresses
+                
+                // TODO: Get subnet network address and masklength from stitchport information by querying the stitchport service using stitchportID                
+                String subnetIPFromSPInfo = " ";
+                int maskLengthFromSPInfo = 0;
+                
+                //net.setIPSubnet(ip, mask) functionality
+                try{
+                    ipSubnet = ipAssign.getSubnet((Inet4Address)InetAddress.getByName(subnetIPFromSPInfo), maskLengthFromSPInfo);
+                    ipSubnet.markIPUsed(ipSubnet.getStartIP());
+		} catch (Exception e){
+                    logger.warn("allocateSubnet warning: " + e);
+		}
+                
+                // net.clearAvailableIPS() functionality
+                if(ipSubnet != null) {
+                    ipSubnet.markAllIPsUsed();
+                }
+                
+                //TODO: ArrayList<String> availIPSet = spInfo.getAllowedIPSetFirstSubnet();
+                ArrayList<String> availIPSet = null;
+                logger.info("available IPs: " + availIPSet);
+                for(String ipAvail: availIPSet){
+                    //net.addAvailableIP(ip);
+                    int ml = 32;
+                    int cnt = 1<<(32-ml);
+                    ipSubnet.markIPsFree(ipAvail, cnt);
+                }
+                                
+                if(ipSubnet != null){
+                    //ipSubnet.markIPUsed("172.16.0.1");
+                    //ipSubnet.markIPUsed("172.16.0.2");
+                    //ipSubnet.markIPUsed("172.16.0.3");
+                    
+                    // Mark ips in compute nodes in manifest as used
+                    existingIPNetMaskListInSlice = getDataPlaneIPAddressesOfComputeNodes(manifest);
+                    for(IPNetmask ip_nmask: existingIPNetMaskListInSlice){
+                        ipSubnet.markIPUsed(ip_nmask.getIP());
+                    }
+                  
+                    int maskLength = ipSubnet.getMaskLength();
+                    newMask = IP4Subnet.netmaskIntToString(maskLength);
+                    
+                    for (int j = 0; j < count; j++){
+                        String newIP = ipSubnet.getFreeIPs(1).getHostAddress();                    
+                        logger.info("new IP address = " + newIP + " | new mask = " + newMask);
+                        newIPList.add(newIP);
+                    }
+                    
+                }
+                
+                
+            }
+            
+            // Finally add the new Worker compute nodes and stitch them to the broadcast network
+            int highestIndexOfWorkerNode = getHighestIndexOfWorkerNodeInManifest(manifest);
+            for(int i = 0; i < count; i++){
+                int indexNewWorkerNode = highestIndexOfWorkerNode + i + 1; // since i starts from 0, we add 1
+                ComputeNode n = s.addComputeNode("Workers" + "-" + indexNewWorkerNode);
+                Interface int1 = net.stitch(n); // Stitch to "Network" , which is net
+                ((InterfaceNode2Net)int1).setIpAddress(newIPList.get(i));
+                ((InterfaceNode2Net)int1).setNetmask(newMask);
+            }
+            
+        }
+        
+        private int getHighestIndexOfWorkerNodeInManifest(String manifest){
+            
+            Slice s = Slice.loadManifest(manifest);
+            int highestIndex = 0;
+            
+            for(ComputeNode cn : s.getComputeNodes()){
+               if(cn.getName().contains("Workers")){
+                   String workerName = cn.getName(); // Workers-1, Workers-2,....
+                   int currentIndex = Integer.parseInt(workerName.split("-")[1]);
+                   if(currentIndex > highestIndex){
+                       highestIndex = currentIndex;
+                   }
+               } 
+            }
+            
+            return highestIndex;
+        }
+        
+        
+        public ArrayList<IPNetmask> getDataPlaneIPAddressesOfComputeNodes(String manifest){
+            
+            Slice s = Slice.loadManifest(manifest);
+            
+            ArrayList<IPNetmask> returnIPNetmaskList = new ArrayList<IPNetmask>();
+            
+            BroadcastNetwork net = null;
+            for(BroadcastNetwork bn: s.getBroadcastLinks()){
+                if(bn.getName().contains("Network")){
+                    logger.info("Found broadcast network called " + bn.getName());
+                    net = bn;
+                }
+            }
+            
+            if(net == null){
+                logger.error("No broadcast network called 'Network' found in slice");
+                return null;
+            }
+            
+            for(ComputeNode cn : s.getComputeNodes()){
+		Interface int1 = cn.getInterface(s.getResourceByName("Network"));
+                String dataPlaneIPFromManifest = ((InterfaceNode2Net)int1).getIpAddress();
+                String netmaskStringFromManifest = ((InterfaceNode2Net)int1).getNetmask();
+		//logger.info("cn: " + cn + " | " + ((InterfaceNode2Net)int1).getIpAddress() + ", " + ((InterfaceNode2Net)int1).getNetmask());
+                
+                // dataplaneIP from manifest already has netmask in it; for e.g. 172.mm.p.yyy/xx
+                String dataPlaneIP = dataPlaneIPFromManifest.split("/")[0];
+                logger.info("cn: " + cn + " | " + dataPlaneIP + ", " + netmaskStringFromManifest);
+                returnIPNetmaskList.add(new IPNetmask(dataPlaneIP, netmaskStringFromManifest));			
+            }
+            
+            logger.info("total number of interfaces in slice = " + s.getInterfaces().size());
+            //logger.info("total number of links in slice = " + s.getLinks().size());
+            
+            return returnIPNetmaskList;
+            
+        }
+        
+        
         public String getSliceManifestStatus(String manifest){
                         
             Slice s = Slice.loadManifest(manifest);
-            // TODO: Looks like s.getState() is not implemented
+            // TODO: Looks like s.getState() is not implemented in AHAB and will return "getState unimplimented"
+            // This is only used in manifest publishing; Not dritical as of now
             return s.getState();
             
             
@@ -915,16 +1248,15 @@ public class AhabManager implements RMConstants{
         public int getNumWorkersInManifest(String manifest){
         
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Workers..");
-                return -1;
-            }
+            
             int numWorkers = 0;
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                numWorkers++;
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Workers")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    numWorkers++;                        
+                }
             }
+            
             logger.info("There are " + numWorkers + " worker nodes in the current manifest");
             return numWorkers;
         
@@ -933,18 +1265,18 @@ public class AhabManager implements RMConstants{
         public int getNumActiveWorkersInManifest(String manifest){
 
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Workers..");
-                return -1;
-            }
+            
             int numActiveWorkers = 0;
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                if(mn.getState().equalsIgnoreCase("Active")){
-                    numActiveWorkers++;
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Workers")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    if(cn.getState().equalsIgnoreCase("Active")){
+                        numActiveWorkers++;
+                        //logger.info("public IP for " + cn.getName() + " is " + cn.getManagementIP());
+                    }
                 }
             }
+            
             logger.info("There are " + numActiveWorkers + " Active worker nodes in the current manifest");
             return numActiveWorkers;
 
@@ -953,18 +1285,17 @@ public class AhabManager implements RMConstants{
         public int getNumTicketedWorkersInManifest(String manifest){
         
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Workers..");
-                return -1;
-            }
+            
             int numTicketedWorkers = 0;
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                if(mn.getState().equalsIgnoreCase("Ticketed")){
-                    numTicketedWorkers++;
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Workers")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    if(cn.getState().equalsIgnoreCase("Ticketed")){
+                        numTicketedWorkers++;
+                    }
                 }
             }
+            
             logger.info("There are " + numTicketedWorkers + " Ticketed worker nodes in the current manifest");
             return numTicketedWorkers;
         
@@ -973,18 +1304,17 @@ public class AhabManager implements RMConstants{
         public int getNumNascentWorkersInManifest(String manifest){
 
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Workers..");
-                return -1;
-            }
+            
             int numNascentWorkers = 0;
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                if(mn.getState().equalsIgnoreCase("Nascent")){
-                    numNascentWorkers++;
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Workers")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    if(cn.getState().equalsIgnoreCase("Nascent")){
+                        numNascentWorkers++;
+                    }
                 }
             }
+            
             logger.info("There are " + numNascentWorkers + " Nascent worker nodes in the current manifest");
             return numNascentWorkers;
 
@@ -993,19 +1323,18 @@ public class AhabManager implements RMConstants{
         public boolean areAllWorkersInManifestActive(String manifest){
 
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Workers..");
-                return false;
-            }
 
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                if(!mn.getState().equalsIgnoreCase("Active")){
-                    return false;
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Workers")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    if(!cn.getState().equalsIgnoreCase("Active")){
+                        return false;
+                    }
                 }
             }
+            
             // Code gets here when all are "Active"
+            logger.info("All Workers nodes are in Active state");
             return true;
 
         }
@@ -1013,22 +1342,18 @@ public class AhabManager implements RMConstants{
         public String getPublicIPMasterInManifest(String manifest){
         
             Slice s = Slice.loadManifest(manifest);
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Master");
-            if(cn == null){
-                logger.error("Manifest doesn't have a Nodegroup named Master..");
-                return null;
-            }
 
-            for (Node mn : ((ComputeNode)cn).getManifestNodes()){
-                logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());
-                if(mn.getState().equalsIgnoreCase("Active")){
-                    // returns the public IP of the first Active node in Master nodegroup; since there is only one 
-                    // master node in the nodegroup, this is fine
-                    return mn.getPublicIP();
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getName().contains("Master")){
+                    logger.info("computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    if(cn.getState().equalsIgnoreCase("Active")){
+                        return (cn.getManagementIP());
+                    }
                 }
             }
 
-            return null;        
+            return null;
+            
         }
         
         
@@ -1091,5 +1416,26 @@ public class AhabManager implements RMConstants{
         
         
         }
+        
+        public class IPNetmask{
+            
+            String ip;
+            String netmask;
+            
+            public IPNetmask(String ip, String netmask){
+                this.ip = ip;
+                this.netmask = netmask;
+            }
+            
+            public String getIP(){
+                return ip;
+            }
+            
+            public String getNetmask(){
+                return netmask;
+            }
+            
+        }
+        
         
 }

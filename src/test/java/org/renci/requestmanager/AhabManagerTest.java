@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.renci.requestmanager.ndl.AhabManager;
 /**
@@ -26,7 +27,7 @@ public class AhabManagerTest {
     private static final String PREF_FILE = ".rm.properties";
     private static Properties rmProps = null;
     
-    @Test
+    //@Test
     public void testHTCondorRequest() {
             
         processPreferences();
@@ -53,7 +54,7 @@ public class AhabManagerTest {
     }
     
     
-    @Test
+    //@Test
     public void testHTCondorRequestMultiPoint() {
             
         processPreferences();
@@ -78,6 +79,92 @@ public class AhabManagerTest {
         }
                 
     }
+    
+    //@Test
+    public void testGetNumActiveWorkersInManifest(){
+        
+        processPreferences();
+            
+        AhabManager ahabManager = new AhabManager(rmProps);
+        
+        String manifest = null;        
+        try {
+            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest-mp.rdf"));
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        int numActiveWorkersInManifest = ahabManager.getNumActiveWorkersInManifest(manifest);
+        
+        System.out.println("****** numActiveWorkersInManifest = " + numActiveWorkersInManifest);
+        
+    }
+    
+    
+    //@Test
+    public void testGetPublicIPMasterInManifest(){
+        
+        processPreferences();
+            
+        AhabManager ahabManager = new AhabManager(rmProps);
+        
+        String manifest = null;        
+        try {
+            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest-mp.rdf"));
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+        
+        String publicIP = ahabManager.getPublicIPMasterInManifest(manifest);
+        
+        System.out.println("****** public IP = " + publicIP);
+        Assert.assertNotNull(publicIP);
+        
+    }
+    
+    //@Test
+    public void testAddNewWorkersToNodeGroupInSlice(){
+        
+        processPreferences();
+            
+        AhabManager ahabManager = new AhabManager(rmProps);
+        
+        String manifest = null;        
+        try {
+            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest-mp.rdf"));
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+        
+        ahabManager.addNewWorkersToNodeGroupInSlice(manifest);
+        
+        System.out.println("****** DONE ******");
+        
+        
+    }
+    
+    @Test
+    public void testGetDataPlaneIPAddressesOfComputeNodes(){
+        
+        processPreferences();
+            
+        AhabManager ahabManager = new AhabManager(rmProps);
+        
+        String manifest = null;        
+        try {
+            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest-mp.rdf"));
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+        
+        ahabManager.getDataPlaneIPAddressesOfComputeNodes(manifest);
+        
+        System.out.println("****** DONE ******");
+        
+        
+    }
+    
+    
     
     
     /**
