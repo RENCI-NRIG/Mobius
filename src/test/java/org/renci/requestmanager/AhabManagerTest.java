@@ -17,6 +17,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.renci.requestmanager.ndl.AhabManager;
+import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 /**
  *
  * @author anirbanmandal
@@ -122,7 +123,7 @@ public class AhabManagerTest {
         
     }
     
-    //@Test
+    @Test
     public void testAddNewWorkersToNodeGroupInSlice(){
         
         processPreferences();
@@ -131,19 +132,35 @@ public class AhabManagerTest {
         
         String manifest = null;        
         try {
-            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest-mp.rdf"));
+            manifest = FileUtils.readFileToString(new File("/tmp/flukes-manifest.rdf"));
         } catch (IOException ex) {
             Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
         } 
         
-        ahabManager.addNewWorkersToNodeGroupInSlice(manifest);
+        String modRequest = ahabManager.addNewWorkersToNodeGroupInSlice(manifest);
+        
+        try {
+            FileUtils.writeStringToFile(new File("/tmp/modRequest.rdf"), modRequest);
+        } catch (IOException ex) {
+            Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+
+        /* Uncomment if you want to send the modify request to ORCA
+        OrcaManager orcaManager = new OrcaManager(rmProps);
+        String resultModify = orcaManager.sendModifyRequestToORCA("anirban.condor", modRequest);
+        
+        if(resultModify == null){ // Exception
+            System.out.println("Could not modify slice in ExoGENI/ORCA");
+        }
+        */
         
         System.out.println("****** DONE ******");
         
         
     }
     
-    @Test
+    //@Test
     public void testGetDataPlaneIPAddressesOfComputeNodes(){
         
         processPreferences();

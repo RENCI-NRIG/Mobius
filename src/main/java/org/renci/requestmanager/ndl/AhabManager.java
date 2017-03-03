@@ -973,6 +973,7 @@ public class AhabManager implements RMConstants{
                                         try {
                                             String orcaSliceID = modReq.getOrcaSliceId();
                                             logger.info("Starting thread to cleanup condor and delete VM when condor cleanup is complete...");
+                                            // TODO: port CleanupCondorAndVM to AHAB
                                             Thread cleanupCondorAndVMThread = new Thread(new CleanupCondorAndVM(rmProperties, orcaSliceID, cn.getManagementIP(), cn.getURL()));
                                             cleanupCondorAndVMThread.start();
                                             logger.info("Started cleanup thread...");
@@ -1013,6 +1014,7 @@ public class AhabManager implements RMConstants{
             }
 
             if (change > 0){ // Need to add more workers
+                
                 int numWorkers = 0;
                 for (ComputeNode cn : s.getComputeNodes()){
                     if(cn.getName().contains("Workers")){
@@ -1044,9 +1046,14 @@ public class AhabManager implements RMConstants{
         }
         
         
-        public void addNewWorkersToNodeGroupInSlice(String manifest){
+        /**
+         * For testing addNewWorkersToNodeGroupInSlice
+         * @param manifest 
+         */
+        public String addNewWorkersToNodeGroupInSlice(String manifest){
             Slice s = Slice.loadManifest(manifest);
             addNewWorkersToNodeGroupInSlice(s, manifest, 1);
+            return s.getRequest();
         }
         
         public void addNewWorkersToNodeGroupInSlice(Slice s, String manifest, int count) {
@@ -1064,8 +1071,7 @@ public class AhabManager implements RMConstants{
             }
            
             
-            // Obtain list of IP addresses for new nodes to be added
-            
+            // To obtain list of IP addresses and netmasks for existing nodes in slice            
             ArrayList<IPNetmask> existingIPNetMaskListInSlice = null;
                 
             // These will be used to assign IP addresses to the new nodes
@@ -1167,12 +1173,19 @@ public class AhabManager implements RMConstants{
             
             // Finally add the new Worker compute nodes and stitch them to the broadcast network
             int highestIndexOfWorkerNode = getHighestIndexOfWorkerNodeInManifest(manifest);
+            String workerDomain = getDomainOfWorkerNodeInManifest(manifest);
+            CondorDefaults cd = new CondorDefaults();
+            String workerPostboot = cd.getDefaultPostbootWorker_SingleDomain();
             for(int i = 0; i < count; i++){
                 int indexNewWorkerNode = highestIndexOfWorkerNode + i + 1; // since i starts from 0, we add 1
                 ComputeNode n = s.addComputeNode("Workers" + "-" + indexNewWorkerNode);
                 Interface int1 = net.stitch(n); // Stitch to "Network" , which is net
                 ((InterfaceNode2Net)int1).setIpAddress(newIPList.get(i));
                 ((InterfaceNode2Net)int1).setNetmask(newMask);
+                n.setImage(CondorDefaults.getDefaultImageUrl(), CondorDefaults.getDefaultImageHash(), CondorDefaults.getDefaultImageName());
+                n.setNodeType("XO Large");
+                n.setDomain(workerDomain);                
+                n.setPostBootScript(workerPostboot);
             }
             
         }
@@ -1193,6 +1206,19 @@ public class AhabManager implements RMConstants{
             }
             
             return highestIndex;
+        }
+        
+        private String getDomainOfWorkerNodeInManifest(String manifest){
+            
+            Slice s = Slice.loadManifest(manifest);
+            
+            for(ComputeNode cn : s.getComputeNodes()){
+               if(cn.getName().contains("Workers")){
+                   return cn.getDomain();
+               } 
+            }
+            
+            return null;
         }
         
         
@@ -1222,7 +1248,7 @@ public class AhabManager implements RMConstants{
 		//logger.info("cn: " + cn + " | " + ((InterfaceNode2Net)int1).getIpAddress() + ", " + ((InterfaceNode2Net)int1).getNetmask());
                 
                 // dataplaneIP from manifest already has netmask in it; for e.g. 172.mm.p.yyy/xx
-                String dataPlaneIP = dataPlaneIPFromManifest.split("/")[0];
+                String dataPlaneIP = dataPlaneIPFromManifest.split("/")[0]; // note that this will work even when the IP address doesn't have a /
                 logger.info("cn: " + cn + " | " + dataPlaneIP + ", " + netmaskStringFromManifest);
                 returnIPNetmaskList.add(new IPNetmask(dataPlaneIP, netmaskStringFromManifest));			
             }
