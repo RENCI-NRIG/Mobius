@@ -20,9 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import org.apache.log4j.Logger;
-import org.renci.requestmanager.amqp.ManifestPublisher;
 import org.renci.requestmanager.amqp.RequestSubscriber;
-import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 //Test ahab

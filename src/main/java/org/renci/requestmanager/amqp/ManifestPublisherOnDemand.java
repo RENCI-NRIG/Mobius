@@ -12,7 +12,7 @@ import java.util.Properties;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.renci.requestmanager.RMConstants;
-import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.ndl.AhabManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 
 /**
@@ -107,7 +107,7 @@ public class ManifestPublisherOnDemand implements RMConstants{
     public void getManifestAndPublishManifestData(String orcaSliceID){
         
         OrcaManager orcaManager = new OrcaManager(rmProperties);
-        NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+        AhabManager ahabManager = new AhabManager(rmProperties);
         
         // Get manifest from ExoGENI
         logger.info("ManifestPublisherOnDemand: Getting manifest form ExoGENI");
@@ -116,15 +116,16 @@ public class ManifestPublisherOnDemand implements RMConstants{
             logger.error("Manifest is null for slice: " + orcaSliceID);
         }
 
-        // Parse manifest using ndllib
-        logger.info("ManifestPublisherOnDemand: Parsing manifest data by calling ndlLib");
-        String sliceState = ndlManager.getSliceManifestStatus(currManifest);
-        int numActiveWorkers = ndlManager.getNumActiveWorkersInManifest(currManifest);                        
+        
+        // Parse manifest using AHAB
+        logger.info("ManifestPublisherOnDemand: Parsing manifest data by calling AHAB");
+        String sliceState = ahabManager.getSliceManifestStatus(currManifest);
+        int numActiveWorkers = ahabManager.getNumActiveWorkersInManifest(currManifest);                        
         // Get number of workers coming up
-        int numTicketedWorkers = ndlManager.getNumTicketedWorkersInManifest(currManifest);
-        int numNascentWorkers = ndlManager.getNumNascentWorkersInManifest(currManifest);
+        int numTicketedWorkers = ahabManager.getNumTicketedWorkersInManifest(currManifest);
+        int numNascentWorkers = ahabManager.getNumNascentWorkersInManifest(currManifest);
         int numProvisioningWorkers = numTicketedWorkers + numNascentWorkers;
-        String masterPublicIP = ndlManager.getPublicIPMasterInManifest(currManifest);
+        String masterPublicIP = ahabManager.getPublicIPMasterInManifest(currManifest);
         if(masterPublicIP == null){ // master not yet up
             masterPublicIP = "unknown";
         }

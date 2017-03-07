@@ -19,7 +19,7 @@ import org.json.simple.JSONObject;
 import org.renci.requestmanager.AppRequestInfo;
 import org.renci.requestmanager.RMConstants;
 import org.renci.requestmanager.RMState;
-import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.ndl.AhabManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 
 /**
@@ -161,7 +161,7 @@ public class ManifestPublisher implements RMConstants{
                     }
 
                     OrcaManager orcaManager = new OrcaManager(rmProperties);
-                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+                    AhabManager ahabManager = new AhabManager(rmProperties);
                     
                     for(String currSliceID: currSliceIDQ){ // Go through all the slice ids
                         
@@ -173,18 +173,20 @@ public class ManifestPublisher implements RMConstants{
                             continue;
                         }
                         
-                        // Parse manifest using ndllib
-                        logger.info("ManifestPublisher: Parsing manifest data by calling ndlLib");
-                        String sliceState = ndlManager.getSliceManifestStatus(currManifest);
-                        int numActiveWorkers = ndlManager.getNumActiveWorkersInManifest(currManifest);                        
+                        // Parse manifest using AHAB
+                        
+                        logger.info("ManifestPublisher: Parsing manifest data by calling AHAB");
+                        String sliceState = ahabManager.getSliceManifestStatus(currManifest);
+                        int numActiveWorkers = ahabManager.getNumActiveWorkersInManifest(currManifest);                        
                         // Get number of workers coming up
-                        int numTicketedWorkers = ndlManager.getNumTicketedWorkersInManifest(currManifest);
-                        int numNascentWorkers = ndlManager.getNumNascentWorkersInManifest(currManifest);
+                        int numTicketedWorkers = ahabManager.getNumTicketedWorkersInManifest(currManifest);
+                        int numNascentWorkers = ahabManager.getNumNascentWorkersInManifest(currManifest);
                         int numProvisioningWorkers = numTicketedWorkers + numNascentWorkers;
-                        String masterPublicIP = ndlManager.getPublicIPMasterInManifest(currManifest);
+                        String masterPublicIP = ahabManager.getPublicIPMasterInManifest(currManifest);
                         if(masterPublicIP == null){ // master not yet up
                             masterPublicIP = "unknown";
                         }
+                        
                         // Publish relevant data to manifest exchange
                         logger.info("ManifestPublisher: Publishing manifest data to exchange");
                         publishManifestData(currSliceID, sliceState, numActiveWorkers, numProvisioningWorkers, masterPublicIP);

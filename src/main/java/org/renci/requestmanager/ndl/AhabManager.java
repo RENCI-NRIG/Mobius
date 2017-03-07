@@ -889,7 +889,7 @@ public class AhabManager implements RMConstants{
                         
                         // Insert StitchportInfo into RMState
                         rmState = RMState.getInstance();
-                        rmState.addSPToStitchportList(new StitchportInfo(orcaSliceID, stitchPortID, label, port, firstSubnetNetwork, Integer.parseInt(firstSubnetMask)));
+                        rmState.addSPToStitchportList(new StitchportInfo(sliceName, stitchPortID, label, port, firstSubnetNetwork, Integer.parseInt(firstSubnetMask)));
 
                     }              
 
@@ -910,11 +910,11 @@ public class AhabManager implements RMConstants{
 
         }        
         
-        public String generateNewHadoopRequest(NewRequestInfo newReq){
+        public String generateNewHadoopRequest(NewRequestInfo newReq, String orcaSliceID){
             return null;
         }
     
-        public String generateNewMPIRequest(NewRequestInfo newReq){
+        public String generateNewMPIRequest(NewRequestInfo newReq, String orcaSliceID){
             return null;
         }
         

@@ -15,7 +15,6 @@ import org.apache.log4j.Logger;
 import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.amqp.ManifestPublisherOnDemand;
 import org.renci.requestmanager.ndl.AhabManager;
-import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaManager;
 
 import org.renci.requestmanager.amqp.FlowPrioritySetupPublisher;
@@ -227,21 +226,21 @@ public class RMController implements RMConstants{
                         
                     }
                     else {
-                        // Depending on the template type, call ndllib to generate appropriate request
-                        NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+                        // Depending on the template type, call AHAB to generate appropriate request
+                        AhabManager ahabManager = new AhabManager(rmProperties);
                         String ndlReq = null;
 
                         if(requestedTemplateType.startsWith(CondorBasicTypeName)){
-                            logger.info("Calling ndllib to generate a request with basic type = " + CondorBasicTypeName);
-                            ndlReq = ndlManager.generateNewCondorRequest(newReq);
+                            logger.info("Calling AHAB to generate a request with basic type = " + CondorBasicTypeName);
+                            ndlReq = ahabManager.generateNewCondorRequest(newReq, orcaSliceID);
                         }
                         else if(requestedTemplateType.startsWith(HadoopBasicTypeName)){
-                            logger.info("Calling ndllib to generate a request with basic type = " + HadoopBasicTypeName);
-                            ndlReq = ndlManager.generateNewHadoopRequest(newReq);
+                            logger.info("Calling AHAB to generate a request with basic type = " + HadoopBasicTypeName);
+                            ndlReq = ahabManager.generateNewHadoopRequest(newReq, orcaSliceID);
                         }
                         else if(requestedTemplateType.startsWith(MPIBasicTypeName)){
-                            logger.info("Calling ndllib to generate a request with basic type = " + MPIBasicTypeName);
-                            ndlReq = ndlManager.generateNewMPIRequest(newReq);
+                            logger.info("Calling AHAB to generate a request with basic type = " + MPIBasicTypeName);
+                            ndlReq = ahabManager.generateNewMPIRequest(newReq, orcaSliceID);
                         }
                         else {
                             logger.error("Unsupported requested template type");
@@ -307,13 +306,13 @@ public class RMController implements RMConstants{
                     }
                     
                     // Call ndllib to generate modify request
-                    NdlLibManager ndlManager = new NdlLibManager(rmProperties);
+                    AhabManager ahabManager = new AhabManager(rmProperties);
                     String ndlModReq = null;
                     
                     // Commenting the next block because we want to allow modify even when the slice is not ready
                     /*
                     logger.info("Calling ndllib to get sliceStatus for " + orcaSliceID);
-                    String sliceStatus = ndlManager.getSliceManifestStatus(currManifest);
+                    String sliceStatus = ahabManager.getSliceManifestStatus(currManifest);
                     if(!sliceStatus.equalsIgnoreCase("ready")){ // slice is not ready, don't allow modify actions now
                         logger.info("Slice manifest says that slice is not ready.. Delaying modify actions..");
                         return "DELAY";
@@ -321,7 +320,7 @@ public class RMController implements RMConstants{
                     */
                     
                     logger.info("Calling ndllib to generate a modify request for slice: " + orcaSliceID);
-                    ndlModReq = ndlManager.generateModifyComputeRequest(modReq, currManifest);
+                    ndlModReq = ahabManager.generateModifyComputeRequest(modReq, currManifest);
                     
                     DisplayPublisher dp;
                     if(ndlModReq == null){
