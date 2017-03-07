@@ -48,6 +48,7 @@ import org.renci.requestmanager.NewRequestInfo;
 import org.renci.requestmanager.RMConstants;
 import static org.renci.requestmanager.RMConstants.PREFERRED_DOMAINS_STRING_NAME;
 import org.renci.requestmanager.RMState;
+import org.renci.requestmanager.StitchportInfo;
 import org.renci.requestmanager.amqp.DisplayPublisher;
 import org.renci.requestmanager.orcaxmlrpc.CleanupCondorAndVM;
 import org.renci.requestmanager.policy.IModifyPolicy;
@@ -885,6 +886,10 @@ public class AhabManager implements RMConstants{
                         //workers.setMaxNodeCount(5);
 
                         // NOTE: If we have to deal with multiple subnets and allowed ips in future, we have that info in spInfo.getAllIPInfo()
+                        
+                        // Insert StitchportInfo into RMState
+                        rmState = RMState.getInstance();
+                        rmState.addSPToStitchportList(new StitchportInfo(orcaSliceID, stitchPortID, label, port, firstSubnetNetwork, Integer.parseInt(firstSubnetMask)));
 
                     }              
 
@@ -1027,7 +1032,7 @@ public class AhabManager implements RMConstants{
                 logger.info("Making new size of Workers nodegroup to " + newNumWorkers + " by adding " + change + " workers");
                 //cn.setNodeCount(newNumWorkers);
                 
-                addNewWorkersToNodeGroupInSlice(s, currManifest, change);
+                addNewWorkersToNodeGroupInSlice(s, currManifest, modReq.getOrcaSliceId(), change);
 
                 // Publish to display exchange, the modify action
                 DisplayPublisher dp;
@@ -1050,13 +1055,13 @@ public class AhabManager implements RMConstants{
          * For testing addNewWorkersToNodeGroupInSlice
          * @param manifest 
          */
-        public String addNewWorkersToNodeGroupInSlice(String manifest){
+        public String addNewWorkersToNodeGroupInSlice(String manifest, String orcaSliceID){
             Slice s = Slice.loadManifest(manifest);
-            addNewWorkersToNodeGroupInSlice(s, manifest, 1);
+            addNewWorkersToNodeGroupInSlice(s, manifest, orcaSliceID, 1);
             return s.getRequest();
         }
         
-        public void addNewWorkersToNodeGroupInSlice(Slice s, String manifest, int count) {
+        public void addNewWorkersToNodeGroupInSlice(Slice s, String manifest, String orcaSliceID, int count) {
             
             BroadcastNetwork net = null;
             for(BroadcastNetwork bn: s.getBroadcastLinks()){
@@ -1117,11 +1122,18 @@ public class AhabManager implements RMConstants{
                                 
                 // Recreate ipSubnet from manifest compute nodes and stitchport information
                 // mark master and worker IPs as used
-                // Then get free IP addresses
+                // Then get free IP addresses 
                 
-                // TODO: Get subnet network address and masklength from stitchport information by querying the stitchport service using stitchportID                
-                String subnetIPFromSPInfo = " ";
-                int maskLengthFromSPInfo = 0;
+                rmState = RMState.getInstance();
+                StitchportInfo spInfo = rmState.findSPFromStitchportList(orcaSliceID);
+                
+                if(spInfo == null){
+                    logger.error("Stitchport exists in the slice but can't find sttichport subnet network IP and netmask information from RMState... Not adding new nodes to the slice !!! ...");
+                    return;
+                }
+                
+                String subnetIPFromSPInfo = spInfo.getFirstSubnetIP();
+                int maskLengthFromSPInfo = spInfo.getFirstSubnetMask();
                 
                 //net.setIPSubnet(ip, mask) functionality
                 try{

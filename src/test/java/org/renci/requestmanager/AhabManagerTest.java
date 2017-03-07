@@ -137,7 +137,8 @@ public class AhabManagerTest {
             Logger.getLogger(AhabManagerTest.class.getName()).log(Level.SEVERE, null, ex);
         } 
         
-        String modRequest = ahabManager.addNewWorkersToNodeGroupInSlice(manifest);
+        String orcaSliceID = "anirban.condor";
+        String modRequest = ahabManager.addNewWorkersToNodeGroupInSlice(manifest, orcaSliceID);
         
         try {
             FileUtils.writeStringToFile(new File("/tmp/modRequest.rdf"), modRequest);
