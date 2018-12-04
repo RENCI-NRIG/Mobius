@@ -20,17 +20,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import org.apache.log4j.Logger;
-import org.renci.requestmanager.amqp.ManifestPublisher;
 import org.renci.requestmanager.amqp.RequestSubscriber;
-import org.renci.requestmanager.ndl.NdlLibManager;
 import org.renci.requestmanager.orcaxmlrpc.OrcaSMXMLRPCProxy;
 
 //Test ahab
 
-import orca.ahab.libndl.Slice;
+//import orca.ahab.libndl.Slice;
 //import orca.ahab.libndl.TestDriver;
-import orca.ahab.libndl.LIBNDL;
-import orca.ahab.libndl.extras.PriorityNetwork;
+//import orca.ahab.libndl.LIBNDL;
+//import orca.ahab.libndl.extras.PriorityNetwork;
 import org.renci.requestmanager.ndl.AhabManager;
 
 /**

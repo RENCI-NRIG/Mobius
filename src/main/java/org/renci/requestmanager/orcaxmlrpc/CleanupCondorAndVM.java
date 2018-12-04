@@ -8,9 +8,9 @@ package org.renci.requestmanager.orcaxmlrpc;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Properties;
-import orca.ndllib.Slice;
-import orca.ndllib.resources.request.ComputeNode;
 import org.apache.log4j.Logger;
+import org.renci.ahab.libndl.Slice;
+import org.renci.ahab.libndl.resources.request.ComputeNode;
 import org.renci.requestmanager.RMConstants;
 import org.renci.requestmanager.RMState;
 import org.renci.requestmanager.amqp.DisplayPublisher;
@@ -38,6 +38,7 @@ public class CleanupCondorAndVM implements Runnable, RMConstants{
         this.rmProperties = rmProps;
         this.orcaSliceID = orcaSliceID;
         this.mnIP = mnIP;
+        //When migrating to AHAB, we use the URL instead of URI, since compute nodes no longer store a URI
         this.mnURI = mnURI;        
         
     }
@@ -62,32 +63,27 @@ public class CleanupCondorAndVM implements Runnable, RMConstants{
         // Get manifest, generate modify request, send modify request
         OrcaManager orcaManager = new OrcaManager(rmProperties);
         logger.info("CLEANUP: Getting manifest from ORCA...");
+        
         String currManifest = orcaManager.getManifestFromORCA(orcaSliceID);
         if (currManifest != null){
-            Slice s = new Slice();
-            s.loadRDF(currManifest);
             
-            // Get "Workers" nodegroup
-            ComputeNode cn = (ComputeNode) s.getResourceByName("Workers");
-            if(cn == null){
-                logger.error("CLEANUP: Manifest doesn't have a Nodegroup named Workers, can't modify Nodegroup");
-            }
+            Slice s = Slice.loadManifest(currManifest);
             
             // delete a specific node from the manifest
             boolean nodeDeleted = false;
-            for (orca.ndllib.resources.manifest.Node mn : ((ComputeNode)cn).getManifestNodes()){
-                //logger.info("manifestNode: " + mn.getURI() + ", state = " + mn.getState());                
-                if(mn.getURI().equalsIgnoreCase(mnURI)){ 
-                    logger.info("CLEANUP: deleting manifest node: " + mn.getURI());
-                    mn.delete();
+            for(ComputeNode cn: s.getComputeNodes()){
+                if(cn.getURL().equalsIgnoreCase(mnURI)){
+                    logger.info("CLEANUP: computeNode: " + cn.getName() + ", state = " + cn.getState());
+                    logger.info("CLEANUP: deleting manifest node: " + cn.getURL());
+                    cn.delete();
                     nodeDeleted = true;
-                }                                    
+                }                
             }
             
             // If node got deleted, send modify request to ORCA
             if(nodeDeleted){
                 String modReq = s.getRequest();
-                 if(modReq != null){
+                if(modReq != null){
                      // We have a modify request; Send modify request to ExoGENI
                     logger.info("CLEANUP: Sending modifyCompute request to ExoGENI...");
                     
@@ -103,7 +99,7 @@ public class CleanupCondorAndVM implements Runnable, RMConstants{
                     if(resultModify == null){ // Exception
                         logger.error("CLEANUP: could not kill VM in ExoGENI/ORCA");
                     }
-                 }
+                }
             }
             
         }

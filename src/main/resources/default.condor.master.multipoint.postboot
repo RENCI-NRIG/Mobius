@@ -2,7 +2,7 @@
 #Site1_SERVER='10.37.71.1'
 
 # TODO: make this template
-MASTER_IP=$Master.get(0).IP("Master-Network")
+MASTER_IP=$Master.IP("Network")
 
 hostname master
 
@@ -12,23 +12,24 @@ echo '/var/nfs *(rw,no_root_squash)' > /etc/exports
 /etc/init.d/rpcbind restart
 /etc/init.d/nfs restart
 
-echo '$Master.get(0).IP("Master-Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
+echo '$Master.IP("Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
 
 mount -a
+
 
 echo  StrictHostKeyChecking no >> /etc/ssh/ssh_config
 
 # replace /etc/hosts
 cat >/etc/hosts <<EOF
-$Master.get(0).IP("Master-Network")  master.expnet   master   salt
+$Master.IP("Network")  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
-START=`echo '$Workers.get(0).IP("Workers-Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
+START=`echo '$Workers-0.IP("Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
 END=$(($START+200))
 for i in $(seq $START $END); do
    name=$(($i - $START))
-   echo `echo $Workers.get(0).IP("Workers-Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
+   echo `echo $Workers-0.IP("Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
 done
 
 echo "" >  /etc/condor/condor_config.local
@@ -49,11 +50,12 @@ LOCAL_BASE=/home/pegasus-user/montage-8-deg
 
 for FILE in dax.xml pegasus.conf replica.catalog sites.xml transformation.catalog; do
     wget -q -O $LOCAL_BASE/${FILE}.tmp $WF_BASE/$FILE  > /dev/null 2>&1
-    sed  's/SLICE_MASTER_HOSTNAME/'$Master.get(0).IP("Master-Network")'/g' $LOCAL_BASE/${FILE}.tmp |  sed  's/SLICE_MASTER_USER/pegasus-user/g'  | sed  's/SLICE_MASTER_HOME/\/home\/pegasus-user\/montage-8-deg/g' > $LOCAL_BASE/${FILE}
+    sed  's/SLICE_MASTER_HOSTNAME/'$Master.IP("Network")'/g' $LOCAL_BASE/${FILE}.tmp |  sed  's/SLICE_MASTER_USER/pegasus-user/g'  | sed  's/SLICE_MASTER_HOME/\/home\/pegasus-user\/montage-8-deg/g' > $LOCAL_BASE/${FILE}
     
     rm $LOCAL_BASE/${FILE}.tmp
     chown pegasus-user $LOCAL_BASE/$FILE
 done
+
 
 
 

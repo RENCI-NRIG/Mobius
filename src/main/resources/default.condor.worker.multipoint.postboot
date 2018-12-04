@@ -2,7 +2,7 @@
 
 
 # TODO: Change this to templated
-MASTER_IP=$Master.get(0).IP("Master-Network")
+MASTER_IP=$Master.IP("Network")
 
 function testSSH() {
         local user=${1}
@@ -15,30 +15,29 @@ function testSSH() {
 }
 
 
-#set ( $sizeWorkerGroup = $Workers.size() - 1 )
+#set ( $sizeWorkerGroup = 16 )
 #foreach ( $j in [0..$sizeWorkerGroup] )
-  if [ "$self.Name()" = "$Workers.get($j).Name()" ];
+  if [ "$self.Name()" = "$Workers-$j.Name()" ];
   then
     ip_end=$j	
    fi
 #end
 name=$self.Name()
-
-name=$(($ip_end))
-MY_HOSTNAME=worker-$name
+IFS=- read n ip <<< "$name"
+MY_HOSTNAME=worker-$ip
 hostname $MY_HOSTNAME
 
 # replace /etc/hosts
 cat >/etc/hosts <<EOF
-$Master.get(0).IP("Master-Network")  master.expnet   master   salt
+$Master.IP("Network")  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
-START=`echo '$Workers.get(0).IP("Workers-Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
+START=`echo '$Workers-0.IP("Network")' | sed 's/^[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.//g'`
 END=$(($START+200))
 for i in $(seq $START $END); do
    name=$(($i - $START))
-   echo `echo $Workers.get(0).IP("Workers-Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
+   echo `echo $Workers-0.IP("Network")  | sed 's/.[0-9][0-9]*$//g'`.$i  worker-$name worker-$name\.expnet >> /etc/hosts
 done
 
 echo "" >  /etc/condor/condor_config.local
@@ -87,11 +86,11 @@ mkdir /mnt/scratch
 
 /etc/init.d/rpcbind restart
 
-echo '$Master.get(0).IP("Master-Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
+echo '$Master.IP("Network"):/var/nfs /mnt/scratch nfs vers=3,proto=tcp,hard,intr,timeo=600,retrans=2,wsize=32768,rsize=32768 0 0' >> /etc/fstab
 
  while true; do
-      echo attemping mount...
-      PING=`ping -c 1 $Master.get(0).IP("Master-Network") > /dev/null 2>&1`
+      echo attemping mount...   
+      PING=`ping -c 1 $Master.IP("Network") > /dev/null 2>&1`
         if [ "$?" = "0" ]; then
            break;
         fi

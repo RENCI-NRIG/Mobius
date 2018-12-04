@@ -27,6 +27,8 @@ public class RMState implements Serializable {
         private ConnectionFactory factory = new ConnectionFactory();
         
         private Table<String, String, String> crossSitePriority = HashBasedTable.create(); // a table for flow priority
+        
+        private ArrayList<StitchportInfo> stitchportList = new ArrayList<StitchportInfo>();
 
         // use output compression
         private static boolean compressOutput = true;
@@ -64,6 +66,14 @@ public class RMState implements Serializable {
         public void setCrossSitePriority(Table<String, String, String> crossSitePriority) {
             this.crossSitePriority = crossSitePriority;
         }       
+
+        public ArrayList<StitchportInfo> getStitchportList() {
+            return stitchportList;
+        }
+
+        public void setStitchportList(ArrayList<StitchportInfo> stitchportList) {
+            this.stitchportList = stitchportList;
+        }
         
         public void addReqToAppReqQ(AppRequestInfo newReq){
             synchronized(appReqQ){
@@ -75,6 +85,25 @@ public class RMState implements Serializable {
             synchronized(appReqQ){
                 return(appReqQ.remove(reqInfo));
             }
+        }
+        
+        public void addSPToStitchportList(StitchportInfo spInfo){
+            synchronized(stitchportList){
+                stitchportList.add(spInfo);
+            }
+        }
+        
+        public StitchportInfo findSPFromStitchportList(String orcaSliceID){
+        
+            synchronized(stitchportList){
+                for(StitchportInfo currSPInfo: stitchportList){
+                    if(currSPInfo.getOrcaSliceID().equalsIgnoreCase(orcaSliceID)){
+                        return currSPInfo;
+                    }
+                }
+            }
+            
+            return null;
         }
         
         public void addPriorityToCrossSitePriority(String endPointSrc, String endPointDst, String flowPriority){

@@ -8,7 +8,7 @@ package org.renci.requestmanager.policy;
 import org.apache.log4j.Logger;
 import org.renci.requestmanager.ModifyRequestInfo;
 import org.renci.requestmanager.RMState;
-import org.renci.requestmanager.ndl.NdlLibManager;
+import org.renci.requestmanager.ndl.AhabManager;
 
 /**
  *
@@ -31,9 +31,9 @@ public class SimpleUnitsModifyPolicy implements IModifyPolicy{
     @Override
     public int determineChangeInNumWorkers(ModifyRequestInfo modReq, String manifest) {
         
-        NdlLibManager ndlManager = new NdlLibManager();
-        int numActiveWorkersInManifest = ndlManager.getNumActiveWorkersInManifest(manifest);        
-        int numTicketedWorkersInManifest = ndlManager.getNumTicketedWorkersInManifest(manifest);
+        AhabManager ahabManager = new AhabManager();
+        int numActiveWorkersInManifest = ahabManager.getNumActiveWorkersInManifest(manifest);        
+        int numTicketedWorkersInManifest = ahabManager.getNumTicketedWorkersInManifest(manifest);
         int numActivePlusTicketedWorkers = numActiveWorkersInManifest + numTicketedWorkersInManifest;
         
         int userViewNumActiveWorkers = modReq.getNumCurrentRes();
