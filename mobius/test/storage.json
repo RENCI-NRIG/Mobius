@@ -1,0 +1,9 @@
+{
+    "mountPoint":"/mnt/",
+    "target":"dataNode0",
+    "size":"1",
+    "leaseStart":"1545151122",
+    "leaseEnd":"1545551122",
+    "action":"add"
+}
+

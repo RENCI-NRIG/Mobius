@@ -54,18 +54,8 @@ public class RequestManagerMain
         
         // This populates rmProperties, which is neded by everybody else
         processPreferences();
-        
-	// Test AHAB
 
-	//LIBNDL.setLogger();
-        
-        //String[] argsAhab = new String[]{"/Users/anirban/.ssl/geni-anirban.pem"};
-        //int count = 3;
-        //String sliceName="anirban.sdx.1";
-        //AhabManager.buildSDX(argsAhab, sliceName, count);
-	//TestDriver.testNewSlice1("/Users/anirban/.ssl/geni-anirban.pem");
-          
-	// Code to start SDX + HTCondor slice
+        // Code to start SDX + HTCondor slice
         if(rmProperties.getProperty(RMConstants.SDX_DEFAULT_CREATESLICE_PROP) != null){
             if(rmProperties.getProperty(RMConstants.SDX_DEFAULT_CREATESLICE_PROP).equalsIgnoreCase("true")){
                 AhabManager ahabManager = new AhabManager(rmProperties);
@@ -77,8 +67,6 @@ public class RequestManagerMain
         // End Code to start SDX + HTCondor slice
         
         //System.exit(0);
-
-	// End Test AHAB
 
         Logger logger = Logger.getLogger(new Object() { }.getClass().getEnclosingClass());
 

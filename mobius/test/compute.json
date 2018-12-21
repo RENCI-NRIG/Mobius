@@ -1,0 +1,10 @@
+{
+    "site":"Exogeni:RENCI (Chapel Hill, NC USA) XO Rack",
+    "cpus":"1",
+    "gpus":"0",
+    "ramPerCpus":"1",
+    "diskPerCpus":"11",
+    "leaseStart":"1545151122",
+    "leaseEnd":"1545551122"
+}
+

@@ -1,0 +1,479 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "Mobius API",
+    "version" : "1.0.0",
+    "title" : "Mobius API",
+    "termsOfService" : "None",
+    "contact" : {
+      "email" : "kthare10@renci.org"
+    },
+    "license" : {
+      "name" : "EPL-2.0",
+      "url" : "https://opensource.org/licenses/EPL-2.0"
+    }
+  },
+  "host" : "localhost:8080",
+  "basePath" : "/mobius",
+  "schemes" : [ "https" ],
+  "paths" : {
+    "/workflow" : {
+      "get" : {
+        "summary" : "returs status of the workflow",
+        "description" : "Get the status of the workflow by passing workflow id\n",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Returns a token identifying a new workflow\n",
+        "description" : "Returns a token identifying a new workflow\n",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete a workflow",
+        "description" : "Delete a workflow",
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
+    },
+    "/storage" : {
+      "post" : {
+        "summary" : "Request/modify storage resource for a workflow\n",
+        "description" : "Request/modify storage resource for a workflow\n",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "string",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/storageRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
+    },
+    "/network" : {
+      "post" : {
+        "summary" : "Request/modify network resource for a workflow\n",
+        "description" : "Request/modify network resource for a workflow\n",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "string",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/networkRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
+    },
+    "/compute" : {
+      "post" : {
+        "summary" : "Request/modify compute resource for a workflow\n",
+        "description" : "Request/modify compute resource for a workflow\n",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "string",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/computeRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "mobiusResponse" : {
+      "type" : "object",
+      "properties" : {
+        "status" : {
+          "type" : "integer",
+          "description" : "status code",
+          "minimum" : 0
+        },
+        "message" : {
+          "type" : "string",
+          "description" : "status message"
+        },
+        "value" : {
+          "type" : "object",
+          "description" : "JSON object",
+          "properties" : { }
+        },
+        "version" : {
+          "type" : "string",
+          "description" : "Mobius version"
+        }
+      }
+    },
+    "computeRequest" : {
+      "type" : "object",
+      "properties" : {
+        "site" : {
+          "type" : "string",
+          "description" : "execution site"
+        },
+        "image" : {
+          "type" : "string",
+          "description" : "execution site"
+        },
+        "cpus" : {
+          "type" : "integer",
+          "description" : "number of cpus",
+          "minimum" : 0
+        },
+        "gpus" : {
+          "type" : "integer",
+          "description" : "number of gpus",
+          "minimum" : 0
+        },
+        "ramPerCpus" : {
+          "type" : "integer",
+          "description" : "RAM per cpu in MB",
+          "minimum" : 0
+        },
+        "diskPerCpus" : {
+          "type" : "integer",
+          "description" : "Disk per cpu in MB",
+          "minimum" : 0
+        },
+        "leaseStart" : {
+          "type" : "string",
+          "description" : "Least Start Time"
+        },
+        "leaseEnd" : {
+          "type" : "string",
+          "description" : "Least End Time"
+        }
+      }
+    },
+    "networkRequest" : {
+      "type" : "object",
+      "properties" : {
+        "source" : {
+          "type" : "string",
+          "description" : "hostname or ip of the source"
+        },
+        "destination" : {
+          "type" : "string",
+          "description" : "hostname or ip of the destination"
+        },
+        "linkSpeed" : {
+          "type" : "integer",
+          "description" : "Link speed",
+          "minimum" : 0
+        },
+        "qos" : {
+          "type" : "string",
+          "description" : "Qos parameters"
+        },
+        "leaseStart" : {
+          "type" : "string",
+          "description" : "Least Start Time"
+        },
+        "leaseEnd" : {
+          "type" : "string",
+          "description" : "Least End Time"
+        },
+        "action" : {
+          "type" : "string",
+          "enum" : [ "add", "delete", "update" ]
+        }
+      }
+    },
+    "storageRequest" : {
+      "type" : "object",
+      "properties" : {
+        "mountPoint" : {
+          "type" : "string",
+          "description" : "mount point"
+        },
+        "target" : {
+          "type" : "string",
+          "description" : "hostname or ip of the destination"
+        },
+        "size" : {
+          "type" : "integer",
+          "description" : "size in bytes",
+          "minimum" : 0
+        },
+        "leaseStart" : {
+          "type" : "string",
+          "description" : "Least Start Time"
+        },
+        "leaseEnd" : {
+          "type" : "string",
+          "description" : "Least End Time"
+        },
+        "action" : {
+          "type" : "string",
+          "enum" : [ "add", "delete", "update" ]
+        }
+      }
+    }
+  },
+  "parameters" : {
+    "workflowID" : {
+      "name" : "workflowID",
+      "in" : "query",
+      "required" : true,
+      "type" : "string"
+    }
+  }
+}
