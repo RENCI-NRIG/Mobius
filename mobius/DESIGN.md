@@ -129,5 +129,8 @@ This thread runs every 60 seconds and performs following actions:
   - For each workflow, checks status of all the contexts(slices)
     - If status of all VMs has changed from Ticketed to Active; sends notification to Pegasus of the workflow status
 ```
-Sending notification to Pegasus = [{"nodes":[{"name":"dataNode1","publicIP":"152.54.14.14","state":"Active","ip1":"172.16.0.2"},{"name":"dataNode0","publicIP":"152.54.14.6","state":"Active","ip1":"172.16.0.1"}],"slice":"Mobius-Exogeni-kthare10-afdc64d6-290f-4f35-bbad-169d848cce1f"},{"nodes":[{"name":"dataNode3","publicIP":"152.54.14.18","state":"Active","ip1":"172.16.0.1"}],"slice":"Mobius-Exogeni-kthare10-5c4f6855-9333-4a46-905f-e82d414f0575"}]
+Sending notification to Pegasus = [{"nodes":[{"name":"dataNode1","publicIP":"152.54.14.14","state":"Active","ip1":"172.16.0.2"},
+ {"name":"dataNode0","publicIP":"152.54.14.6","state":"Active","ip1":"172.16.0.1"}],
+  "slice":"Mobius-Exogeni-kthare10-afdc64d6-290f-4f35-bbad-169d848cce1f"},{"nodes":[{"name":"dataNode3","publicIP":"152.54.14.18","state":"Active","ip1":"172.16.0.1"}],
+  "slice":"Mobius-Exogeni-kthare10-5c4f6855-9333-4a46-905f-e82d414f0575"}]
 ```
