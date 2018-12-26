@@ -4,7 +4,7 @@
     "gpus":"0",
     "ramPerCpus":"1",
     "diskPerCpus":"11",
-    "leaseStart":"1545151122",
-    "leaseEnd":"1545551122"
+    "leaseStart":"1545818245",
+    "leaseEnd":"1545928245"
 }
 
