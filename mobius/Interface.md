@@ -1,0 +1,178 @@
+# Introduction
+Mobius is a service which enables provisioning of resources on multiple cloud infrastructure. In the current implemenation, Exogeni, Chameleon and Open Science Grid is supported.
+
+# API Operations
+Source [Mobius](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0) specification on swaggerhub. 
+
+## workflow
+### POST
+Create a workflow ID. 
+#### URL
+POST -i "<ip/hostname>:8080/mobius/workflow" -H "accept: application/json"
+#### Response
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| status        | Integer       | HTTP Status code                     |
+| message       | String        | Message                              |
+| Value         | Object        | JSON Object containing workflow ID   |
+| Version       | String        | Mobius API version number            |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 200              | Success                              |
+### GET
+Get workflow status
+#### URL
+GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
+#### Parameters
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| workflowID    | String        | Workflow ID identifying the workflow |
+#### Response
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| status        | Integer       | HTTP Status code                     |
+| message       | String        | Message                              |
+| Value         | Object        | JSON Object representing status of workflow   |
+| Version       | String        | Mobius API version number            |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 404              | Not found                           |
+| 200              | Success                              |
+```
+EXAMPLE RESPONSE:
+  {
+    "status":200,
+    "message":"Success",
+    "value":"{
+              "workflowStatus":"
+                      [
+                        {\"nodes\":
+                          [
+                            {
+                              \"name\":\"dataNode1\",
+                              \"publicIP\":\"152.54.14.14\",
+                              \"state\":\"Active\",
+                              \"ip1\":\"172.16.0.2\"
+                            },
+                            {
+                              \"name\":\"dataNode0\",
+                              \"publicIP\":\"152.54.14.6\",
+                              \"state\":\"Active\",
+                              \"ip1\":\"172.16.0.1\"
+                            }
+                          ],
+                          \"slice\":\"Mobius-Exogeni-kthare10-afdc64d6-290f-4f35-bbad-169d848cce1f\"
+                       },
+                      {\"nodes\":     
+                        [
+                          {
+                            \"name\":\"dataNode3\",
+                            \"publicIP\":\"152.54.14.18\",
+                            \"state\":\"Active\",
+                            \"ip1\":\"172.16.0.1\"
+                          }
+                        ],
+                        \"slice\":\"Mobius-Exogeni-kthare10-5c4f6855-9333-4a46-905f-e82d414f0575\"
+                      }
+                    ]"
+               }",
+     "version":"0.1"
+  }
+```
+### DELETE
+Delete a workflow
+#### URL
+DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
+#### Parameters
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| workflowID    | String        | Workflow ID identifying the workflow |
+#### Response
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| status        | Integer       | HTTP Status code                     |
+| message       | String        | Message                              |
+| Value         | Object        | null  |
+| Version       | String        | Mobius API version number            |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 404              | Not found                           |
+| 200              | Success                              |
+## compute
+Provision compute resources for a workflow
+#### URL
+POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
+#### Parameters
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| workflowID    | String        | Workflow ID identifying the workflow |
+#### Body
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| site          | String        | Site name  |
+| cpus          | Integer       | Number of cpus requested  |
+| gpus          | Integer       | Number of gpus requested  |
+| ramPerCpus    | Integer       | RAM per cpu   |
+| diskPerCpus   | Integer       | Disk per cpu  |
+| leaseStart    | String        | Lease Start Time as Linux epoch |
+| leaseEnd      | String        | Lease End Time as Linux epoch |
+#### Response
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| status        | Integer       | HTTP Status code                     |
+| message       | String        | Message                              |
+| Value         | Object        | null  |
+| Version       | String        | Mobius API version number            |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 404              | Not found                           |
+| 200              | Success                              |
+## storage
+Provision storage resources for a workflow
+#### URL
+POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
+#### Parameters
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| workflowID    | String        | Workflow ID identifying the workflow |
+#### Body
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| mountPoint    | String        | Mount Point  |
+| target        | Integer       | Target Node Name  |
+| size          | Integer       | Number of gpus requested  |
+| action        | String        | Action to be taken i.e. add, delete, update  |
+| leaseStart    | String        | Lease Start Time as Linux epoch |
+| leaseEnd      | String        | Lease End Time as Linux epoch |
+#### Response
+| Name          | Type          | Description                          |
+| ------------- |:-------------:| ------------------------------------:|
+| status        | Integer       | HTTP Status code                     |
+| message       | String        | Message                              |
+| Value         | Object        | null  |
+| Version       | String        | Mobius API version number            |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 404              | Not found                           |
+| 200              | Success                              |
+## network
