@@ -157,7 +157,7 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: app
 | mountPoint    | String        | Mount Point  |
 | target        | Integer       | Target Node Name  |
 | size          | Integer       | Number of gpus requested  |
-| action        | String        | Action to be taken i.e. add, delete, update  |
+| action        | String        | Action to be taken i.e. add, delete, renew  |
 | leaseStart    | String        | Lease Start Time as Linux epoch |
 | leaseEnd      | String        | Lease End Time as Linux epoch |
 #### Response
