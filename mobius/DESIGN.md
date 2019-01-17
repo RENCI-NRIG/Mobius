@@ -14,24 +14,12 @@ Mobius controller is responsible for handling Rest APIs. It is a Singleton class
 ### Workflow
 Workflow is uniquely identified by its ID. Workflow can span across clouds and sites. It maintains a hashtable of CloudContext with siteName as the key. MobiusController handles create, get and delete operations for workflow as explained below. 
 #### Create
-- Checks if Periodic processing thread is running
-- If not, 
-  - Use java.util.UUID.randomUUID() to generate and return UUID
-  - In case of error in UUID generation, INTERNAL_SERVER_ERROR is returned
-- Otherwise, returns SERVICE_UNAVAILABLE; System busy error
+![createWorkflow](../mobius/plantuml/images/createWorkflow.png)
 ```
 POST -i "<ip/hostname>:8080/mobius/workflow" -H "accept: application/json"
 ```
 #### Get
-- Checks if Periodic processing thread is running
-- If not,
-  - Perform lookup on workflowHapMap to find the workflow 
-  - If workflow not found, return NOT_FOUND
-  - Otherwise 
-    - For each CloudContext in cloudContextHashmap do the following
-      - Return JSON Object per slice containing list of the nodes
-    - in case of error in status generation, INTERNAL_SERVER_ERROR is returned
-- Otherwise, returns SERVICE_UNAVAILABLE; System busy error
+![getWorkflow](../mobius/plantuml/images/getWorkflow.png)
 ```
 GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
 
@@ -48,41 +36,12 @@ Example Output:
 }
 ```
 #### DELETE
-- Checks if Periodic processing thread is running
-- If not, 
-  - Perform lookup on workflowHapMap to find the workflow 
-  - If workflow not found, return NOT_FOUND
-  - Otherwise
-    - For each CloudContext in cloudContextHashmap do the following
-      - Delete all slices if CloudContext is Exogeni Context
-    - in case of error in status generation, INTERNAL_SERVER_ERROR is returned
-- Otherwise, returns SERVICE_UNAVAILABLE; System busy error
+![deleteWorkflow](../mobius/plantuml/images/deleteWorkflow.png)
 ```
 DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
 ```
 #### COMPUTE
-- Checks if Periodic processing thread is running
-- If not, 
-  - Perform lookup on workflowHapMap to find the workflow 
-  - If workflow not found, return NOT_FOUND
-  - Otherwise
-    - Lookup context for the site
-      - If context found
-        - Validate Compute request; incase of failure return BAD_REQUEST
-        - For Exogeni:
-          - Determine number of VMs and their flavors; incase of failure return BAD_REQUEST
-          - Lookup existing slices with the same LeaseEnd Time
-          - If an existing slice found, modify slice to add required VMs and connect to the Broadcast link
-          - Otherwise, Create a new slice with required VM instances all contexted to each other via Broadcast link 
-      - Otherwise
-        - Create Cloud Context
-        - Validate Compute request; incase of failure return BAD_REQUEST
-        - For Exogeni:
-          - Determine number of VMs and their flavors; incase of failure return BAD_REQUEST
-          - Create a slice with required VM instances all contexted to each other via Broadcast link 
-        - Add to siteToCloudContext Hashmap and return SUCCESS
-    - in case of error in status generation, INTERNAL_SERVER_ERROR is returned
-- Otherwise, returns SERVICE_UNAVAILABLE; System busy error
+![compute](../mobius/plantuml/images/compute.png)
 ```
 POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
 
@@ -99,19 +58,7 @@ $ cat compute.json
 ```
 NOTE: For Exogeni, slice names are generated as 'Mobius-Exogeni-<user>-uuid'. Hostnames for VMs are dataNode<Number>
 #### STORAGE
-- Checks if Periodic processing thread is running
-- If not, 
-  - Perform lookup on workflowHapMap to find the workflow 
-  - If workflow not found, return NOT_FOUND
-  - Otherwise
-    - Lookup context which contains target HostName
-      - If not found, return NOT_FOUND
-      - Otherwise, 
-        - For Exogeni
-          - Lookup slice which contains target HostName
-          - Modify slice to add storage and conntext to the respective VM and return success
-    - in case of error in status generation, INTERNAL_SERVER_ERROR is returned
-- Otherwise, returns SERVICE_UNAVAILABLE; System busy error
+![storage](../mobius/plantuml/images/storage.png)
 ```
 POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
 $ cat storage.json
