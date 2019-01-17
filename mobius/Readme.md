@@ -14,12 +14,12 @@ Mobius controller is responsible for handling Rest APIs. It is a Singleton class
 ### Workflow
 Workflow is uniquely identified by its ID. Workflow can span across clouds and sites. It maintains a hashtable of CloudContext with siteName as the key. MobiusController handles create, get and delete operations for workflow as explained below. 
 #### Create
-![createWorkflow](./plantuml/images/createWorkflow.png)
+![createWorkflow](./mobius/plantuml/images/createWorkflow.png)
 ```
 POST -i "<ip/hostname>:8080/mobius/workflow" -H "accept: application/json"
 ```
 #### Get
-![getWorkflow](./plantuml/images/getWorkflow.png)
+![getWorkflow](./mobius/plantuml/images/getWorkflow.png)
 ```
 GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
 
@@ -36,12 +36,12 @@ Example Output:
 }
 ```
 #### DELETE
-![deleteWorkflow](./plantuml/images/deleteWorkflow.png)
+![deleteWorkflow](./mobius/plantuml/images/deleteWorkflow.png)
 ```
 DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
 ```
 #### COMPUTE
-![compute](./plantuml/images/compute.png)
+![compute](./mobius/plantuml/images/compute.png)
 ```
 POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
 
@@ -58,7 +58,7 @@ $ cat compute.json
 ```
 NOTE: For Exogeni, slice names are generated as 'Mobius-Exogeni-<user>-uuid'. Hostnames for VMs are dataNode<Number>
 #### STORAGE
-![storage](./plantuml/images/storage.png)
+![storage](./mobius/plantuml/images/storage.png)
 ```
 POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
 $ cat storage.json
