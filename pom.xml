@@ -9,6 +9,7 @@
   <url>http://maven.apache.org</url>
     <modules>
         <module>mobius</module>
+        <module>notification</module>
     </modules>
   <build>
     

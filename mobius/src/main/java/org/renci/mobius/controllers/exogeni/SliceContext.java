@@ -4,6 +4,7 @@ import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.ahab.libndl.Slice;
+import org.renci.ahab.libndl.resources.request.LinkNetwork;
 import org.renci.ahab.libndl.resources.request.*;
 import org.renci.ahab.libtransport.*;
 import org.renci.ahab.libtransport.util.SSHAccessTokenFileFactory;
@@ -34,22 +35,22 @@ public class SliceContext {
     public static final String JsonKeyPublicIP = "publicIP";
     public static final String JsonKeyIP = "ip";
 
-    private ComputeRequest request;
+    private ComputeRequest lastRequest;
     private String sliceName;
     private boolean sliceRenewed;
     private State state;
 
-    public SliceContext(String sliceName, ComputeRequest request) {
+    public SliceContext(String sliceName) {
         this.sliceName = sliceName;
-        this.request = request;
+        this.lastRequest = null;
         sliceRenewed = false;
         state = State.New;
     }
     public String getSliceName() {
         return sliceName;
     }
-    public ComputeRequest getRequest() {
-        return request;
+    public ComputeRequest getLastRequest() {
+        return lastRequest;
     }
 
     private ISliceTransportAPIv1 getSliceProxy(String pem, String controllerUrl){
@@ -114,6 +115,7 @@ public class SliceContext {
                 int closeCount = 0;
                 int ticketedCount = 0;
                 for (Node n : slice.getNodes()) {
+                    System.out.println("Node=" + n.getName());
                     JSONObject object = nodeToJson(n);
                     if(object != null && !object.isEmpty()) {
                         array.add(object);
@@ -147,9 +149,9 @@ public class SliceContext {
                         state = State.PartiallyActive;
                     }
                 }
-                if(state == State.Active && !sliceRenewed) {
+                if(state == State.Active && !sliceRenewed && lastRequest != null) {
                     // renew the lease to match the end slice
-                    long timestamp = Long.parseLong(request.getLeaseEnd());
+                    long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
                     Date expiry = new Date(timestamp * 1000);
                     slice.renew(expiry);
                     sliceRenewed = true;
@@ -194,7 +196,7 @@ public class SliceContext {
         }
         return new Pair<>(sendNotification, object);
     }
-    public int processCompute(List<String> flavorList, int nameIndex) throws Exception {
+    public int processCompute(List<String> flavorList, int nameIndex, ComputeRequest request) throws Exception {
         try {
             Slice slice = null;
             String user = MobiusConfig.getInstance().getDefaultExogeniUser();
@@ -238,14 +240,14 @@ public class SliceContext {
                 ComputeNode c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
                 ++nameIndex;
                 if (request.getImageUrl() != null && request.getImageHash() != null && request.getImageName() != null) {
-                    System.out.println("imageUrl=" + request.getImageUrl());
-                    System.out.println("imageName=" + request.getImageName());
-                    System.out.println("imageHash=" + request.getImageHash());
+                    System.out.println("Request imageUrl=" + request.getImageUrl());
+                    System.out.println("Request imageName=" + request.getImageName());
+                    System.out.println("Request imageHash=" + request.getImageHash());
                     c.setImage(request.getImageUrl(), request.getImageHash(), request.getImageName());
                 } else {
-                    System.out.println("imageUrl=" + MobiusConfig.getInstance().getDefaultExogeniImageUrl());
-                    System.out.println("imageName=" + MobiusConfig.getInstance().getDefaultExogeniImageName());
-                    System.out.println("imageHash=" + MobiusConfig.getInstance().getDefaultExogeniImageHash());
+                    System.out.println("Default imageUrl=" + MobiusConfig.getInstance().getDefaultExogeniImageUrl());
+                    System.out.println("Default imageName=" + MobiusConfig.getInstance().getDefaultExogeniImageName());
+                    System.out.println("Default imageHash=" + MobiusConfig.getInstance().getDefaultExogeniImageHash());
                     c.setImage(MobiusConfig.getInstance().getDefaultExogeniImageUrl(),
                             MobiusConfig.getInstance().getDefaultExogeniImageHash(),
                             MobiusConfig.getInstance().getDefaultExogeniImageName());
@@ -266,6 +268,7 @@ public class SliceContext {
 
             slice.commit(MobiusConfig.getInstance().getDefaultExogeniCommitRetryCount(),
                     MobiusConfig.getInstance().getDefaultExogeniCommitSleepInterval());
+            lastRequest = request;
 
             return nameIndex;
         }
@@ -290,43 +293,48 @@ public class SliceContext {
             if (c == null) {
                 throw new MobiusException("Unable to load compute node");
             }
-            System.out.println("Domain=" + c.getDomain());
-            BroadcastNetwork storageNetwork = (BroadcastNetwork) slice.getResourceByName(CloudContext.StorageNetworkName);
-            if (storageNetwork == null) {
-                storageNetwork = slice.addBroadcastLink(CloudContext.StorageNetworkName);
-            }
-            String storageName = request.getTarget() + CloudContext.StorageNameSuffix;
 
+            String storageName = request.getTarget() + CloudContext.StorageNameSuffix;
             StorageNode storage = (StorageNode) slice.getResourceByName(storageName);
+            boolean commit = false;
+
             switch (request.getAction()) {
                 case ADD:
                     if (storage != null) {
                         throw new MobiusException(HttpStatus.BAD_REQUEST, "Storage already exists");
                     }
+                    LinkNetwork storageNetwork = slice.addLinkNetwork(request.getTarget() + CloudContext.StorageNetworkName);
+                    if (storageNetwork == null) {
+                        throw new MobiusException("Unable to load link network node");
+                    }
                     System.out.println("Adding storage node = " + storageName);
-                    storage = slice.addStorageNode(storageName);
+                    storage = slice.addStorageNode(storageName, request.getSize(), request.getMountPoint());
                     storage.setDomain(c.getDomain());
-                    storage.setCapacity(request.getSize());
-                    // TODO mountpoint
                     storageNetwork.stitch(storage);
-                    storageNetwork.stitch(c);
+                    storageNetwork.stitch(c, storage);
+                    commit = true;
                     break;
                 case DELETE:
                     if (storage == null) {
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
                     storage.delete();
+                    commit = true;
                     break;
-                case UPDATE:
+                case RENEW:
                     if (storage == null) {
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
-                    storage.setCapacity(request.getSize());
+                    long timestamp = Long.parseLong(request.getLeaseEnd());
+                    Date expiry = new Date(timestamp * 1000);
+                    slice.renew(expiry);
                     break;
                 default:
                     throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid action on storage");
             }
-            slice.commit();
+            if(commit) {
+                slice.commit();
+            }
         }
         catch (MobiusException e) {
             System.out.println("Exception occurred =" + e);

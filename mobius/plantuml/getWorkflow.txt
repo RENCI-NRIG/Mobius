@@ -1,0 +1,23 @@
+start
+
+if (Periodic processing thread?) then (yes)
+  :return SERVICE_UNAVAILABLE; System busy error;
+  stop
+else (no)
+  :Lookup on workflowHapMap to find the workflow;
+  if (workflow found?) then (yes)
+    repeat
+     :Generate JSON Object per slice containing list of the nodes;
+     If (JSON generation?) then (yes)
+       :append JSON object to status;
+     else(no)
+       :return INTERNAL_SERVER_ERROR;
+     endif
+    repeat while (cloudContextHashmap has entries?)
+  else (no)
+     :return NOT_FOUND;
+endif
+:return status;
+stop
+
+@enduml

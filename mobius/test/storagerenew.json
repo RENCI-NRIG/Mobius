@@ -3,7 +3,7 @@
     "target":"dataNode0",
     "size":"1",
     "leaseStart":"1546886883",
-    "leaseEnd":"1546986883",
-    "action":"add"
+    "leaseEnd":"1547886883",
+    "action":"renew"
 }
 

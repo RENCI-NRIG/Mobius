@@ -17,21 +17,25 @@ abstract public class CloudContext {
     public static final String StorageNetworkName = "storagenetwork";
     public static final String StorageNameSuffix = "storage";
     public static final String NodeName = "dataNode";
+    public static final Integer AllowedDeltaTimeInMsFromCurrentTime = 300000;
+    public static final Long minimumTimeDifInMs = 86400000L; // 24 hours
 
     public static String generateSliceName(CloudType type) {
         return "Mobius-" + type.name() + "-" + MobiusConfig.getInstance().getDefaultExogeniUser() + "-" + java.util.UUID.randomUUID().toString();
     }
-
-    public String getSite() { return site; }
-    public CloudType getCloudType() { return type; }
     protected CloudType type;
     protected String site;
     protected Set<String> hostNameSet;
+
     public CloudContext(CloudType t, String s) {
         type = t;
         site = s;
         hostNameSet = new HashSet<String>();
     }
+
+    public String getSite() { return site; }
+    public CloudType getCloudType() { return type; }
+
     abstract public int processCompute(String workflowId, ComputeRequest request, int nameIndex) throws Exception;
     abstract public String getStatus() throws Exception;
     abstract public void stop() throws Exception;

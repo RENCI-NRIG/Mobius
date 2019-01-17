@@ -4,7 +4,7 @@
     <artifactId>mobius-spring</artifactId>
     <packaging>jar</packaging>
     <name>mobius-spring</name>
-    <version>1.0.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <properties>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -79,6 +79,11 @@
             <artifactId>ahab</artifactId>
             <version>0.1.7-SNAPSHOT</version>
             <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.5.1</version>
         </dependency>
     </dependencies>
 </project>

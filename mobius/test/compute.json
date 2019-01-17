@@ -1,10 +1,10 @@
 {
-    "site":"Exogeni:RENCI (Chapel Hill, NC USA) XO Rack",
+    "site":"Exogeni:CIENA2 (Hanover, MD) XO Rack",
     "cpus":"1",
     "gpus":"0",
-    "ramPerCpus":"1",
-    "diskPerCpus":"11",
-    "leaseStart":"1545818245",
-    "leaseEnd":"1545928245"
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "leaseStart":"1547733832",
+    "leaseEnd":"1557733832"
 }
 

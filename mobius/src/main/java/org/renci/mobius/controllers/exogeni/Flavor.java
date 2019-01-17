@@ -7,11 +7,11 @@ enum Flavor {
     ExtraLarge(4, 76800, 12288, "XO Extra Large"),
     BareMetal(20, 49152, 102400, "ExoGENI Bare-Metal");
 
-    private Flavor(Integer c, Integer d, Integer r, String n) {
-        cpus =c;
-        diskSpace = d;
-        ram = r;
-        name = n;
+    private Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
+        this.cpus =cpus;
+        this.diskSpace = diskSpace;
+        this.ram = ram;
+        this.name = name;
     }
 
     public Integer getCpus() { return cpus; }

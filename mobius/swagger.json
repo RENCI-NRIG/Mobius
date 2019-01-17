@@ -463,7 +463,7 @@
         },
         "action" : {
           "type" : "string",
-          "enum" : [ "add", "delete", "update" ]
+          "enum" : [ "add", "delete", "renew" ]
         }
       }
     }

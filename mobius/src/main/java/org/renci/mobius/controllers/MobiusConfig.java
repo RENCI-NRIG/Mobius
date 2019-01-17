@@ -22,6 +22,40 @@ public class MobiusConfig {
     public static final String enablePeriodicProcessingFile = "mobius.enable.periodic.processing.file";
     public static final String periodicProcessingWaitTime = "mobius.periodic.processing.max.wait.time";
     public static final String periodicProcessingPeriod = "mobius.periodic.processing.period";
+    public static final String amqpServerHost = "mobius.amqp.server.host";
+    public static final String amqpServerPort = "mobius.amqp.server.port";
+    public static final String amqpUseSsl = "mobius.amqp.use.ssl";
+    public static final String amqpUserName = "mobius.amqp.user.name";
+    public static final String amqpPassword = "mobius.amqp.user.password";
+    public static final String amqpVirtualHost = "mobius.amqp.virtual.host";
+    public static final String amqpExchangeName = "mobius.amqp.exchange.name";
+    public static final String amqpRoutingKey = "mobius.amqp.exchange.routing.key";
+
+    public String getAmqpExchangeName() { return properties.getProperty(amqpExchangeName); }
+
+    public String getAmqpRoutingKey() { return properties.getProperty(amqpRoutingKey); }
+
+    public String getAmqpServerHost() { return properties.getProperty(amqpServerHost); }
+
+    public Integer getAmqpServerPort() {
+        if(properties.getProperty(amqpServerPort) != null) {
+            return Integer.valueOf(properties.getProperty(amqpServerPort));
+        }
+        return -1;
+    }
+
+    public boolean getAmqpUseSsl() {
+        if(properties.getProperty(amqpUseSsl) != null) {
+        return Boolean.valueOf(properties.getProperty(amqpUseSsl));
+        }
+        return false;
+    }
+
+    public String getAmqpUserName() { return properties.getProperty(amqpUserName); }
+
+    public String getAmqpPassword() { return properties.getProperty(amqpPassword); }
+
+    public String getAmqpVirtualHost() { return properties.getProperty(amqpVirtualHost); }
 
     public String getPeriodicProcessingWaitTime() { return properties.getProperty(periodicProcessingWaitTime); }
 

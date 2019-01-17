@@ -40,7 +40,7 @@ public class StorageRequest   {
     
     DELETE("delete"),
     
-    UPDATE("update");
+    RENEW("renew");
 
     private String value;
 

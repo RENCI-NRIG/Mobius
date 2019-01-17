@@ -4,6 +4,7 @@ import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.FutureRequestException;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
@@ -12,10 +13,6 @@ import org.springframework.http.HttpStatus;
 import java.util.*;
 
 public class ExogeniContext extends CloudContext {
-
-
-    public static final Long minimumTimeDifInMs = 600000L; // 10 minutes
-
     private HashMap<String, SliceContext> sliceNameToSliceContextMap;
     private HashMap<Date, String> leaseEndTimeToSliceNameHashMap;
     private HashMap<String, String> hostNameToSliceNameHashMap;
@@ -29,23 +26,32 @@ public class ExogeniContext extends CloudContext {
         networkName = "Network";
     }
 
-    private void validateComputeRequest(ComputeRequest request) throws Exception {
-        if(request.getGpus() > 0) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Exogeni does not support Gpus");
-        }
+    private void validateLeasTime(String startTime, String endTime) throws Exception {
         long currTime = System.currentTimeMillis();
-        long beginTimestamp = Long.parseLong(request.getLeaseStart()) * 1000;
-        long endTimestamp  = Long.parseLong(request.getLeaseEnd()) * 1000;
-        /*
-        if(beginTimestamp < currTime) {
+        long beginTimestamp = Long.parseLong(startTime) * 1000;
+        long endTimestamp  = Long.parseLong(endTime) * 1000;
+
+        /*if((beginTimestamp + AllowedDeltaTimeInMsFromCurrentTime) > currTime) {
+            throw new FutureRequestException("Future request");
+        }
+
+        if((beginTimestamp + AllowedDeltaTimeInMsFromCurrentTime) < currTime) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "startTime is before currentTime");
         }*/
+
         if(endTimestamp < currTime){
             throw new MobiusException(HttpStatus.BAD_REQUEST, "endTime is before currTime");
         }
         if(endTimestamp - beginTimestamp <= minimumTimeDifInMs) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is less than 10 minutes");
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is less than 24 hours");
         }
+    }
+
+    private void validateComputeRequest(ComputeRequest request) throws Exception {
+        if(request.getGpus() > 0) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Exogeni does not support Gpus");
+        }
+        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd());
     }
 
     // TODO make it more effificent; also handle listResources
@@ -133,12 +139,12 @@ public class ExogeniContext extends CloudContext {
             context = sliceNameToSliceContextMap.get(sliceName);
         }
         else {
-            context = new SliceContext(sliceName, request);
+            context = new SliceContext(sliceName);
             addSliceToMaps = true;
             System.out.println("Created new context=" + sliceName);
         }
 
-        int index = context.processCompute(flavorList, nameIndex);
+        int index = context.processCompute(flavorList, nameIndex, request);
         sliceName = context.getSliceName();
 
         if(addSliceToMaps) {
@@ -205,6 +211,8 @@ public class ExogeniContext extends CloudContext {
 
     @Override
     public void processStorageRequest(StorageRequest request) throws Exception {
+        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd());
+
         String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
         if(sliceName == null) {
             throw new MobiusException("hostName not found in hostNameToSliceHashMap");
