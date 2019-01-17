@@ -1,4 +1,4 @@
-package org.renci.notification;
+package org.renci.notificationSink;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
