@@ -3,12 +3,12 @@
 Spring Boot Rest Server which has the capability to provision resources on different cloud infrastructures. In this release, Exogeni, Chameleon and Open Science Grid clouds are supported
 
 
-- Design details can be found in [Design](../mobius/DESIGN.md)
-- Interface specifications can be found in [Interface](../mobius/Interface.md)
-- Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](../mobius/HowToGenerateCodeFromSwagger.md)
+- Design details can be found in [Design](./DESIGN.md)
+- Interface specifications can be found in [Interface](./Interface.md)
+- Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](./HowToGenerateCodeFromSwagger.md)
 
 ## Block Diagram
-![Component Diagram](../mobius/plantuml/images/component.png)
+![Component Diagram](./plantuml/images/component.png)
 
 ## Open Implementation Issues
 - User / certificate information
