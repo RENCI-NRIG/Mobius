@@ -8,7 +8,7 @@ Spring Boot Rest Server which has the capability to provision resources on diffe
 - Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](./HowToGenerateCodeFromSwagger.md)
 
 ## Block Diagram
-![Component Diagram](./plantuml/images/component.png)
+![Component Diagram](./mobius/plantuml/images/component.png)
 
 ## Open Implementation Issues
 - User / certificate information
