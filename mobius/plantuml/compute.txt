@@ -3,61 +3,61 @@ start
     if (Periodic processing thread?) then (yes)
         :return SERVICE_UNAVAILABLE; System busy error;
         stop
-    else (no)
-        :Lookup on workflowHapMap to find the workflow;
-        if (workflow found?) then (yes)
-            :Lookup context for the site;
-            if (context found?) then (yes)
-                if (context is exogeni?) then (yes)
-                    if (request valid?) then (no)
-                        : return BAD_REQUEST;
-                        stop
-                    endif
-                    if (request is future?) then (yes)
-                        : add to future requests;
-                        stop
-                    endif
-                    : Determine number of VMs and their flavors;
-                    if (flavor determined?) then (no)
-                        : return BAD_REQUEST;
-                        stop
-                    endif
-                    : Lookup existing slices with the same LeaseEnd Time;
-                    if (slice found?) then (yes)
-                        : Modify slice to add required VMs;
-                        : Connect to the Broadcast link;
-                    else (no)
-                        : Create a new slice with required VM instances;
-                        : Connect all VMs to each other via Broadcast link;
-                    endif
-                else (no)
-                    : return NOT_IMPLEMENTED;
-                    stop
-                endif
-            else (no)
-                : Create Cloud Context;
+    endif
+    :Lookup on workflowHapMap to find the workflow;
+    if (workflow found?) then (yes)
+        :Lookup context for the site;
+        if (context found?) then (yes)
+            if (context is exogeni?) then (yes)
                 if (request valid?) then (no)
                     : return BAD_REQUEST;
                     stop
                 endif
                 if (request is future?) then (yes)
-                        : add to future requests;
-                        stop
+                    : add to future requests;
+                    stop
                 endif
                 : Determine number of VMs and their flavors;
                 if (flavor determined?) then (no)
                     : return BAD_REQUEST;
                     stop
                 endif
-                : Create a new slice with required VM instances;
-                : Connect all VMs to each other via Broadcast link;
+                : Lookup existing slices with the same LeaseEnd Time;
+                if (slice found?) then (yes)
+                    : Modify slice to add required VMs;
+                    : Connect to the Broadcast link;
+                else (no)
+                    : Create a new slice with required VM instances;
+                    : Connect all VMs to each other via Broadcast link;
+                endif
+            else (no)
+                : return NOT_IMPLEMENTED;
+                stop
             endif
-            : Add to siteToCloudContext Hashmap and return SUCCESS;
         else (no)
-            :return NOT_FOUND;
-            stop
+            : Create Cloud Context;
+            if (request valid?) then (no)
+                : return BAD_REQUEST;
+                stop
+            endif
+            if (request is future?) then (yes)
+                    : add to future requests;
+                    stop
+            endif
+            : Determine number of VMs and their flavors;
+            if (flavor determined?) then (no)
+                : return BAD_REQUEST;
+                stop
+            endif
+            : Create a new slice with required VM instances;
+            : Connect all VMs to each other via Broadcast link;
         endif
+        : Add to siteToCloudContext Hashmap and return SUCCESS;
+    else (no)
+        :return NOT_FOUND;
+        stop
     endif
 stop
 
 @enduml
+
