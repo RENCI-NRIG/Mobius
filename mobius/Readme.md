@@ -1,4 +1,4 @@
-# Design
+# Mobius
 
 Mobius is Spring-Boot based REST Webserver with the ability to provision compute, network or storage resources on multiple clouds. In the first release, following 3 cloud providers will be supported:
 - Exogeni
