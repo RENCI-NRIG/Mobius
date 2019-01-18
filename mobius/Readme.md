@@ -82,3 +82,6 @@ Sending notification to Pegasus = [{"nodes":[{"name":"dataNode1","publicIP":"152
 {"nodes":[{"name":"dataNode3","publicIP":"152.54.14.18","state":"Active","ip1":"172.16.0.1"}],
   "slice":"Mobius-Exogeni-kthare10-5c4f6855-9333-4a46-905f-e82d414f0575"}]
 ```
+## Class Diagram
+![diagram1](../mobius/plantuml/images/diagram1.png)
+![diagram2](../mobius/plantuml/images/diagram2.png)
