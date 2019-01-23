@@ -8,7 +8,7 @@ Source [Mobius](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0) specifica
 ### POST
 Create a workflow ID. 
 #### URL
-POST -i "<ip/hostname>:8080/mobius/workflow" -H "accept: application/json"
+POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
