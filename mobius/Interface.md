@@ -8,7 +8,7 @@ Source [Mobius](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0) specifica
 ### POST
 Create a workflow ID. 
 #### URL
-POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
+POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -30,7 +30,7 @@ POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept:
 ### GET
 Get workflow status
 #### URL
-GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
+GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -94,7 +94,7 @@ EXAMPLE RESPONSE:
 ### DELETE
 Delete a workflow
 #### URL
-DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accept: application/json"
+DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -117,7 +117,7 @@ DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=<workflowID>" -H "accep
 ## compute
 Provision compute resources for a workflow
 #### URL
-POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
+POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -154,7 +154,7 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=<workflowId>" -H "accept: app
 ## storage
 Provision storage resources for a workflow
 #### URL
-POST "<ip/hostname>:8080/mobius/storage?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
+POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -186,7 +186,7 @@ POST "<ip/hostname>:8080/mobius/storage?workflowID=<workflowId>" -H "accept: app
 ## network
 Provision network resources for a workflow
 #### URL
-POST "<ip/hostname>:8080/mobius/network?workflowID=<workflowId>" -H "accept: application/json" -H "Content-Type: application/json" -d @network.json 
+POST "<ip/hostname>:8080/mobius/network?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @network.json 
 #### Parameters
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
