@@ -56,5 +56,3 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
 # mvn clean install
 # java -jar target/mobius-spring-1.0.0-SNAPSHOT.jar
 ```
-
-```
