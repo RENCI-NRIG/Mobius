@@ -71,7 +71,12 @@
         "summary" : "Returns a token identifying a new workflow\n",
         "description" : "Returns a token identifying a new workflow\n",
         "produces" : [ "application/json" ],
-        "parameters" : [ ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -414,6 +419,10 @@
         "imageName" : {
           "type" : "string",
           "description" : "image name"
+        },
+        "postBootScript" : {
+          "type" : "string",
+          "description" : "post boot script"
         }
       }
     },
@@ -464,7 +473,7 @@
         },
         "size" : {
           "type" : "integer",
-          "description" : "size in bytes",
+          "description" : "size in GB",
           "minimum" : 0
         },
         "leaseStart" : {

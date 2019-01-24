@@ -13,7 +13,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-22T13:10:00.976-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-24T10:02:23.336-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -48,6 +48,9 @@ public class ComputeRequest   {
 
   @JsonProperty("imageName")
   private String imageName = null;
+
+  @JsonProperty("postBootScript")
+  private String postBootScript = null;
 
   public ComputeRequest site(String site) {
     this.site = site;
@@ -281,6 +284,26 @@ public class ComputeRequest   {
     this.imageName = imageName;
   }
 
+  public ComputeRequest postBootScript(String postBootScript) {
+    this.postBootScript = postBootScript;
+    return this;
+  }
+
+  /**
+   * post boot script
+   * @return postBootScript
+  **/
+  @ApiModelProperty(value = "post boot script")
+
+
+  public String getPostBootScript() {
+    return postBootScript;
+  }
+
+  public void setPostBootScript(String postBootScript) {
+    this.postBootScript = postBootScript;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -301,12 +324,13 @@ public class ComputeRequest   {
         Objects.equals(this.coallocate, computeRequest.coallocate) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
-        Objects.equals(this.imageName, computeRequest.imageName);
+        Objects.equals(this.imageName, computeRequest.imageName) &&
+        Objects.equals(this.postBootScript, computeRequest.postBootScript);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, imageUrl, imageHash, imageName);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, imageUrl, imageHash, imageName, postBootScript);
   }
 
   @Override
@@ -325,6 +349,7 @@ public class ComputeRequest   {
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");
+    sb.append("    postBootScript: ").append(toIndentedString(postBootScript)).append("\n");
     sb.append("}");
     return sb.toString();
   }

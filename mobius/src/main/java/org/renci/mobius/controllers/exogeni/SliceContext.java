@@ -275,6 +275,9 @@ public class SliceContext {
                 LOGGER.debug("Domain=" + arrOfStr[1]);
                 c.setDomain(arrOfStr[1]);
                 net.stitch(c);
+                if(request.getPostBootScript() != null) {
+                    c.setPostBootScript(request.getPostBootScript());
+                }
             }
 
             slice.autoIP();
