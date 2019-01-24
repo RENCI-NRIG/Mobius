@@ -153,14 +153,15 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | site          | String        | Site name  | M         |
 | cpus          | Integer       | Number of cpus requested  | M         |
 | gpus          | Integer       | Number of gpus requested  | M         |
-| ramPerCpus    | Integer       | RAM per cpu in bytes  | M         |
-| diskPerCpus   | Integer       | Disk per cpu in bytes  | M         |
+| ramPerCpus    | Integer       | RAM per cpu in MB  | M         |
+| diskPerCpus   | Integer       | Disk per cpu in MB  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 | coallocate    | Boolean       | flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false' | M         |
 | imageUrl      | String        | Image URL | O         |
 | imageHash     | String        | Image Hash | O         |
 | imageName     | String        | Image Name | O         |
+| postBootScript | String       | Post Boot Script | O         |
 #### Response
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
