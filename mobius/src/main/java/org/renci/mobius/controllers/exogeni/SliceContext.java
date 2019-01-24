@@ -1,9 +1,9 @@
 package org.renci.mobius.controllers.exogeni;
 
-import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.ahab.libndl.Slice;
+import org.renci.ahab.libndl.ndl.NDLGenerator;
 import org.renci.ahab.libndl.resources.request.LinkNetwork;
 import org.renci.ahab.libndl.resources.request.*;
 import org.renci.ahab.libtransport.*;
@@ -12,40 +12,43 @@ import org.renci.ahab.libtransport.xmlrpc.XMLRPCProxyFactory;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
+import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.net.URL;
 import java.util.*;
+import org.apache.log4j.Logger;
 
 public class SliceContext {
-
-    enum State {
-        New,
-        Ticketed,
-        Active,
-        Closed,
-        PartiallyActive
-    }
-    public static final String JsonKeySlice = "slice";
-    public static final String JsonKeyNodes = "nodes";
-    public static final String JsonKeyName = "name";
-    public static final String JsonKeyState = "state";
-    public static final String JsonKeyPublicIP = "publicIP";
-    public static final String JsonKeyIP = "ip";
+    private static final Logger LOGGER = Logger.getLogger( SliceContext.class.getName() );
 
     private ComputeRequest lastRequest;
     private String sliceName;
-    private boolean sliceRenewed;
-    private State state;
+    private boolean sendNotification;
+    private NDLGenerator.SliceState state;
+    private Date expiry;
 
     public SliceContext(String sliceName) {
         this.sliceName = sliceName;
         this.lastRequest = null;
-        sliceRenewed = false;
-        state = State.New;
+        sendNotification = false;
+        state = NDLGenerator.SliceState.NULL;
+        expiry = null;
     }
+    public boolean canTriggerNotification() {
+        if(sendNotification &&
+                (state == NDLGenerator.SliceState.STABLE_OK || state == NDLGenerator.SliceState.STABLE_ERROR)) {
+            return true;
+        }
+        return false;
+    }
+
+    public void setSendNotification(boolean value) {
+        sendNotification = value;
+    }
+    public Date getExpiry() { return expiry; }
     public String getSliceName() {
         return sliceName;
     }
@@ -54,68 +57,77 @@ public class SliceContext {
     }
 
     private ISliceTransportAPIv1 getSliceProxy(String pem, String controllerUrl){
+        LOGGER.debug("getSliceProxy: IN");
 
         ISliceTransportAPIv1 sliceProxy = null;
         try{
             //ExoGENI controller context
             ITransportProxyFactory ifac = new XMLRPCProxyFactory();
-            System.out.println("Opening certificate " + pem + " and key " + pem);
+            LOGGER.debug("Opening certificate " + pem + " and key " + pem);
             TransportContext ctx = new PEMTransportContext("", pem, pem);
             sliceProxy = ifac.getSliceProxy(ctx, new URL(controllerUrl));
 
         } catch  (Exception e){
             e.printStackTrace();
-            System.err.println("Proxy factory test failed");
+            LOGGER.error("Proxy factory test failed");
             assert(false);
         }
 
+        LOGGER.debug("getSliceProxy: OUT");
         return sliceProxy;
     }
 
     private Slice getSlice() throws Exception {
+        LOGGER.debug("getSlice: IN");
         ISliceTransportAPIv1 sliceProxy = getSliceProxy(MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
                 MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+        LOGGER.debug("getSlice: OUT");
         return Slice.loadManifestFile(sliceProxy,sliceName);
     }
 
     private JSONObject nodeToJson(Node n){
+        LOGGER.debug("nodeToJson: IN");
         JSONObject object = new JSONObject();
-        object.put(JsonKeyName, n.getName());
-        object.put(JsonKeyState, n.getState());
+        object.put(CloudContext.JsonKeyName, n.getName());
+        object.put(CloudContext.JsonKeyState, n.getState());
         int count = 1;
         // Set is used to ensure no duplicate ips are added to JSON object
         Set<String> ipSetForJson = new HashSet<String>();
         if (n instanceof ComputeNode) {
             ComputeNode c = ((ComputeNode) n);
             String mgmtIP = c.getManagementIP();
-            object.put(JsonKeyPublicIP, mgmtIP);
+            object.put(CloudContext.JsonKeyPublicIP, mgmtIP);
             for (Interface i : c.getInterfaces()) {
                 InterfaceNode2Net iface = (InterfaceNode2Net) i;
                 String ip = iface.getIpAddress();
                 if (ip != null && ipSetForJson.contains(ip) == false) {
-                    object.put(JsonKeyIP + count,ip);
+                    object.put(CloudContext.JsonKeyIP + count,ip);
                     count++;
                     ipSetForJson.add(ip);
                 }
             }
         }
+        LOGGER.debug("nodeToJson: OUT");
         return object;
     }
 
-    public JSONObject status(Set<String> hostNameSet) {
+    public JSONObject status(Set<String> hostNameSet) throws Exception{
+        LOGGER.debug("status: IN");
         JSONObject returnValue = new JSONObject();
         try {
 
             Slice slice = getSlice();
+            slice.getAllResources();
             if (slice != null) {
-                returnValue.put(JsonKeySlice, sliceName);
+                LOGGER.debug("Slice state = " + slice.getState());
+                if(slice.getState() == NDLGenerator.SliceState.CLOSING_DEAD) {
+                    throw new SliceNotFoundOrDeadException("slice dead");
+                }
+                returnValue.put(CloudContext.JsonKeySlice, sliceName);
                 JSONArray array = new JSONArray();
                 int nodeCount = slice.getNodes().size();
-                int activeCount = 0;
-                int closeCount = 0;
-                int ticketedCount = 0;
                 for (Node n : slice.getNodes()) {
-                    System.out.println("Node=" + n.getName());
+                    LOGGER.debug("Node=" + n.getName());
                     JSONObject object = nodeToJson(n);
                     if(object != null && !object.isEmpty()) {
                         array.add(object);
@@ -125,78 +137,79 @@ public class SliceContext {
                         if(n instanceof ComputeNode && !hostNameSet.contains(n.getName())) {
                             hostNameSet.add(n.getName());
                         }
-                        activeCount++;
-                    }
-                    if (state.compareToIgnoreCase("Closed") == 0) {
-                        closeCount++;
-                    }
-                    if (state.compareToIgnoreCase("Ticketed") == 0) {
-                        ticketedCount++;
                     }
                 }
-
-                if(state != State.Active) {
-                    if (activeCount == nodeCount) {
-                        state = State.Active;
-                    }
-                    else if (closeCount == nodeCount) {
-                        state = State.Closed;
-                    }
-                    else if (ticketedCount == nodeCount) {
-                        state = State.Ticketed;
-                    }
-                    else if (activeCount + closeCount == nodeCount){
-                        state = State.PartiallyActive;
-                    }
-                }
-                if(state == State.Active && !sliceRenewed && lastRequest != null) {
+                NDLGenerator.SliceState currState = slice.getState();
+                LOGGER.debug("Slice state = " + currState);
+                if((currState == NDLGenerator.SliceState.STABLE_OK ||
+                        currState == NDLGenerator.SliceState.STABLE_ERROR) &&
+                        state != NDLGenerator.SliceState.STABLE_ERROR &&
+                        state != NDLGenerator.SliceState.STABLE_OK){
                     // renew the lease to match the end slice
-                    long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
-                    Date expiry = new Date(timestamp * 1000);
                     slice.renew(expiry);
-                    sliceRenewed = true;
+                    sendNotification = true;
                 }
-                returnValue.put(JsonKeyNodes, array);
+                state = currState;
+                returnValue.put(CloudContext.JsonKeyNodes, array);
             }
         }
+        catch (SliceNotFoundOrDeadException e) {
+            throw e;
+        }
         catch (Exception e){
-            System.out.println("Exception occured while getting status of slice " + sliceName);
+            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occured while getting status of slice " + sliceName);
+            LOGGER.error("Ex= " + e);
+            e.printStackTrace();
+        }
+        finally {
+            LOGGER.debug("status: OUT");
         }
         return returnValue;
     }
     public void stop() {
+        LOGGER.debug("stop: IN");
+
         try {
             Slice slice = getSlice();
             if(slice != null) {
                 slice.delete();
-                System.out.println("Successfully deleted slice " + sliceName);
+                LOGGER.debug("Successfully deleted slice " + sliceName);
             }
         }
         catch (Exception e){
-            System.out.println("Exception occured while deleting slice " + sliceName);
+            LOGGER.debug("Exception occured while deleting slice " + sliceName);
         }
+        LOGGER.debug("stop: OUT");
     }
-    public Pair<Boolean, JSONObject> doPeriodic(Set<String> hostNameSet) {
+    public JSONObject doPeriodic(Set<String> hostNameSet) throws SliceNotFoundOrDeadException {
+        LOGGER.debug("doPeriodic: IN");
+
         JSONObject object = null;
-        boolean sendNotification = sliceRenewed;
         try {
             object = status(hostNameSet);
         }
+        catch (SliceNotFoundOrDeadException e) {
+            LOGGER.debug("doPeriodic: OUT");
+            throw e;
+        }
         catch (Exception e){
-            System.out.println("Exception occured while performing periodic updates to slice " + sliceName);
+            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+                LOGGER.debug("doPeriodic: OUT");
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occured while performing periodic updates to slice " + sliceName);
         }
-        // Slice was renewed in this periodic cycle; send notification to Pegasus
-        if(!sendNotification && sliceRenewed) {
-            System.out.println("Slice was renewed in this periodic cycle; send notification to Pegasus");
-            sendNotification = true;
-        }
-        else {
-            System.out.println("Notification to Pegasus already sent");
-            sendNotification = false;
-        }
-        return new Pair<>(sendNotification, object);
+        LOGGER.debug("doPeriodic: OUT");
+        return object;
     }
     public int processCompute(List<String> flavorList, int nameIndex, ComputeRequest request) throws Exception {
+        LOGGER.debug("processCompute: IN");
+
         try {
             Slice slice = null;
             String user = MobiusConfig.getInstance().getDefaultExogeniUser();
@@ -236,54 +249,65 @@ public class SliceContext {
 
 
             for (String flavor : flavorList) {
-                System.out.println("adding node=" + nameIndex);
+                LOGGER.debug("adding node=" + nameIndex);
                 ComputeNode c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
                 ++nameIndex;
                 if (request.getImageUrl() != null && request.getImageHash() != null && request.getImageName() != null) {
-                    System.out.println("Request imageUrl=" + request.getImageUrl());
-                    System.out.println("Request imageName=" + request.getImageName());
-                    System.out.println("Request imageHash=" + request.getImageHash());
+                    LOGGER.debug("Request imageUrl=" + request.getImageUrl());
+                    LOGGER.debug("Request imageName=" + request.getImageName());
+                    LOGGER.debug("Request imageHash=" + request.getImageHash());
                     c.setImage(request.getImageUrl(), request.getImageHash(), request.getImageName());
                 } else {
-                    System.out.println("Default imageUrl=" + MobiusConfig.getInstance().getDefaultExogeniImageUrl());
-                    System.out.println("Default imageName=" + MobiusConfig.getInstance().getDefaultExogeniImageName());
-                    System.out.println("Default imageHash=" + MobiusConfig.getInstance().getDefaultExogeniImageHash());
+                    LOGGER.debug("Default imageUrl=" + MobiusConfig.getInstance().getDefaultExogeniImageUrl());
+                    LOGGER.debug("Default imageName=" + MobiusConfig.getInstance().getDefaultExogeniImageName());
+                    LOGGER.debug("Default imageHash=" + MobiusConfig.getInstance().getDefaultExogeniImageHash());
                     c.setImage(MobiusConfig.getInstance().getDefaultExogeniImageUrl(),
                             MobiusConfig.getInstance().getDefaultExogeniImageHash(),
                             MobiusConfig.getInstance().getDefaultExogeniImageName());
                 }
-                System.out.println("flavor=" + flavor);
+                LOGGER.debug("flavor=" + flavor);
                 c.setNodeType(flavor);
                 String[] arrOfStr = request.getSite().split(":");
                 if(arrOfStr.length < 2 || arrOfStr.length > 2) {
                     throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
                 }
-                System.out.println("Site=" + request.getSite());
-                System.out.println("Domain=" + arrOfStr[1]);
+                LOGGER.debug("Site=" + request.getSite());
+                LOGGER.debug("Domain=" + arrOfStr[1]);
                 c.setDomain(arrOfStr[1]);
                 net.stitch(c);
             }
 
             slice.autoIP();
-
+            sendNotification = true;
             slice.commit(MobiusConfig.getInstance().getDefaultExogeniCommitRetryCount(),
                     MobiusConfig.getInstance().getDefaultExogeniCommitSleepInterval());
             lastRequest = request;
+            long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
+            expiry = new Date(timestamp * 1000);
 
             return nameIndex;
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred =" + e);
+            LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw e;
         }
         catch (Exception e) {
-            System.out.println("Exception occurred =" + e);
+            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw new MobiusException("Failed to server compute request");
         }
+        finally {
+            LOGGER.debug("processCompute: OUT");
+        }
     }
     public void processStorageRequest(StorageRequest request) throws Exception {
+        LOGGER.debug("processStorageRequest: IN");
+
         try {
             Slice slice = getSlice();
             if (slice == null) {
@@ -307,18 +331,20 @@ public class SliceContext {
                     if (storageNetwork == null) {
                         throw new MobiusException("Unable to load link network node");
                     }
-                    System.out.println("Adding storage node = " + storageName);
+                    LOGGER.debug("Adding storage node = " + storageName);
                     storage = slice.addStorageNode(storageName, request.getSize(), request.getMountPoint());
                     storage.setDomain(c.getDomain());
                     storageNetwork.stitch(storage);
                     storageNetwork.stitch(c, storage);
                     commit = true;
+                    sendNotification = true;
                     break;
                 case DELETE:
                     if (storage == null) {
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
                     storage.delete();
+                    sendNotification = true;
                     commit = true;
                     break;
                 case RENEW:
@@ -326,7 +352,7 @@ public class SliceContext {
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
                     long timestamp = Long.parseLong(request.getLeaseEnd());
-                    Date expiry = new Date(timestamp * 1000);
+                    expiry = new Date(timestamp * 1000);
                     slice.renew(expiry);
                     break;
                 default:
@@ -337,14 +363,21 @@ public class SliceContext {
             }
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred =" + e);
+            LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw e;
         }
         catch (Exception e) {
-            System.out.println("Exception occurred =" + e);
+            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw new MobiusException("Failed to server compute request");
+        }
+        finally {
+            LOGGER.debug("processStorageRequest: OUT");
         }
     }
 }

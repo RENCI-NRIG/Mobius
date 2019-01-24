@@ -1,5 +1,7 @@
 package org.renci.mobius.controllers;
 
+import org.apache.log4j.Logger;
+
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -10,11 +12,12 @@ public class PeriodicProcessingThread implements Runnable {
 
     public static final int MAX_DEFAULT_WAIT_TIME = 60; // seconds
     public static final int DEFAULT_PERIODIC_THREAD_PERIOD = 60; // seconds
+    private static final Logger LOGGER = Logger.getLogger( PeriodicProcessingThread.class.getName() );
+
 
     protected static Lock syncLock = new ReentrantLock();
     protected static int waitTimeInt = 0;
     protected static int periodTimeInt = 0;
-
     private boolean running;
 
     public PeriodicProcessingThread() {
@@ -23,14 +26,16 @@ public class PeriodicProcessingThread implements Runnable {
 
     @Override
     public void run() {
+        LOGGER.debug("run(): IN");
         synchronized (this) {
             if (running) {
-                System.out.println("PeriodicProcessingThread ran into itself, leaving");
+                LOGGER.debug("PeriodicProcessingThread ran into itself, leaving");
+                LOGGER.debug("run(): OUT");
                 return;
             }
             running = true;
         }
-        System.out.println("PeriodicProcessingThread executing cycle");
+        LOGGER.debug("PeriodicProcessingThread executing cycle");
 
         String patFileName = MobiusConfig.getInstance().getEnablePeriodicProcessingFile();
         if (patFileName == null) {
@@ -39,22 +44,23 @@ public class PeriodicProcessingThread implements Runnable {
 
         File rf = new File(patFileName);
         if (!rf.exists()) {
-            System.out.println("PeriodicProcessingThread enable file " + patFileName + " doesn't exist, skipping");
+            LOGGER.debug("PeriodicProcessingThread enable file " + patFileName + " doesn't exist, skipping");
             running = false;
             return;
         }
 
         try {
             getLock();
-            System.out.println("PeriodicProcessingThread executing cycle, lock aquired");
+            LOGGER.debug("PeriodicProcessingThread executing cycle, lock aquired");
             MobiusController.getInstance().doPeriodic();
-            System.out.println("PeriodicProcessingThread completed sync");
+            LOGGER.debug("PeriodicProcessingThread completed sync");
         } catch (Exception e) {
-            System.out.println("PeriodicProcessingThread exception");
+            LOGGER.debug("PeriodicProcessingThread exception");
         } finally {
             releaseLock();
             running = false;
         }
+        LOGGER.debug("run(): OUT");
     }
 
 
@@ -67,7 +73,8 @@ public class PeriodicProcessingThread implements Runnable {
         try {
             ret = syncLock.tryLock(sec, TimeUnit.SECONDS);
         } catch (InterruptedException ie) {
-            System.out.println("PeriodicProcessingThread.tryLock interrupted externally");
+            LOGGER.error("PeriodicProcessingThread.tryLock interrupted externally");
+            ie.printStackTrace();
         }
         return ret;
     }
@@ -91,8 +98,9 @@ public class PeriodicProcessingThread implements Runnable {
                     return defaultVal;
                 return parseVal;
             } catch (NumberFormatException nfe) {
-                System.out.println("getPropertyOrDefault unable to parse property " + pName + ": " + pVal + ", using default "
+                LOGGER.error("getPropertyOrDefault unable to parse property " + pName + ": " + pVal + ", using default "
                         + defaultVal);
+                nfe.printStackTrace();
                 return defaultVal;
             }
         }

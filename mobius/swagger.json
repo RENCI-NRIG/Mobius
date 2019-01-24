@@ -364,12 +364,9 @@
     },
     "computeRequest" : {
       "type" : "object",
+      "required" : [ "coallocate", "cpus", "diskPerCpus", "gpus", "leaseEnd", "leaseStart", "ramPerCpus", "site" ],
       "properties" : {
         "site" : {
-          "type" : "string",
-          "description" : "execution site"
-        },
-        "image" : {
           "type" : "string",
           "description" : "execution site"
         },
@@ -400,6 +397,23 @@
         "leaseEnd" : {
           "type" : "string",
           "description" : "Least End Time"
+        },
+        "coallocate" : {
+          "type" : "boolean",
+          "description" : "flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'",
+          "default" : false
+        },
+        "imageUrl" : {
+          "type" : "string",
+          "description" : "image url"
+        },
+        "imageHash" : {
+          "type" : "string",
+          "description" : "image hash"
+        },
+        "imageName" : {
+          "type" : "string",
+          "description" : "image name"
         }
       }
     },

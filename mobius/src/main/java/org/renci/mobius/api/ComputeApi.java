@@ -23,7 +23,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2018-12-17T08:25:38.605-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-22T13:10:00.976-05:00[America/New_York]")
 
 @Api(value = "compute", description = "the compute API")
 public interface ComputeApi {
@@ -40,6 +40,6 @@ public interface ComputeApi {
         produces = { "application/json" }, 
         consumes = { "application/json" },
         method = RequestMethod.POST)
-    ResponseEntity<MobiusResponse> computePost(@ApiParam(value = "" ,required=true )  @Valid @RequestBody ComputeRequest body, @NotNull @ApiParam(value = "", required = true) @Valid @RequestParam(value = "workflowID", required = true) String workflowID);
+    ResponseEntity<MobiusResponse> computePost(@ApiParam(value = "" ,required=true )  @Valid @RequestBody ComputeRequest body,@NotNull @ApiParam(value = "", required = true) @Valid @RequestParam(value = "workflowID", required = true) String workflowID);
 
 }

@@ -13,7 +13,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2018-12-17T08:25:38.605-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-22T13:10:00.976-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -36,6 +36,9 @@ public class ComputeRequest   {
 
   @JsonProperty("leaseEnd")
   private String leaseEnd = null;
+
+  @JsonProperty("coallocate")
+  private Boolean coallocate = false;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -197,6 +200,27 @@ public class ComputeRequest   {
     this.leaseEnd = leaseEnd;
   }
 
+  public ComputeRequest coallocate(Boolean coallocate) {
+    this.coallocate = coallocate;
+    return this;
+  }
+
+  /**
+   * flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'
+   * @return coallocate
+  **/
+  @ApiModelProperty(required = true, value = "flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'")
+  @NotNull
+
+
+  public Boolean isCoallocate() {
+    return coallocate;
+  }
+
+  public void setCoallocate(Boolean coallocate) {
+    this.coallocate = coallocate;
+  }
+
   public ComputeRequest imageUrl(String imageUrl) {
     this.imageUrl = imageUrl;
     return this;
@@ -274,6 +298,7 @@ public class ComputeRequest   {
         Objects.equals(this.diskPerCpus, computeRequest.diskPerCpus) &&
         Objects.equals(this.leaseStart, computeRequest.leaseStart) &&
         Objects.equals(this.leaseEnd, computeRequest.leaseEnd) &&
+        Objects.equals(this.coallocate, computeRequest.coallocate) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName);
@@ -281,7 +306,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, imageUrl, imageHash, imageName);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, imageUrl, imageHash, imageName);
   }
 
   @Override
@@ -296,6 +321,7 @@ public class ComputeRequest   {
     sb.append("    diskPerCpus: ").append(toIndentedString(diskPerCpus)).append("\n");
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
     sb.append("    leaseEnd: ").append(toIndentedString(leaseEnd)).append("\n");
+    sb.append("    coallocate: ").append(toIndentedString(coallocate)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");

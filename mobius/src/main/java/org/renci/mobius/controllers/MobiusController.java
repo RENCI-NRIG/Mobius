@@ -6,10 +6,13 @@ import org.springframework.http.HttpStatus;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.*;
+import org.apache.log4j.Logger;
 
 public class MobiusController {
     private HashMap<String, Workflow> workflowHashMap;
     private static final MobiusController fINSTANCE = new MobiusController();
+    private static final Logger LOGGER = Logger.getLogger( MobiusController.class.getName() );
+
     private MobiusController() {
         workflowHashMap = new HashMap<String, Workflow>();
     }
@@ -23,38 +26,45 @@ public class MobiusController {
         return fINSTANCE;
     }
 
-    public String createWorkflowID() throws Exception{
+    public void createWorkflow(String workflowID) throws Exception{
+        LOGGER.debug("createWorkflow(): IN");
         if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+            LOGGER.debug("createWorkflow(): OUT");
             throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
         }
-        String uuid = null;
         try {
+            Workflow workflow = null;
             synchronized (this) {
-                uuid = java.util.UUID.randomUUID().toString();
-                // TODO
-                uuid = "acdbaada-7a4a-47dd-9832-32c04153c766";
-                Workflow workflow = new Workflow(uuid);
-                workflowHashMap.put(uuid, workflow);
+                workflow = workflowHashMap.get(workflowID);
+                if( workflow != null) {
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "Workflow Id already in use");
+                }
+                workflow = new Workflow(workflowID);
+                workflowHashMap.put(workflowID, workflow);
             }
         }
         catch (Exception e) {
             throw new MobiusException("Internal Server Error");
         }
         finally {
+            LOGGER.debug("createWorkflow(): OUT");
             PeriodicProcessingThread.releaseLock();
         }
-        return uuid;
     }
 
     public void deleteWorkflow(Workflow workflow) {
+        LOGGER.debug("deleteWorkflow(): IN");
         if(workflow != null) {
             synchronized (this) {
                 workflowHashMap.remove(workflow.getWorkflowID());
             }
         }
+        LOGGER.debug("deleteWorkflow(): OUT");
     }
 
     public void deleteWorkflow(String workflowId) throws Exception {
+        LOGGER.debug("deleteWorkflow(): IN");
+
         try {
             if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
                 throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
@@ -80,11 +90,14 @@ public class MobiusController {
             }
         }
         finally {
+            LOGGER.debug("deleteWorkflow(): OUT");
             PeriodicProcessingThread.releaseLock();
         }
     }
 
     public String getWorkflowStatus(String workflowId) throws Exception {
+        LOGGER.debug("getWorkflowStatus(): IN");
+
         String retVal = null;
         try {
             if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
@@ -111,12 +124,14 @@ public class MobiusController {
             }
         }
         finally {
+            LOGGER.debug("getWorkflowStatus(): OUT");
             PeriodicProcessingThread.releaseLock();
         }
         return retVal;
     }
 
     public void processComputeRequest(String workflowId, ComputeRequest request) throws Exception {
+        LOGGER.debug("processComputeRequest(): IN");
         try {
             if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
                 throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
@@ -129,7 +144,7 @@ public class MobiusController {
                 if (workflow != null) {
                     workflow.lock();
                     try {
-                        workflow.processComputeRequest(request);
+                        workflow.processComputeRequest(request, false);
                     } finally {
 
                         workflow.unlock();
@@ -142,12 +157,14 @@ public class MobiusController {
             }
         }
         finally {
+            LOGGER.debug("processComputeRequest(): OUT");
             PeriodicProcessingThread.releaseLock();
         }
     }
     public void processNetworkRequest() throws Exception {
     }
     public void processStorageRequest(String workflowId, StorageRequest request) throws Exception{
+        LOGGER.debug("processStorageRequest(): IN");
         try {
             if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
                 throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
@@ -160,7 +177,7 @@ public class MobiusController {
                 if (workflow != null) {
                     workflow.lock();
                     try {
-                        workflow.processStorageRequest(request);
+                        workflow.processStorageRequest(request, false);
                     } finally {
 
                         workflow.unlock();
@@ -173,11 +190,13 @@ public class MobiusController {
             }
         }
         finally {
+            LOGGER.debug("processStorageRequest(): OUT");
             PeriodicProcessingThread.releaseLock();
         }
     }
 
     public void doPeriodic() {
+        LOGGER.debug("doPeriodic(): IN");
         synchronized (this) {
             for(HashMap.Entry<String, Workflow> workflowEntry : workflowHashMap.entrySet()) {
                 Workflow w = workflowEntry.getValue();
@@ -186,16 +205,19 @@ public class MobiusController {
                     w.doPeriodic();
                 }
                 catch (Exception e) {
-                    System.out.println("Exception occured while processing worklfow =" + e);
+                    LOGGER.debug("Exception occured while processing worklfow =" + e);
+                    e.printStackTrace();
                 }
                 finally {
                     w.unlock();
                 }
             }
         }
+        LOGGER.debug("doPeriodic(): OUT");
     }
 
     public static void startThreads() {
+        LOGGER.debug("startThreads(): IN");
 
         // create service for various periodic threads that are daemon threads
         // that way we don't have to kill them on exit
@@ -208,10 +230,10 @@ public class MobiusController {
             }
         });
 
-        System.out.println("Staring Periodic Processing thread at " + PeriodicProcessingThread.getPeriod() + " sec.");
+        LOGGER.debug("Staring Periodic Processing thread at " + PeriodicProcessingThread.getPeriod() + " sec.");
         ppt = new PeriodicProcessingThread();
         pptFuture = scheduler.scheduleAtFixedRate(ppt, PeriodicProcessingThread.getPeriod() , PeriodicProcessingThread.getPeriod(),
                 TimeUnit.SECONDS);
-
+        LOGGER.debug("startThreads(): OUT");
     }
 }

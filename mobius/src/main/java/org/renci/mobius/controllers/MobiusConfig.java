@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +10,7 @@ public class MobiusConfig {
     private Properties properties;
     private boolean load = true;
 
-    public static final String configFile = "src/main/resources/application.properties";
+    private static final String MOBIUS_HOME = "MOBIUS_HOME";
     public static final String exogeniUser = "mobius.exogeni.user";
     public static final String exogeniUserCertKey = "mobius.exogeni.certKeyPath";
     public static final String exogeniUserSshKey = "mobius.exogeni.sshKeyPath";
@@ -117,7 +118,16 @@ public class MobiusConfig {
 
         try {
             if(load) {
-                input = new FileInputStream(configFile);
+                if(getMobiusHome() == null) {
+                    input = MobiusConfig.class.getClassLoader().getResourceAsStream("application.properties");
+                }
+                else {
+                    String HomeDirectory = MobiusConfig.getMobiusHome();
+                    String ConfigDirectory = HomeDirectory + System.getProperty("file.separator") + "config"
+                           + System.getProperty("file.separator");
+                    String MobiusConfigurationFile = ConfigDirectory + "application.properties";
+                    input = new FileInputStream(MobiusConfigurationFile);
+                }
                 properties = new Properties();
                 // load a properties file
                 properties.load(input);
@@ -134,5 +144,16 @@ public class MobiusConfig {
                 }
             }
         }
+    }
+
+    private static String getMobiusHome() {
+        // first check if MOBIUS_HOME is defined as a system property
+        String mobiusHome = System.getProperty(MOBIUS_HOME);
+        if (mobiusHome == null){
+            // next check if there is an environment variable MOBIUS_HOME
+            mobiusHome = System.getenv(MOBIUS_HOME);
+        }
+
+        return mobiusHome;
     }
 }

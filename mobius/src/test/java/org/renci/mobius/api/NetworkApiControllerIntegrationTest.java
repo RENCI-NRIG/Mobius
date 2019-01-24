@@ -1,5 +1,7 @@
 package org.renci.mobius.api;
 
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.renci.mobius.model.MobiusResponse;
 import org.renci.mobius.model.NetworkRequest;
 
@@ -17,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class NetworkApiControllerIntegrationTest {
 
     @Autowired

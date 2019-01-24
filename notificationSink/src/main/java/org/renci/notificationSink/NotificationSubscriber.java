@@ -6,7 +6,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
 public class NotificationSubscriber {
-    private static final String EXCHANGE_NAME = "notifcations";
+    private static final String EXCHANGE_NAME = "notifications";
     private static final String ROUTING_KEY = "workflows";
     private static final String TOPIC_TYPE = "topic";
 
@@ -17,7 +17,7 @@ public class NotificationSubscriber {
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 
-        channel.exchangeDeclare(EXCHANGE_NAME, TOPIC_TYPE);
+        channel.exchangeDeclare(EXCHANGE_NAME, TOPIC_TYPE, true);
         String queueName = channel.queueDeclare().getQueue();
 
         channel.queueBind(queueName, EXCHANGE_NAME, ROUTING_KEY);

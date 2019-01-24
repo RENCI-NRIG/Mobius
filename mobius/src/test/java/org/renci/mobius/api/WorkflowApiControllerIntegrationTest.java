@@ -1,5 +1,7 @@
 package org.renci.mobius.api;
 
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.renci.mobius.model.MobiusResponse;
 
 import java.util.*;
@@ -16,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class WorkflowApiControllerIntegrationTest {
 
     @Autowired
@@ -37,7 +40,8 @@ public class WorkflowApiControllerIntegrationTest {
 
     @Test
     public void workflowPostTest() throws Exception {
-        ResponseEntity<MobiusResponse> responseEntity = api.workflowPost();
+        String workflowID = "workflowID_example";
+        ResponseEntity<MobiusResponse> responseEntity = api.workflowPost(workflowID);
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
     }
 

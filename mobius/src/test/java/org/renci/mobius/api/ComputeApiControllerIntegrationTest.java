@@ -1,5 +1,7 @@
 package org.renci.mobius.api;
 
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.MobiusResponse;
 
@@ -17,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ComputeApiControllerIntegrationTest {
 
     @Autowired
@@ -27,7 +30,7 @@ public class ComputeApiControllerIntegrationTest {
         ComputeRequest body = new ComputeRequest();
         String workflowID = "workflowID_example";
         ResponseEntity<MobiusResponse> responseEntity = api.computePost(body, workflowID);
-        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
     }
 
 }

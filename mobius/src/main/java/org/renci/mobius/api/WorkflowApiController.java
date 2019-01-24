@@ -53,14 +53,14 @@ public class WorkflowApiController implements WorkflowApi {
             resp.setMessage("Success");
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = e.getStatus();
             resp.setStatus(status.value());
             resp.setMessage(e.getMessage());
         }
         catch (Exception e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -84,14 +84,14 @@ public class WorkflowApiController implements WorkflowApi {
             resp.setMessage("Success");
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = e.getStatus();
             resp.setStatus(status.value());
             resp.setMessage(e.getMessage());
         }
         catch (Exception e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -101,28 +101,25 @@ public class WorkflowApiController implements WorkflowApi {
         return new ResponseEntity<MobiusResponse>(resp, status);
     }
 
-    public ResponseEntity<MobiusResponse> workflowPost() {
+    public ResponseEntity<MobiusResponse> workflowPost(@NotNull @ApiParam(value = "", required = true) @Valid @RequestParam(value = "workflowID", required = true) String workflowID) {
         String accept = request.getHeader("Accept");
-        JSONObject output = new JSONObject();
         MobiusResponse resp = new MobiusResponse();
         resp.setVersion("0.1");
         HttpStatus status = HttpStatus.OK;
         try {
-            String workflowId = MobiusController.getInstance().createWorkflowID();
-            output.put("workflowID", workflowId);
-            resp.setValue(output.toString());
+            MobiusController.getInstance().createWorkflow(workflowID);
             resp.setStatus(HttpStatus.OK.value());
             resp.setMessage("Success");
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = e.getStatus();
             resp.setStatus(status.value());
             resp.setMessage(e.getMessage());
         }
         catch (Exception e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());

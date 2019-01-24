@@ -54,14 +54,14 @@ public class StorageApiController implements StorageApi {
             resp.setMessage("Success");
         }
         catch (MobiusException e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = e.getStatus();
             resp.setStatus(status.value());
             resp.setMessage(e.getMessage());
         }
         catch (Exception e) {
-            System.out.println("Exception occurred e=" + e);
+            log.error("Exception occurred e=" + e);
             e.printStackTrace();
             status = HttpStatus.INTERNAL_SERVER_ERROR;
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
