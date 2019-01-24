@@ -52,44 +52,69 @@ GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept
 | 200              | Success                              |
 ```
 EXAMPLE RESPONSE:
-  {
-    "status":200,
-    "message":"Success",
-    "value":"{
-              "workflowStatus":"
-                      [
-                        {\"nodes\":
-                          [
-                            {
-                              \"name\":\"dataNode1\",
-                              \"publicIP\":\"152.54.14.14\",
-                              \"state\":\"Active\",
-                              \"ip1\":\"172.16.0.2\"
-                            },
-                            {
-                              \"name\":\"dataNode0\",
-                              \"publicIP\":\"152.54.14.6\",
-                              \"state\":\"Active\",
-                              \"ip1\":\"172.16.0.1\"
-                            }
-                          ],
-                          \"slice\":\"Mobius-Exogeni-kthare10-afdc64d6-290f-4f35-bbad-169d848cce1f\"
-                       },
-                      {\"nodes\":     
-                        [
-                          {
-                            \"name\":\"dataNode3\",
-                            \"publicIP\":\"152.54.14.18\",
-                            \"state\":\"Active\",
-                            \"ip1\":\"172.16.0.1\"
-                          }
-                        ],
-                        \"slice\":\"Mobius-Exogeni-kthare10-5c4f6855-9333-4a46-905f-e82d414f0575\"
-                      }
-                    ]"
-               }",
-     "version":"0.1"
-  }
+{
+  "status":200,
+  "message":"Success",
+  "value":
+          "{
+             \"workflowStatus\":
+                                \"[
+                                    {
+                                        \\\"slices\\\":
+                                                        [
+                                                          {
+                                                              \\\"nodes\\\":
+                                                                           [
+                                                                             {
+                                                                                \\\"name\\\":\\\"dataNode3\\\",
+                                                                                \\\"publicIP\\\":\\\"152.54.14.30\\\",
+                                                                                \\\"state\\\":\\\"Active\\\",
+                                                                                \\\"ip1\\\":\\\"172.16.0.1\\\"
+                                                                             },          
+                                                                             {
+                                                                             \\\"name\\\":\\\"dataNode7\\\",
+                                                                             \\\"publicIP\\\":\\\"152.54.14.28\\\",
+                                                                             \\\"state\\\":\\\"Active\\\",
+                                                                             \\\"ip1\\\":\\\"172.16.0.1\\\"
+                                                                             }
+                                                                           ],
+                                                              \\\"slice\\\":\\\"Mobius-Exogeni-kthare10-f0106b20-2795-45a6-a0ce-7f7a7e1be2d3\\\"
+                                                          }
+                                                        ],
+                                        \\\"site\\\":\\\"Exogeni:RENCI (Chapel Hill, NC USA) XO Rack\\\"
+                                    },
+                                    {
+                                        \\\"slices\\\":
+                                                        [
+                                                          {
+                                                              \\\"nodes\\\":
+                                                                           [
+                                                                              {
+                                                                                \\\"name\\\":\\\"dataNode0storage\\\",
+                                                                                \\\"state\\\":\\\"Active\\\"
+                                                                              }, 
+                                                                              {
+                                                                                \\\"name\\\":\\\"dataNode0\\\",
+                                                                                \\\"publicIP\\\":\\\"162.244.229.107\\\",
+                                                                                \\\"ip2\\\":\\\"10.104.0.6\\\",
+                                                                                \\\"state\\\":\\\"Active\\\",
+                                                                                \\\"ip1\\\":\\\"172.16.0.1\\\"
+                                                                              },{
+                                                                                \\\"name\\\":\\\"dataNode1\\\",
+                                                                                \\\"publicIP\\\":\\\"162.244.229.108\\\",
+                                                                                \\\"state\\\":\\\"Active\\\",
+                                                                                \\\"ip1\\\":\\\"172.16.0.2\\\"
+                                                                              }
+                                                                           ],
+                                                              \\\"slice\\\":\\\"Mobius-Exogeni-kthare10-a2e73094-d8d8-4924-9bed-33d5f05afea7\\\"
+                                                          }
+                                                        ],
+                                        \\\"site\\\":\\\"Exogeni:CIENA2 (Hanover, MD) XO Rack\\\"
+                                    }
+                                ]\"
+          }",
+  "version":"0.1"
+}
 ```
 ### DELETE
 Delete a workflow
@@ -128,8 +153,8 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | site          | String        | Site name  | M         |
 | cpus          | Integer       | Number of cpus requested  | M         |
 | gpus          | Integer       | Number of gpus requested  | M         |
-| ramPerCpus    | Integer       | RAM per cpu   | M         |
-| diskPerCpus   | Integer       | Disk per cpu  | M         |
+| ramPerCpus    | Integer       | RAM per cpu in bytes  | M         |
+| diskPerCpus   | Integer       | Disk per cpu in bytes  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 | coallocate    | Boolean       | flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false' | M         |
@@ -164,7 +189,7 @@ POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: a
 | ------------- |:-------------:| ------------------------------------:| ---------:|
 | mountPoint    | String        | Mount Point  | M         |
 | target        | Integer       | Target Node Name  | M         |
-| size          | Integer       | Number of gpus requested  | M         |
+| size          | Integer       | Size in GB  | M         |
 | action        | String        | Action to be taken i.e. add, delete, renew  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
