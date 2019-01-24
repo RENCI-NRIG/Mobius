@@ -8,11 +8,11 @@ Servers are generated as stubbed code, and require the logical operations to be 
 The server within this repository is based on Spring Boot and Java API for RESTful Web Services.
 
 ## Documentation
-https://app.swaggerhub.com/apis-docs/kthare10/mobius/1.0.0#/
+[API Documentation](https://app.swaggerhub.com/apis-docs/kthare10/mobius/1.0.0#/)
 
 ## Generate a new server stub
 
-In a browser, go to https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0
+In a browser, go to [Swagger definition](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0)
 
 From the generate code icon (downward facing arrow), select Download API > JSON Resolved
 
