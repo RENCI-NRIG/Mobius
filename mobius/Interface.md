@@ -18,7 +18,7 @@ POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accep
 | ------------- |:-------------:| ------------------------------------:| ---------:|
 | status        | Integer       | HTTP Status code                     | M         |
 | message       | String        | Message                              | M         |
-| Value         | Object        | JSON Object containing workflow ID   | M         |
+| Value         | Object        | null   | M         |
 | Version       | String        | Mobius API version number            | M         |
 #### Return Code
 | HTTP Status Code | Description                          |
