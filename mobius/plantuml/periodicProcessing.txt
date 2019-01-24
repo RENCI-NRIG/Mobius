@@ -1,0 +1,22 @@
+@startuml
+
+title PeriodicProcessing Thread
+
+
+start
+
+repeat
+  :Check Status of CloudContext;
+  if (status STABLE and notification to be sent?) then (yes)
+     :Set sendNotification=True;
+  endif
+  :Add Status JSONObject to Notification object;
+repeat while (not end of CloudContextMap?)
+if (sendNotification?) then (yes)
+  :Send notification to Pegasus;
+endif
+:Process any future compute requests;
+:Process any future storage requests;
+stop
+
+@enduml
