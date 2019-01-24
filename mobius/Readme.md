@@ -72,9 +72,7 @@ $ cat storage.json
 }
 ```
 ## Periodic Processing Thread
-This thread runs every 60 seconds and performs following actions:
-  - For each workflow, checks status of all the contexts(slices)
-    - If status of all VMs has changed from Ticketed to Active; sends notification to Pegasus of the workflow status
+![periodicProcessing](../mobius/plantuml/images/periodicProcessing.png)
 ```
 Sending notification to Pegasus = 
 [
