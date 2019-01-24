@@ -44,3 +44,17 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
   - Update operation on storage cannot be supported (increase/decrease)
   - Keep - What is the expectation ?
 
+## How to use or launch Mobius?
+- User should clone the code from git repo
+- Update configuration in Mobius/mobius/src/main/resources/application.properties
+- Launch Mobius
+- Example JSON body for compute and storage can be found in test directory
+- Refer to [Interface](./mobius/Interface.md) to see the REST API
+```
+# git clone https://github.com/RENCI-NRIG/Mobius.git
+# cd Mobius/mobius
+# mvn clean install
+# java -jar target/mobius-spring-1.0.0-SNAPSHOT.jar
+```
+
+```
