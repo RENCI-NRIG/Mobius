@@ -140,7 +140,7 @@ DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "acc
 | 404              | Not found                           |
 | 200              | Success                              |
 ## compute
-Provision compute resources for a workflow. Compute resources are added to a new slice on a specific site of specific cloud if no other slice on that site exists with the same LeasEndTime. If another slice on the specific site of speicific cloud with same LeaseEndTime is found, compute resources are added to the existing slice.
+Provision compute resources for a workflow. Compute resources are added as per SlicePolicy indicated in the request. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
 #### URL
 POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
 #### Parameters
@@ -158,7 +158,7 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 | coallocate    | Boolean       | flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false' | M         |
-| slicePolicy   | String        | Indicates Slice policy. Behavior for each of possible values is as follows. new - compute resources are added in a new slice on site specified. existing - compute resources are added to existing slice specified by 'sliceName' field. default - compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'| M         |
+| slicePolicy   | String        | Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'| M         |
 | sliceName      | String       | Existing slice name to which compute resources should be added | O         |
 | imageUrl      | String        | Image URL | O         |
 | imageHash     | String        | Image Hash | O         |
