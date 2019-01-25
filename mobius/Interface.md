@@ -193,7 +193,7 @@ POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: a
 | mountPoint    | String        | Mount Point  | M         |
 | target        | Integer       | Target Node Name  | M         |
 | size          | Integer       | Size in GB  | M         |
-| action        | String        | Action to be taken i.e. add, delete, renew  | M         |
+| action        | String        | Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 #### Response
