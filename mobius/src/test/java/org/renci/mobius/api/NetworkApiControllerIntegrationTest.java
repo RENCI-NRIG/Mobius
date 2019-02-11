@@ -28,7 +28,7 @@ public class NetworkApiControllerIntegrationTest {
     @Test
     public void networkPostTest() throws Exception {
         NetworkRequest body = new NetworkRequest();
-        String workflowID = "workflowID_example";
+        String workflowID = "workflowID_example_network";
         ResponseEntity<MobiusResponse> responseEntity = api.networkPost(body, workflowID);
         assertEquals(HttpStatus.NOT_IMPLEMENTED, responseEntity.getStatusCode());
     }

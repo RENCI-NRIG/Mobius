@@ -1,8 +1,13 @@
 version: '3'
 
 services:
+    rabbitmq_server:
+        image: rabbitmq:management
+        ports:
+        - "5672:5672"
+        - "15672:15672"
     mobius_server:
-        image: rencinrig/mobius-spring
+        image: rencinrig/mobius-spring:1.0.0-SNAPSHOT
         environment:
             MOBIUS_HOME : /code/
         ports:

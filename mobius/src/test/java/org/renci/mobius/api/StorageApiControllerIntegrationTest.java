@@ -28,7 +28,7 @@ public class StorageApiControllerIntegrationTest {
     @Test
     public void storagePostTest() throws Exception {
         StorageRequest body = new StorageRequest();
-        String workflowID = "workflowID_example";
+        String workflowID = "workflowID_example_storage";
         ResponseEntity<MobiusResponse> responseEntity = api.storagePost(body, workflowID);
         assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
     }

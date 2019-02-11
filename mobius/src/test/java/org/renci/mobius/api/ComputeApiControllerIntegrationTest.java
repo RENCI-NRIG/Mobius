@@ -28,9 +28,9 @@ public class ComputeApiControllerIntegrationTest {
     @Test
     public void computePostTest() throws Exception {
         ComputeRequest body = new ComputeRequest();
-        String workflowID = "workflowID_example";
+        String workflowID = "workflowID_example_compute";
         ResponseEntity<MobiusResponse> responseEntity = api.computePost(body, workflowID);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
     }
 
 }
