@@ -53,6 +53,6 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
 ```
 # git clone https://github.com/RENCI-NRIG/Mobius.git
 # cd Mobius/mobius
-# mvn clean install
-# java -jar target/mobius-spring-1.0.0-SNAPSHOT.jar
+# mvn clean package
+# docker-compose up -d
 ```
