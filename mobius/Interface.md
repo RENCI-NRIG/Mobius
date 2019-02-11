@@ -6,7 +6,7 @@ Source [Mobius](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0) specifica
 
 ## workflow
 ### POST
-Create a workflow ID. 
+Create an empty workflow with workflowID provided if no existing workflow is associated with workflowID. Returns error if workflow is already associated to an exsiting workflow. 
 #### URL
 POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
@@ -28,7 +28,7 @@ POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accep
 | 400              | Bad Request                          |
 | 200              | Success                              |
 ### GET
-Get workflow status
+Get workflow status. Mobius returns JSON object indicating all the slices at diffierent sites at different clouds. For each slice, all Compute and storage nodes are returned along with IP and state information.
 #### URL
 GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
@@ -117,7 +117,7 @@ EXAMPLE RESPONSE:
 }
 ```
 ### DELETE
-Delete a workflow
+Delete a workflow. It results in the deletion of all the slices at different sites on different clouds associated with the workflow.
 #### URL
 DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
 #### Parameters
@@ -140,7 +140,7 @@ DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "acc
 | 404              | Not found                           |
 | 200              | Success                              |
 ## compute
-Provision compute resources for a workflow
+Provision compute resources for a workflow. Compute resources are added as per SlicePolicy indicated in the request. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
 #### URL
 POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
 #### Parameters
@@ -153,14 +153,17 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | site          | String        | Site name  | M         |
 | cpus          | Integer       | Number of cpus requested  | M         |
 | gpus          | Integer       | Number of gpus requested  | M         |
-| ramPerCpus    | Integer       | RAM per cpu in bytes  | M         |
-| diskPerCpus   | Integer       | Disk per cpu in bytes  | M         |
+| ramPerCpus    | Integer       | RAM per cpu in MB  | M         |
+| diskPerCpus   | Integer       | Disk per cpu in MB  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 | coallocate    | Boolean       | flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false' | M         |
+| slicePolicy   | String        | Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'| M         |
+| sliceName      | String       | Existing slice name to which compute resources should be added | O         |
 | imageUrl      | String        | Image URL | O         |
 | imageHash     | String        | Image Hash | O         |
 | imageName     | String        | Image Name | O         |
+| postBootScript | String       | Post Boot Script | O         |
 #### Response
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
@@ -177,7 +180,7 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | 404              | Not found                           |
 | 200              | Success                              |
 ## storage
-Provision storage resources for a workflow
+Provision storage resources for a workflow. For add action, Storage resource is added to target node. If target not is not found, an error is returned. For delete action, all storage nodes attached to target node are deleted. For renew action, lease of the entire slice is renewed.
 #### URL
 POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
 #### Parameters
@@ -190,7 +193,7 @@ POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: a
 | mountPoint    | String        | Mount Point  | M         |
 | target        | Integer       | Target Node Name  | M         |
 | size          | Integer       | Size in GB  | M         |
-| action        | String        | Action to be taken i.e. add, delete, renew  | M         |
+| action        | String        | Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
 #### Response
