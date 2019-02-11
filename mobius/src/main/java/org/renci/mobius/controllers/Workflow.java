@@ -16,7 +16,7 @@ class Workflow {
     private String workflowID;
     protected WorkflowOperationLock lock;
     private HashMap<String, CloudContext> siteToContextHashMap;
-    private int nodeCount;
+    private int nodeCount, storageCount;
     private FutureRequests futureRequests;
     private static final Logger LOGGER = Logger.getLogger( Workflow.class.getName() );
 
@@ -25,6 +25,7 @@ class Workflow {
         lock = new WorkflowOperationLock();
         siteToContextHashMap = new HashMap<String, CloudContext>();
         nodeCount = 0;
+        storageCount = 0;
         futureRequests = new FutureRequests();
     }
 
@@ -75,26 +76,73 @@ class Workflow {
         LOGGER.debug("processComputeRequest(): IN");
 
         try {
-            // Lookup an existing stack
-            CloudContext s = siteToContextHashMap.get(request.getSite());
-            boolean addContextToMap = false;
-
-            // Create a new slice if not found
-            if (s == null) {
-                s = CloudContextFactory.getInstance().createCloudContext(request.getSite());
-                addContextToMap = true;
+            if(request.getSlicePolicy() == ComputeRequest.SlicePolicyEnum.EXISTING && request.getSliceName() == null) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "Slice name must be specified for SlicePolicy-exisiting");
             }
 
-            int count = s.processCompute(workflowID, request, nodeCount, isFutureRequest);
-            nodeCount += count;
+            CloudContext context = null;
+            boolean addContextToMap = false;
+            if(request.getSlicePolicy() == ComputeRequest.SlicePolicyEnum.EXISTING) {
+                // Look up existing slice
+                for(CloudContext c : siteToContextHashMap.values()) {
+                    if(c.containsSlice(request.getSliceName())) {
+                        context = c;
+                        break;
+                    }
+                }
+                if(context == null) {
+                    throw new MobiusException(HttpStatus.NOT_FOUND, "Slice not found for SlicePolicy-exisiting");
+                }
+            }
+            else {
+                // Lookup an existing stack
+                context = siteToContextHashMap.get(request.getSite());
+                // Create a new slice if not found
+                if (context == null) {
+                    context = CloudContextFactory.getInstance().createCloudContext(request.getSite());
+                    addContextToMap = true;
+                }
+            }
+
+            nodeCount = context.processCompute(workflowID, request, nodeCount, isFutureRequest);
             if (addContextToMap) {
-                siteToContextHashMap.put(request.getSite(), s);
+                siteToContextHashMap.put(request.getSite(), context);
             }
         }
         catch (FutureRequestException e) {
             futureRequests.add(request);
         }
         LOGGER.debug("processComputeRequest(): OUT");
+    }
+    public void processStorageRequest(StorageRequest request, boolean isFutureRequest) throws Exception{
+        LOGGER.debug("processStorageRequest(): IN");
+        try {
+            if (siteToContextHashMap.size() == 0) {
+                LOGGER.debug("processStorageRequest(): OUT");
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+            CloudContext context = null;
+            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
+                context = e.getValue();
+                if (context.containsHost(request.getTarget())) {
+                    LOGGER.debug("Context found to handle storage request=" + context.getSite());
+                    storageCount = context.processStorageRequest(request, storageCount, isFutureRequest);
+                    break;
+                }else {
+                    context = null;
+                }
+            }
+            if(context == null) {
+                LOGGER.debug("processStorageRequest(): OUT");
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+        }
+        catch (FutureRequestException e) {
+            futureRequests.add(request);
+        }
+        finally {
+            LOGGER.debug("processStorageRequest(): OUT");
+        }
     }
 
     public void doPeriodic() {
@@ -128,37 +176,6 @@ class Workflow {
         processFutureComputeRequests();
         processFutureStorageRequests();
         LOGGER.debug("doPeriodic(): OUT");
-    }
-
-    public void processStorageRequest(StorageRequest request, boolean isFutureRequest) throws Exception{
-        LOGGER.debug("processStorageRequest(): IN");
-        try {
-            if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("processStorageRequest(): OUT");
-                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
-            }
-            CloudContext context = null;
-            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
-                context = e.getValue();
-                if (context.containsHost(request.getTarget())) {
-                    LOGGER.debug("Context found to handle storage request=" + context.getSite());
-                    context.processStorageRequest(request, isFutureRequest);
-                    break;
-                }else {
-                    context = null;
-                }
-            }
-            if(context == null) {
-                LOGGER.debug("processStorageRequest(): OUT");
-                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
-            }
-        }
-        catch (FutureRequestException e) {
-            futureRequests.add(request);
-        }
-        finally {
-            LOGGER.debug("processStorageRequest(): OUT");
-        }
     }
 
     public void processFutureComputeRequests() {

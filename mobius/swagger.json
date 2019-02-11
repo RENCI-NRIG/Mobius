@@ -369,7 +369,7 @@
     },
     "computeRequest" : {
       "type" : "object",
-      "required" : [ "coallocate", "cpus", "diskPerCpus", "gpus", "leaseEnd", "leaseStart", "ramPerCpus", "site" ],
+      "required" : [ "coallocate", "cpus", "diskPerCpus", "gpus", "leaseEnd", "leaseStart", "ramPerCpus", "site", "slicePolicy" ],
       "properties" : {
         "site" : {
           "type" : "string",
@@ -407,6 +407,16 @@
           "type" : "boolean",
           "description" : "flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'",
           "default" : false
+        },
+        "slicePolicy" : {
+          "type" : "string",
+          "description" : "Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'",
+          "default" : "default",
+          "enum" : [ "new", "existing", "default" ]
+        },
+        "sliceName" : {
+          "type" : "string",
+          "description" : "existing slice name to which compute resources should be added"
         },
         "imageUrl" : {
           "type" : "string",
@@ -486,6 +496,7 @@
         },
         "action" : {
           "type" : "string",
+          "description" : "Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.",
           "enum" : [ "add", "delete", "renew" ]
         }
       }

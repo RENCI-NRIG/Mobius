@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+    mobius_server:
+        image: rencinrig/mobius-spring
+        environment:
+            MOBIUS_HOME : /code/
+        ports:
+        - "8080:8080"
+        volumes:
+        - "./mobius.log:/code/mobius.log"
+        - "/Users/komalthareja/mobius/config/application.properties:/code/config/application.properties"
+

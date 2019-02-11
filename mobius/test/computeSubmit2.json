@@ -1,14 +1,16 @@
 {
-    "site":"Exogeni:RENCI (Chapel Hill, NC USA) XO Rack",
+    "site":"Exogeni:SL (Chicago, IL USA) XO Rack",
     "cpus":"4",
     "gpus":"0",
     "ramPerCpus":"3072",
     "diskPerCpus":"19200",
-    "leaseStart":"1548338992",
+    "leaseStart":"1548430708",
     "leaseEnd":"1557733832",
     "coallocate":"true",
     "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/submit/ubuntu-dynamo-submit.xml",
-    "imageHash":"584564de63d3325eadbae9dc90b271d439921e2d",
-    "imageName":"ubuntu-dynamo-submit"
+    "imageHash":"fef5b1b7b8ab437342d97ff5d436503d631d3c13",
+    "imageName":"ubuntu-dynamo-submit",
+    "slicePolicy":"existing",
+    "sliceName":"Mobius-Exogeni-kthare10-23ff4573-de8a-4649-992b-2a4db9af8369"
 }
 

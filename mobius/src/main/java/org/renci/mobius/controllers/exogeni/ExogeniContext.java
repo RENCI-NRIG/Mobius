@@ -1,12 +1,8 @@
 package org.renci.mobius.controllers.exogeni;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
-import org.renci.mobius.controllers.FutureRequestException;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
@@ -19,48 +15,15 @@ import java.util.*;
 
 public class ExogeniContext extends CloudContext {
     private static final Logger LOGGER = Logger.getLogger( ExogeniContext.class.getName() );
-    private HashMap<String, SliceContext> sliceNameToSliceContextMap;
-    private Multimap<Date, String> leaseEndTimeToSliceNameHashMap;
-    private HashMap<String, String> hostNameToSliceNameHashMap;
-    private String networkName;
+    private HashMap<String, SliceContext> sliceContextHashMap;
+
 
     public ExogeniContext(CloudContext.CloudType t, String s) {
         super(t, s);
-        sliceNameToSliceContextMap = new HashMap<>();
-        leaseEndTimeToSliceNameHashMap = ArrayListMultimap.create();
-        hostNameToSliceNameHashMap = new HashMap<>();
-        networkName = "Network";
+        sliceContextHashMap = new HashMap<>();
     }
 
-    private void validateLeasTime(String startTime, String endTime, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("validateLeasTime: IN");
-        long currTime = System.currentTimeMillis();
-        long beginTimestamp = Long.parseLong(startTime) * 1000;
-        long endTimestamp  = Long.parseLong(endTime) * 1000;
-
-        if(beginTimestamp > currTime) {
-            LOGGER.info("Future request to be started at " + beginTimestamp);
-            throw new FutureRequestException("future request " + beginTimestamp);
-        }
-
-        // Ignore Start time check for requests triggered via periodic processing
-        if(!isFutureRequest) {
-            long diff = java.lang.Math.abs(currTime - beginTimestamp);
-            if (diff > AllowedDeltaTimeInMsFromCurrentTime) {
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "startTime is before currentTime");
-            }
-        }
-
-        if(endTimestamp < currTime){
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "endTime is before currTime");
-        }
-        if(endTimestamp - beginTimestamp <= minimumTimeDifInMs) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is less than 24 hours");
-        }
-        LOGGER.debug("validateLeasTime: OUT");
-    }
-
-    private void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
+    protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
 
         if(request.getGpus() > 0) {
@@ -68,23 +31,6 @@ public class ExogeniContext extends CloudContext {
         }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
         LOGGER.debug("validateComputeRequest: OUT");
-    }
-
-    private String findSlice(ComputeRequest request) {
-        LOGGER.debug("findSlice: IN");
-        if(leaseEndTimeToSliceNameHashMap.size() == 0) {
-            return null;
-        }
-
-        long timestamp = Long.parseLong(request.getLeaseEnd());
-        Date expiry = new Date(timestamp * 1000);
-
-        String sliceName = null;
-        if(leaseEndTimeToSliceNameHashMap.containsKey(expiry)) {
-            sliceName = leaseEndTimeToSliceNameHashMap.get(expiry).iterator().next();
-        }
-        LOGGER.debug("findSlice: OUT");
-        return sliceName;
     }
 
     @Override
@@ -98,14 +44,28 @@ public class ExogeniContext extends CloudContext {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "None of the flavors can satisfy compute request");
         }
 
-        String sliceName = findSlice(request);
+        String sliceName = null;
+
+        switch (request.getSlicePolicy()) {
+            case NEW:
+                // Create new slice
+                break;
+            case DEFAULT:
+                sliceName = findSlice(request);
+                break;
+            case EXISTING:
+                sliceName = request.getSliceName();
+                break;
+            default:
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "Unspported SlicePolicy");
+        }
 
         SliceContext context = null;
         boolean addSliceToMaps = false;
 
         if(sliceName != null) {
             LOGGER.debug("Using existing context=" + sliceName);
-            context = sliceNameToSliceContextMap.get(sliceName);
+            context = sliceContextHashMap.get(sliceName);
         }
         else {
             context = new SliceContext(sliceName);
@@ -113,26 +73,55 @@ public class ExogeniContext extends CloudContext {
             LOGGER.debug("Created new context=" + sliceName);
         }
 
-        int index = 0;
         try {
-            index = context.processCompute(flavorList, nameIndex, request);
+            nameIndex = context.processCompute(flavorList, nameIndex, request);
+
+            sliceName = context.getSliceName();
+
+            if(addSliceToMaps) {
+                long timestamp = Long.parseLong(request.getLeaseEnd());
+                Date expiry = new Date(timestamp * 1000);
+                sliceContextHashMap.put(sliceName, context);
+                leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
+                LOGGER.debug("Added " + sliceName + " with expiry= " + expiry);
+            }
+            return nameIndex;
         }
         catch (SliceNotFoundOrDeadException e) {
-            handSliceNotFoundException(context);
-            sliceNameToSliceContextMap.remove(context);
+            handSliceNotFoundException(context.getSliceName());
+            sliceContextHashMap.remove(context);
             throw new MobiusException("Slice not found");
         }
-        sliceName = context.getSliceName();
-
-        if(addSliceToMaps) {
-            long timestamp = Long.parseLong(request.getLeaseEnd());
-            Date expiry = new Date(timestamp * 1000);
-            sliceNameToSliceContextMap.put(sliceName, context);
-            leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
-            LOGGER.debug("Added " + sliceName + " with expiry= " + expiry);
+        finally {
+            LOGGER.debug("processCompute: OUT");
         }
-        LOGGER.debug("processCompute: OUT");
-        return index;
+    }
+
+    @Override
+    public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+        LOGGER.debug("processStorageRequest: IN");
+        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
+
+        String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
+        if(sliceName == null) {
+            throw new MobiusException("hostName not found in hostNameToSliceHashMap");
+        }
+        SliceContext context = sliceContextHashMap.get(sliceName);
+        if(context == null) {
+            throw new MobiusException("slice context not found");
+        }
+        try {
+            nameIndex = context.processStorageRequest(request, nameIndex);
+            return nameIndex;
+        }
+        catch (SliceNotFoundOrDeadException e) {
+            handSliceNotFoundException(context.getSliceName());
+            sliceContextHashMap.remove(context);
+            throw new MobiusException("Slice not found");
+        }
+        finally {
+            LOGGER.debug("processStorageRequest: OUT");
+        }
     }
 
     @Override
@@ -142,7 +131,7 @@ public class ExogeniContext extends CloudContext {
         JSONObject retVal = null;
 
         SliceContext context = null;
-        for (HashMap.Entry<String, SliceContext> entry:sliceNameToSliceContextMap.entrySet()) {
+        for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
             context = entry.getValue();
 
             try {
@@ -152,8 +141,8 @@ public class ExogeniContext extends CloudContext {
                 }
             }
             catch (SliceNotFoundOrDeadException e) {
-                handSliceNotFoundException(context);
-                sliceNameToSliceContextMap.remove(context);
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
             }
         }
         if(!array.isEmpty()) {
@@ -169,11 +158,11 @@ public class ExogeniContext extends CloudContext {
     public void stop() throws Exception {
         LOGGER.debug("stop: IN");
         SliceContext context = null;
-        for (HashMap.Entry<String, SliceContext> entry:sliceNameToSliceContextMap.entrySet()) {
+        for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
             context = entry.getValue();
             context.stop();
         }
-        sliceNameToSliceContextMap.clear();
+        sliceContextHashMap.clear();
         LOGGER.debug("stop: OUT");
     }
 
@@ -186,7 +175,7 @@ public class ExogeniContext extends CloudContext {
         hostNameToSliceNameHashMap.clear();
         leaseEndTimeToSliceNameHashMap.clear();
         hostNameSet.clear();
-        Iterator<HashMap.Entry<String, SliceContext>> iterator = sliceNameToSliceContextMap.entrySet().iterator();
+        Iterator<HashMap.Entry<String, SliceContext>> iterator = sliceContextHashMap.entrySet().iterator();
         while (iterator.hasNext()) {
             HashMap.Entry<String, SliceContext> entry = iterator.next();
             context = entry.getValue();
@@ -196,7 +185,7 @@ public class ExogeniContext extends CloudContext {
                 result = context.doPeriodic(hostNames);
             }
             catch (SliceNotFoundOrDeadException e) {
-                handSliceNotFoundException(context);
+                handSliceNotFoundException(context.getSliceName());
                 iterator.remove();
                 continue;
             }
@@ -225,49 +214,7 @@ public class ExogeniContext extends CloudContext {
     }
 
     @Override
-    public void processStorageRequest(StorageRequest request, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("processStorageRequest: IN");
-        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
-
-        String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
-        if(sliceName == null) {
-            throw new MobiusException("hostName not found in hostNameToSliceHashMap");
-        }
-        SliceContext context = sliceNameToSliceContextMap.get(sliceName);
-        if(context == null) {
-            throw new MobiusException("slice context not found");
-        }
-        try {
-            context.processStorageRequest(request);
-        }
-        catch (SliceNotFoundOrDeadException e) {
-            handSliceNotFoundException(context);
-            sliceNameToSliceContextMap.remove(context);
-            throw new MobiusException("Slice not found");
-        }
-        LOGGER.debug("processStorageRequest: OUT");
-    }
-
-    private void handSliceNotFoundException(SliceContext context) {
-        LOGGER.debug("handSliceNotFoundException: IN");
-        if(hostNameToSliceNameHashMap.containsValue(context.getSliceName())) {
-            Iterator<HashMap.Entry<String, String>> iterator = hostNameToSliceNameHashMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-                HashMap.Entry<String, String> entry = iterator.next();
-                if(entry.getValue().equalsIgnoreCase(context.getSliceName())) {
-                    iterator.remove();
-                }
-            }
-        }
-        if(leaseEndTimeToSliceNameHashMap.containsValue(context.getSliceName())) {
-            Iterator<Map.Entry<Date, String>> iterator = leaseEndTimeToSliceNameHashMap.entries().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<Date, String> entry = iterator.next();
-                if(entry.getValue().equalsIgnoreCase(context.getSliceName())) {
-                    iterator.remove();
-                }
-            }
-        }
-        LOGGER.debug("handSliceNotFoundException: OUT");
+    public boolean containsSlice(String sliceName) {
+        return sliceContextHashMap.containsKey(sliceName);
     }
 }

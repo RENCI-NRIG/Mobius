@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers;
 
+import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.springframework.http.HttpStatus;
 
@@ -14,7 +15,7 @@ public class CloudContextFactory {
 
     public CloudContext createCloudContext(String site) throws Exception{
         if(site.compareToIgnoreCase(CloudContext.CloudType.Chameleon.toString()) == 0) {
-            throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not Implemented");
+            return new ChameleonContext(CloudContext.CloudType.Exogeni, site);
         }
         else if(site.compareToIgnoreCase(CloudContext.CloudType.OSG.toString()) == 0) {
             throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not Implemented");

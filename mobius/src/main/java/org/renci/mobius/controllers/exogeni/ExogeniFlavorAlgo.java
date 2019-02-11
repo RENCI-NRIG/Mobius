@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 class ExogeniFlavorAlgo implements FlavorAlgo {
-    private static final Logger LOGGER = Logger.getLogger( FlavorAlgo.class.getName() );
+    private static final Logger LOGGER = Logger.getLogger( ExogeniFlavorAlgo.class.getName() );
 
     enum Flavor {
         // cpus, diskspace, ram, name

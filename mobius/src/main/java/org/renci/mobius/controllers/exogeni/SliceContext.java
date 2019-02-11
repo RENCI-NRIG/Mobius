@@ -247,7 +247,6 @@ public class SliceContext {
                 throw new MobiusException("Slice could not be created or loaded");
             }
 
-
             for (String flavor : flavorList) {
                 LOGGER.debug("adding node=" + nameIndex);
                 ComputeNode c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
@@ -287,7 +286,6 @@ public class SliceContext {
             lastRequest = request;
             long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
             expiry = new Date(timestamp * 1000);
-
             return nameIndex;
         }
         catch (MobiusException e) {
@@ -308,7 +306,7 @@ public class SliceContext {
             LOGGER.debug("processCompute: OUT");
         }
     }
-    public void processStorageRequest(StorageRequest request) throws Exception {
+    public int processStorageRequest(StorageRequest request, int nameIndex) throws Exception {
         LOGGER.debug("processStorageRequest: IN");
 
         try {
@@ -317,20 +315,20 @@ public class SliceContext {
                 throw new MobiusException("Unable to load slice");
             }
             ComputeNode c = (ComputeNode) slice.getResourceByName(request.getTarget());
+            Collection<Interface> computeInterfaces  = c.getInterfaces();
             if (c == null) {
                 throw new MobiusException("Unable to load compute node");
             }
 
-            String storageName = request.getTarget() + CloudContext.StorageNameSuffix;
-            StorageNode storage = (StorageNode) slice.getResourceByName(storageName);
             boolean commit = false;
-
             switch (request.getAction()) {
-                case ADD:
+                case ADD: {
+                    String storageName = request.getTarget() + CloudContext.StorageNameSuffix + nameIndex;
+                    StorageNode storage = (StorageNode) slice.getResourceByName(storageName);
                     if (storage != null) {
                         throw new MobiusException(HttpStatus.BAD_REQUEST, "Storage already exists");
                     }
-                    LinkNetwork storageNetwork = slice.addLinkNetwork(request.getTarget() + CloudContext.StorageNetworkName);
+                    LinkNetwork storageNetwork = slice.addLinkNetwork(request.getTarget() + CloudContext.StorageNetworkName + nameIndex);
                     if (storageNetwork == null) {
                         throw new MobiusException("Unable to load link network node");
                     }
@@ -341,22 +339,51 @@ public class SliceContext {
                     storageNetwork.stitch(c, storage);
                     commit = true;
                     sendNotification = true;
+                }
                     break;
-                case DELETE:
-                    if (storage == null) {
+                case DELETE: {
+                    Collection<StorageNode> storageNodes = slice.getStorageNodes();
+                    List<StorageNode> storageNodesToBeDeleted = new LinkedList<>();
+                    if (storageNodes == null) {
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
-                    storage.delete();
+
+                    for(StorageNode s: storageNodes) {
+                        if(s.isAttachedTo(c)) {
+                            LOGGER.debug("Added storage=" + s.getName() + " to tobedeleted list");
+                            storageNodesToBeDeleted.add(s);
+                        }
+                    }
+                    if(storageNodesToBeDeleted.isEmpty()){
+                        throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
+                    }
+                    for(StorageNode s: storageNodesToBeDeleted) {
+                        s.delete();
+                    }
                     sendNotification = true;
                     commit = true;
+                }
                     break;
-                case RENEW:
-                    if (storage == null) {
+                case RENEW: {
+                    Collection<StorageNode> storageNodes = slice.getStorageNodes();
+                    List<StorageNode> storageNodesToBeRenewed = new LinkedList<>();
+                    if (storageNodes == null) {
+                        throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
+                    }
+
+                    for(StorageNode s: storageNodes) {
+                        if(s.isAttachedTo(c)) {
+                            LOGGER.debug("Added storage=" + s.getName() + " to tobedeleted list");
+                            storageNodesToBeRenewed.add(s);
+                        }
+                    }
+                    if(storageNodesToBeRenewed.isEmpty()){
                         throw new MobiusException(HttpStatus.NOT_FOUND, "Storage does not exist");
                     }
                     long timestamp = Long.parseLong(request.getLeaseEnd());
                     expiry = new Date(timestamp * 1000);
                     slice.renew(expiry);
+                }
                     break;
                 default:
                     throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid action on storage");
@@ -364,6 +391,10 @@ public class SliceContext {
             if(commit) {
                 slice.commit();
             }
+            if(request.getAction() == StorageRequest.ActionEnum.ADD) {
+                nameIndex++;
+            }
+            return nameIndex;
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

@@ -3,6 +3,7 @@ package org.renci.mobius.model;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.springframework.validation.annotation.Validated;
@@ -13,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-24T10:02:23.336-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-25T09:04:06.535-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -39,6 +40,45 @@ public class ComputeRequest   {
 
   @JsonProperty("coallocate")
   private Boolean coallocate = false;
+
+  /**
+   * Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
+   */
+  public enum SlicePolicyEnum {
+    NEW("new"),
+    
+    EXISTING("existing"),
+    
+    DEFAULT("default");
+
+    private String value;
+
+    SlicePolicyEnum(String value) {
+      this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static SlicePolicyEnum fromValue(String text) {
+      for (SlicePolicyEnum b : SlicePolicyEnum.values()) {
+        if (String.valueOf(b.value).equals(text)) {
+          return b;
+        }
+      }
+      return null;
+    }
+  }
+
+  @JsonProperty("slicePolicy")
+  private SlicePolicyEnum slicePolicy = SlicePolicyEnum.DEFAULT;
+
+  @JsonProperty("sliceName")
+  private String sliceName = null;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -224,6 +264,47 @@ public class ComputeRequest   {
     this.coallocate = coallocate;
   }
 
+  public ComputeRequest slicePolicy(SlicePolicyEnum slicePolicy) {
+    this.slicePolicy = slicePolicy;
+    return this;
+  }
+
+  /**
+   * Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
+   * @return slicePolicy
+  **/
+  @ApiModelProperty(required = true, value = "Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'")
+  @NotNull
+
+
+  public SlicePolicyEnum getSlicePolicy() {
+    return slicePolicy;
+  }
+
+  public void setSlicePolicy(SlicePolicyEnum slicePolicy) {
+    this.slicePolicy = slicePolicy;
+  }
+
+  public ComputeRequest sliceName(String sliceName) {
+    this.sliceName = sliceName;
+    return this;
+  }
+
+  /**
+   * existing slice name to which compute resources should be added
+   * @return sliceName
+  **/
+  @ApiModelProperty(value = "existing slice name to which compute resources should be added")
+
+
+  public String getSliceName() {
+    return sliceName;
+  }
+
+  public void setSliceName(String sliceName) {
+    this.sliceName = sliceName;
+  }
+
   public ComputeRequest imageUrl(String imageUrl) {
     this.imageUrl = imageUrl;
     return this;
@@ -322,6 +403,8 @@ public class ComputeRequest   {
         Objects.equals(this.leaseStart, computeRequest.leaseStart) &&
         Objects.equals(this.leaseEnd, computeRequest.leaseEnd) &&
         Objects.equals(this.coallocate, computeRequest.coallocate) &&
+        Objects.equals(this.slicePolicy, computeRequest.slicePolicy) &&
+        Objects.equals(this.sliceName, computeRequest.sliceName) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
@@ -330,7 +413,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, imageUrl, imageHash, imageName, postBootScript);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, imageUrl, imageHash, imageName, postBootScript);
   }
 
   @Override
@@ -346,6 +429,8 @@ public class ComputeRequest   {
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
     sb.append("    leaseEnd: ").append(toIndentedString(leaseEnd)).append("\n");
     sb.append("    coallocate: ").append(toIndentedString(coallocate)).append("\n");
+    sb.append("    slicePolicy: ").append(toIndentedString(slicePolicy)).append("\n");
+    sb.append("    sliceName: ").append(toIndentedString(sliceName)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");

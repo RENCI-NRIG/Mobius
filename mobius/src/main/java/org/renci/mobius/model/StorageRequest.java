@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * StorageRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2018-12-12T15:18:29.707-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-25T09:04:06.535-05:00[America/New_York]")
 
 public class StorageRequest   {
   @JsonProperty("mountPoint")
@@ -33,7 +33,7 @@ public class StorageRequest   {
   private String leaseEnd = null;
 
   /**
-   * Gets or Sets action
+   * Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.
    */
   public enum ActionEnum {
     ADD("add"),
@@ -114,11 +114,11 @@ public class StorageRequest   {
   }
 
   /**
-   * size in bytes
+   * size in GB
    * minimum: 0
    * @return size
   **/
-  @ApiModelProperty(value = "size in bytes")
+  @ApiModelProperty(value = "size in GB")
 
 @Min(0)
   public Integer getSize() {
@@ -175,10 +175,10 @@ public class StorageRequest   {
   }
 
   /**
-   * Get action
+   * Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.
    * @return action
   **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.")
 
 
   public ActionEnum getAction() {
