@@ -1,8 +1,18 @@
 # Running the code
 This repository is designed to be run in Docker out of the box using docker-compose. Optionally the user can make minor configuration changes to run portions of the project on their local machine for easier programmatic interaction with Mobius directly.
 
-## Running everything in docker. 
+## Running everything in docker.
+### Build images
+Build docker images by cloning git repository and executing followingh steps:
+```
+git clone https://github.com/RENCI-NRIG/Mobius.git
+cd Mobius
+git checkout -b br2
+git pull origin br2
+mvn clean install
+```
 ### User specific configuration
+Once images are ready, update configuration in docker as indicated below:
 1. Update docker/config/application.properties to specify user specific values for following properties
 ```
  mobius.exogeni.user=kthare10
@@ -43,7 +53,7 @@ This repository is designed to be run in Docker out of the box using docker-comp
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
 ```
 ### Run Docker
-Run docker-compose up -d
+Run docker-compose up -d from Mobius/docker directory
 
 ```
 $ docker-compose up -d
