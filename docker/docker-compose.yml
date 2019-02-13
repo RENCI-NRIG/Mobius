@@ -5,6 +5,7 @@ services:
         container_name: rabbitmq 
         hostname: rabbitmq
         image: rabbitmq:management
+        restart: always
         ports:
         - "5672:5672"
         - "15672:15672"
@@ -13,6 +14,7 @@ services:
     database:
         image: postgres:10
         container_name: database
+        restart: always
         environment:
         - POSTGRES_PASSWORD=mobius
         - POSTGRES_USER=mobius
@@ -23,6 +25,7 @@ services:
         container_name: mobius 
         hostname: mobius 
         image: rencinrig/mobius-spring:1.0.0-SNAPSHOT
+        restart: always
         depends_on:
         - rabbitmq_server
         - database 
@@ -30,17 +33,23 @@ services:
             MOBIUS_HOME : /code/
         ports:
         - "8080:8080"
+        # point to user specific keys below
         volumes:
-        - "/Users/komalthareja/mobius/logs/:/var/log/"
-        - "/Users/komalthareja/mobius/config/application.properties:/code/config/application.properties"
+        - "./logs/:/var/log/"
+        - "./config/application.properties:/code/config/application.properties"
+        - "./mobius-sync:/code/mobius-sync"
+        - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+        - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
     notificationsink:
         container_name: notification 
         hostname: notification 
         image: rencinrig/notificationsink:1.0.0-SNAPSHOT
+        restart: always
         depends_on:
         - rabbitmq_server
+        - mobius_server
         environment:
-            RABBITMQ_SERVER: ${RABBITMQ_SERVER:-127.0.0.1}
+            RABBITMQ_SERVER: rabbitmq
             RABBITMQ_PORT: 5672 
             EXCHANGE_NAME: notifications 
             ROUTING_KEY: workflows 

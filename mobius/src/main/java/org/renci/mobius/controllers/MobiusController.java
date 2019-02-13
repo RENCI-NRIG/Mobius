@@ -11,18 +11,21 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 public class MobiusController {
-    private HashMap<String, Workflow> workflowHashMap;
+
     private static final MobiusController fINSTANCE = new MobiusController();
     private static final Logger LOGGER = Logger.getLogger( MobiusController.class.getName() );
-
-    private MobiusController() {
-        workflowHashMap = new HashMap<String, Workflow>();
-    }
 
     // thread for syncing tags from existing reservations
     protected static PeriodicProcessingThread ppt = null;
     protected static ScheduledFuture<?> pptFuture = null;
-    private WorkflowService service = null;
+
+    private HashMap<String, Workflow> workflowHashMap;
+    private WorkflowService service;
+
+    private MobiusController() {
+        workflowHashMap = new HashMap<String, Workflow>();
+        service = null;
+    }
 
     public static MobiusController getInstance() {
         return fINSTANCE;
@@ -32,6 +35,47 @@ public class MobiusController {
         synchronized (this) {
             this.service = service;
         }
+    }
+
+    enum DbOperation {
+        Create,
+        Update,
+        Delete
+
+    };
+
+    private void dbWrite(Workflow workflow, DbOperation operation) {
+        try {
+            if (workflow != null) {
+                switch (operation) {
+                    case Create:
+                        if (service != null) {
+                            WorkflowEntity workflowEntity = workflow.convert();
+                            service.createWorkflow(workflowEntity);
+                        }
+                        break;
+                    case Delete:
+                        if (service != null) {
+                            service.deleteWorkflow(workflow.getWorkflowID());
+                        }
+                        break;
+                    case Update:
+                        if (service != null) {
+                            WorkflowEntity workflowEntity = workflow.convert();
+                            service.editWorkflow(workflowEntity);
+                        }
+                        break;
+                }
+            } else {
+                LOGGER.error("dbWrite(): workflow is null");
+            }
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred e=" + e);
+            e.printStackTrace();
+            throw e;
+        }
+
     }
 
     public void createWorkflow(String workflowID) throws Exception{
@@ -49,10 +93,7 @@ public class MobiusController {
                 }
                 workflow = new Workflow(workflowID);
                 workflowHashMap.put(workflowID, workflow);
-                if(service != null) {
-                    WorkflowEntity workflowEntity = workflow.convert();
-                    service.createWorkflow(workflowEntity);
-                }
+                dbWrite(workflow, DbOperation.Create);
             }
         }
         catch (Exception e) {
@@ -95,9 +136,7 @@ public class MobiusController {
                         workflow.unlock();
                     }
                     deleteWorkflow(workflow);
-                    if(service != null) {
-                        service.deleteWorkflow(workflowId);
-                    }
+                    dbWrite(workflow, DbOperation.Delete);
                 } else {
                     throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
                 }
@@ -129,10 +168,7 @@ public class MobiusController {
                     workflow.lock();
                     try {
                         retVal = workflow.status();
-                        if(service != null) {
-                            WorkflowEntity workflowEntity = workflow.convert();
-                            service.editWorkflow(workflowEntity);
-                        }
+                        dbWrite(workflow, DbOperation.Update);
                     } finally {
                         workflow.unlock();
                     }
@@ -165,10 +201,7 @@ public class MobiusController {
                     workflow.lock();
                     try {
                         workflow.processComputeRequest(request, false);
-                        if(service != null) {
-                            WorkflowEntity workflowEntity = workflow.convert();
-                            service.editWorkflow(workflowEntity);
-                        }
+                        dbWrite(workflow, DbOperation.Update);
                     } finally {
 
                         workflow.unlock();
@@ -202,10 +235,7 @@ public class MobiusController {
                     workflow.lock();
                     try {
                         workflow.processStorageRequest(request, false);
-                        if(service != null) {
-                            WorkflowEntity workflowEntity = workflow.convert();
-                            service.editWorkflow(workflowEntity);
-                        }
+                        dbWrite(workflow, DbOperation.Update);
                     } finally {
 
                         workflow.unlock();
@@ -231,10 +261,7 @@ public class MobiusController {
                 try {
                     workflow.lock();
                     workflow.doPeriodic();
-                    if(service != null) {
-                        WorkflowEntity workflowEntity = workflow.convert();
-                        service.editWorkflow(workflowEntity);
-                    }
+                    dbWrite(workflow, DbOperation.Update);
                 }
                 catch (Exception e) {
                     LOGGER.debug("Exception occured while processing worklfow =" + e);
