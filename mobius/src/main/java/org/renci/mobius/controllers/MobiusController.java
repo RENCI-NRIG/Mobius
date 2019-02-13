@@ -1,10 +1,12 @@
 package org.renci.mobius.controllers;
+import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.service.WorkflowService;
 import org.springframework.http.HttpStatus;
 
 import java.util.HashMap;
-import java.util.UUID;
+import java.util.List;
 import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
@@ -20,10 +22,16 @@ public class MobiusController {
     // thread for syncing tags from existing reservations
     protected static PeriodicProcessingThread ppt = null;
     protected static ScheduledFuture<?> pptFuture = null;
-
+    private WorkflowService service = null;
 
     public static MobiusController getInstance() {
         return fINSTANCE;
+    }
+
+    public void setService(WorkflowService service) {
+        synchronized (this) {
+            this.service = service;
+        }
     }
 
     public void createWorkflow(String workflowID) throws Exception{
@@ -41,10 +49,15 @@ public class MobiusController {
                 }
                 workflow = new Workflow(workflowID);
                 workflowHashMap.put(workflowID, workflow);
+                if(service != null) {
+                    WorkflowEntity workflowEntity = workflow.convert();
+                    service.createWorkflow(workflowEntity);
+                }
             }
         }
         catch (Exception e) {
-            throw new MobiusException("Internal Server Error");
+            e.printStackTrace();
+            throw new MobiusException("Internal Server Error e=" + e);
         }
         finally {
             LOGGER.debug("createWorkflow(): OUT");
@@ -82,6 +95,9 @@ public class MobiusController {
                         workflow.unlock();
                     }
                     deleteWorkflow(workflow);
+                    if(service != null) {
+                        service.deleteWorkflow(workflowId);
+                    }
                 } else {
                     throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
                 }
@@ -105,16 +121,20 @@ public class MobiusController {
             }
 
             if (workflowId != null) {
-                Workflow w = null;
+                Workflow workflow = null;
                 synchronized (this) {
-                    w = workflowHashMap.get(workflowId);
+                    workflow = workflowHashMap.get(workflowId);
                 }
-                if (w != null) {
-                    w.lock();
+                if (workflow != null) {
+                    workflow.lock();
                     try {
-                        retVal = w.status();
+                        retVal = workflow.status();
+                        if(service != null) {
+                            WorkflowEntity workflowEntity = workflow.convert();
+                            service.editWorkflow(workflowEntity);
+                        }
                     } finally {
-                        w.unlock();
+                        workflow.unlock();
                     }
                 } else {
                     throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
@@ -145,6 +165,10 @@ public class MobiusController {
                     workflow.lock();
                     try {
                         workflow.processComputeRequest(request, false);
+                        if(service != null) {
+                            WorkflowEntity workflowEntity = workflow.convert();
+                            service.editWorkflow(workflowEntity);
+                        }
                     } finally {
 
                         workflow.unlock();
@@ -178,6 +202,10 @@ public class MobiusController {
                     workflow.lock();
                     try {
                         workflow.processStorageRequest(request, false);
+                        if(service != null) {
+                            WorkflowEntity workflowEntity = workflow.convert();
+                            service.editWorkflow(workflowEntity);
+                        }
                     } finally {
 
                         workflow.unlock();
@@ -199,25 +227,51 @@ public class MobiusController {
         LOGGER.debug("doPeriodic(): IN");
         synchronized (this) {
             for(HashMap.Entry<String, Workflow> workflowEntry : workflowHashMap.entrySet()) {
-                Workflow w = workflowEntry.getValue();
+                Workflow workflow = workflowEntry.getValue();
                 try {
-                    w.lock();
-                    w.doPeriodic();
+                    workflow.lock();
+                    workflow.doPeriodic();
+                    if(service != null) {
+                        WorkflowEntity workflowEntity = workflow.convert();
+                        service.editWorkflow(workflowEntity);
+                    }
                 }
                 catch (Exception e) {
                     LOGGER.debug("Exception occured while processing worklfow =" + e);
                     e.printStackTrace();
                 }
                 finally {
-                    w.unlock();
+                    workflow.unlock();
                 }
             }
         }
         LOGGER.debug("doPeriodic(): OUT");
     }
 
+    public void recover() {
+        if(service != null) {
+            List<WorkflowEntity> workflowEntities = service.getAllWorkflows();
+            if (workflowEntities != null) {
+                for (WorkflowEntity workflowEntity : workflowEntities) {
+                    Workflow workflow = new Workflow(workflowEntity);
+                    workflow.doPeriodic();
+                    synchronized (this) {
+                        workflowHashMap.put(workflowEntity.getWorkflowId(), workflow);
+                    }
+                }
+            }
+            LOGGER.error("recover():recovery successful and complete");
+        }
+        else {
+            LOGGER.error("recover():recovery failed");
+            LOGGER.error("recover():service is null");
+        }
+    }
+
     public static void startThreads() {
         LOGGER.debug("startThreads(): IN");
+
+        MobiusController.getInstance().recover();
 
         // create service for various periodic threads that are daemon threads
         // that way we don't have to kill them on exit

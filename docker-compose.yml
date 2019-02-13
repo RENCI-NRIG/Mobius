@@ -1,0 +1,46 @@
+version: '3.6'
+
+services:
+    rabbitmq_server:
+        container_name: rabbitmq 
+        hostname: rabbitmq
+        image: rabbitmq:management
+        ports:
+        - "5672:5672"
+        - "15672:15672"
+        labels:
+            NAME: rabbitmq
+    database:
+        image: postgres:10
+        container_name: database
+        environment:
+        - POSTGRES_PASSWORD=mobius
+        - POSTGRES_USER=mobius
+        - POSTGRES_DB=mobius
+        ports:
+        - 5432:${POSTGRES_PORT:-5432}
+    mobius_server:
+        container_name: mobius 
+        hostname: mobius 
+        image: rencinrig/mobius-spring:1.0.0-SNAPSHOT
+        depends_on:
+        - rabbitmq_server
+        - database 
+        environment:
+            MOBIUS_HOME : /code/
+        ports:
+        - "8080:8080"
+        volumes:
+        - "/Users/komalthareja/mobius/logs/:/var/log/"
+        - "/Users/komalthareja/mobius/config/application.properties:/code/config/application.properties"
+    notificationsink:
+        container_name: notification 
+        hostname: notification 
+        image: rencinrig/notificationsink:1.0.0-SNAPSHOT
+        depends_on:
+        - rabbitmq_server
+        environment:
+            RABBITMQ_SERVER: ${RABBITMQ_SERVER:-127.0.0.1}
+            RABBITMQ_PORT: 5672 
+            EXCHANGE_NAME: notifications 
+            ROUTING_KEY: workflows 

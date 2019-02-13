@@ -23,6 +23,46 @@ public class ExogeniContext extends CloudContext {
         sliceContextHashMap = new HashMap<>();
     }
 
+    @Override
+    public JSONArray toJson() {
+        JSONArray slices = null;
+        if(sliceContextHashMap != null && sliceContextHashMap.size() != 0) {
+            slices = new JSONArray();
+            SliceContext context = null;
+            for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
+                context = entry.getValue();
+                JSONObject slice = new JSONObject();
+                slice.put("name", context.getSliceName());
+                if(context.getExpiry() != null) {
+                    slice.put("expiry", Long.toString(context.getExpiry().getTime()));
+                }
+                slices.add(slice);
+            }
+        }
+        return slices;
+    }
+
+    @Override
+    public void fromJson(JSONArray array) {
+        if(array != null) {
+            for (Object object : array) {
+                JSONObject slice = (JSONObject) object;
+                String sliceName = (String) slice.get("name");
+                LOGGER.debug("fromJson(): sliceName=" + sliceName);
+                SliceContext sliceContext = new SliceContext(sliceName);
+                String expiry = (String) slice.get("expiry");
+                LOGGER.debug("fromJson(): expiry=" + expiry);
+                if(expiry != null) {
+                    sliceContext.setExpiry(expiry);
+                }
+                sliceContextHashMap.put(sliceName, sliceContext);
+            }
+        }
+        else {
+            LOGGER.error("fromJson(): Null array passed");
+        }
+    }
+
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
 
@@ -198,7 +238,10 @@ public class ExogeniContext extends CloudContext {
             if(result != null && !result.isEmpty()) {
                 array.add(result);
             }
-            leaseEndTimeToSliceNameHashMap.put(context.getExpiry(), context.getSliceName());
+            // TODO find a way to reload expiryTime
+            if(context.getExpiry() != null) {
+                leaseEndTimeToSliceNameHashMap.put(context.getExpiry(), context.getSliceName());
+            }
             triggerNotification |= context.canTriggerNotification();
             if(context.canTriggerNotification()) {
                 context.setSendNotification(false);

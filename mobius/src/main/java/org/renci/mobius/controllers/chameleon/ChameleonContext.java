@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers.chameleon;
 
 import com.google.common.collect.Multimap;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusException;
@@ -32,6 +33,46 @@ public class ChameleonContext extends CloudContext {
 
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
         LOGGER.debug("validateComputeRequest: OUT");
+    }
+
+    @Override
+    public JSONArray toJson() {
+        JSONArray slices = null;
+        if(stackContextHashMap != null && stackContextHashMap.size() != 0) {
+            slices = new JSONArray();
+            StackContext context = null;
+            for (HashMap.Entry<String, StackContext> entry:stackContextHashMap.entrySet()) {
+                context = entry.getValue();
+                JSONObject slice = new JSONObject();
+                slice.put("name", context.getSliceName());
+                if(context.getExpiry() != null) {
+                    slice.put("expiry", Long.toString(context.getExpiry().getTime()));
+                }
+                slices.add(slice);
+            }
+        }
+        return slices;
+    }
+
+    @Override
+    public void fromJson(JSONArray array) {
+        if(array != null) {
+            for (Object object : array) {
+                JSONObject slice = (JSONObject) object;
+                String sliceName = (String) slice.get("name");
+                LOGGER.debug("fromJson(): sliceName=" + sliceName);
+                StackContext sliceContext = new StackContext(sliceName);
+                String expiry = (String) slice.get("expiry");
+                LOGGER.debug("fromJson(): expiry=" + expiry);
+                if(expiry != null) {
+                    sliceContext.setExpiry(expiry);
+                }
+                stackContextHashMap.put(sliceName, sliceContext);
+            }
+        }
+        else {
+            LOGGER.error("fromJson(): Null array passed");
+        }
     }
 
     @Override

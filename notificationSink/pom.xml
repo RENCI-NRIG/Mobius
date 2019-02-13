@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.renci</groupId>
-    <artifactId>notificationSink</artifactId>
+    <artifactId>notificationsink</artifactId>
     <packaging>jar</packaging>
-    <name>notificationSink</name>
+    <name>notificationsink</name>
     <version>1.0.0-SNAPSHOT</version>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
     <properties>
@@ -13,8 +13,14 @@
         <dockerfile-maven-version>1.4.10</dockerfile-maven-version>
         <docker.image.prefix>rencinrig</docker.image.prefix>
     </properties>
+    <parent>
+        <groupId>org.renci</groupId>
+        <artifactId>mobius</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
     <build>
-        <sourceDirectory>src/main/java/</sourceDirectory>
+        <sourceDirectory>src/main/java</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -55,7 +61,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.renci.notificationSink.NotificationSubscriber</mainClass>
+                            <mainClass>org.renci.notificationsink.NotificationSubscriber</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -165,7 +171,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.renci.notificationSink.NotificationSubscriber</mainClass>
+                            <mainClass>org.renci.notificationsink.NotificationSubscriber</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -41,6 +41,11 @@ public class StackContext {
         return lastRequest;
     }
 
+    public void setExpiry(String expiry) {
+        long timestamp = Long.parseLong(expiry);
+        this.expiry = new Date(timestamp);
+    }
+
     public boolean canTriggerNotification() {
         /*if(sendNotification &&
                 (state == STABLE_OK || state == STABLE_ERROR)) {

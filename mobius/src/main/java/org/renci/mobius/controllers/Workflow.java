@@ -2,6 +2,8 @@ package org.renci.mobius.controllers;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.notification.NotificationPublisher;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
@@ -29,9 +31,71 @@ class Workflow {
         futureRequests = new FutureRequests();
     }
 
+    Workflow(WorkflowEntity workflow) {
+        workflowID = workflow.getWorkflowId();
+        LOGGER.debug("Workflow(): workflowID=" + workflowID);
+        nodeCount = workflow.getNodeCount();
+        LOGGER.debug("Workflow(): nodeCount=" + nodeCount);
+        storageCount = workflow.getStorageCount();
+        LOGGER.debug("Workflow(): storageCount=" + storageCount);
+        lock = new WorkflowOperationLock();
+        siteToContextHashMap = new HashMap<String, CloudContext>();
+        futureRequests = new FutureRequests();
+
+        // TODO process json to construct siteToContextHashMap
+        if(workflow.getSiteContextJson() != null) {
+            LOGGER.debug("SiteContext =" + workflow.getSiteContextJson());
+            JSONArray array = (JSONArray) JSONValue.parse(workflow.getSiteContextJson());
+            if(array != null) {
+                for (Object object : array) {
+                    try {
+                        JSONObject c = (JSONObject) object;
+                        String site = (String) c.get("site");
+                        LOGGER.debug("Workflow(): site=" + site);
+                        CloudContext context = CloudContextFactory.getInstance().createCloudContext(site);
+                        JSONArray sliceArray = (JSONArray) c.get("slices");
+                        context.fromJson(sliceArray);
+                        siteToContextHashMap.put(site, context);
+                    } catch (Exception e) {
+                        LOGGER.error("Workflow(): Exception occured while loading context from database e= " + e);
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else {
+                LOGGER.error("Workflow(): JSON parsing failed");
+            }
+        }
+    }
+
     public String getWorkflowID() {
         return workflowID;
     }
+
+    public WorkflowEntity convert() {
+        WorkflowEntity retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, null);
+
+        if(siteToContextHashMap != null && siteToContextHashMap.size() != 0) {
+            JSONArray array = new JSONArray();
+            CloudContext context = null;
+            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
+                context = e.getValue();
+                JSONObject c = new JSONObject();
+                c.put("type", context.getCloudType().toString());
+                c.put("site", context.getSite());
+                JSONArray slices = context.toJson();
+                if(slices != null) {
+                    c.put("slices", slices);
+                }
+                array.add(c);
+            }
+            LOGGER.debug("convert(): array=" + array.toJSONString());
+            retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, array.toJSONString());
+        }
+
+        return retVal;
+    }
+
 
     public void stop() throws Exception {
         LOGGER.debug("stop(): IN");
@@ -105,6 +169,7 @@ class Workflow {
             }
 
             nodeCount = context.processCompute(workflowID, request, nodeCount, isFutureRequest);
+            LOGGER.debug("processComputeRequest(): nodeCount = " + nodeCount);
             if (addContextToMap) {
                 siteToContextHashMap.put(request.getSite(), context);
             }

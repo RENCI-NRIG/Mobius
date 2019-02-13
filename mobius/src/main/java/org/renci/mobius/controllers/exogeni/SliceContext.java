@@ -52,8 +52,10 @@ public class SliceContext {
     public String getSliceName() {
         return sliceName;
     }
-    public ComputeRequest getLastRequest() {
-        return lastRequest;
+
+    public void setExpiry(String expiry) {
+        long timestamp = Long.parseLong(expiry);
+        this.expiry = new Date(timestamp);
     }
 
     private ISliceTransportAPIv1 getSliceProxy(String pem, String controllerUrl){
@@ -145,9 +147,11 @@ public class SliceContext {
                         currState == NDLGenerator.SliceState.STABLE_ERROR) &&
                         state != NDLGenerator.SliceState.STABLE_ERROR &&
                         state != NDLGenerator.SliceState.STABLE_OK){
-                    // renew the lease to match the end slice
-                    slice.renew(expiry);
-                    sendNotification = true;
+                    if(expiry != null) {
+                        // renew the lease to match the end slice
+                        slice.renew(expiry);
+                        sendNotification = true;
+                    }
                 }
                 state = currState;
                 returnValue.put(CloudContext.JsonKeyNodes, array);

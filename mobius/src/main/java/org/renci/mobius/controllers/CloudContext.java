@@ -2,8 +2,8 @@ package org.renci.mobius.controllers;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.mobius.controllers.exogeni.SliceContext;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.http.HttpStatus;
@@ -75,6 +75,8 @@ abstract public class CloudContext {
     abstract public void stop() throws Exception;
     abstract public JSONObject doPeriodic();
     abstract public boolean containsSlice(String sliceName);
+    abstract public JSONArray toJson();
+    abstract public void fromJson(JSONArray array);
 
 
     protected void validateLeasTime(String startTime, String endTime, boolean isFutureRequest) throws Exception {
