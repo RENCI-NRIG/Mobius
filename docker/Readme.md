@@ -52,4 +52,4 @@ Creating rabbitmq ... done
 Creating mobius   ... done
 Creating notification ... done
 ```
-After a few moments the docker containers will have stood up and configured themselves. User can now trigger requests to Mobius. Refer to [Interface](./mobius/Interface.md) to see the REST API
+After a few moments the docker containers will have stood up and configured themselves. User can now trigger requests to Mobius. Refer to [Interface](../mobius/Interface.md) to see the REST API
