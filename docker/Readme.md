@@ -31,7 +31,7 @@ Once images are ready, update configuration in docker as indicated below:
  #mobius.amqp.server.port=5672
  #mobius.amqp.use.ssl=false
  #mobius.amqp.user.name=anirban
- #mobius.amqp.user.password=75O2g%oy3DM$b8uz
+ #mobius.amqp.user.password=
  #mobius.amqp.virtual.host=panorama
  mobius.amqp.exchange.name=notifications
  mobius.amqp.exchange.routing.key=workflows
