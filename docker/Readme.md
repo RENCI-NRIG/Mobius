@@ -13,7 +13,6 @@ Once images are ready, update configuration in docker as indicated below:
 ```
  mobius.exogeni.user=kthare10
  mobius.exogeni.user=kthare10
- mobius.exogeni.KeyPath=./ssh/
  mobius.exogeni.certKeyFile=geni-kthare10.pem
  mobius.exogeni.sshKeyFile=id_rsa.pub
  ```
