@@ -1,0 +1,12 @@
+{
+    "site":"Chameleon",
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "leaseStart":"1548698379",
+    "leaseEnd":"1557733832",
+    "coallocate":"true",
+    "imageName":"CC-Ubuntu16.04"
+}
+
