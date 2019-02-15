@@ -12,6 +12,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <dockerfile-maven-version>1.4.10</dockerfile-maven-version>
         <docker.image.prefix>rencinrig</docker.image.prefix>
+        <docker.image.name>mobius</docker.image.name>
         <springfox-version>2.7.0</springfox-version>
     </properties>
     <parent>
@@ -42,12 +43,11 @@
                         <id>default</id>
                         <goals>
                             <goal>build</goal>
-                            <!--<goal>push</goal> -->
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <repository>${docker.image.prefix}/${project.artifactId}</repository>
+                    <repository>${docker.image.prefix}/${docker.image.name}</repository>
                     <tag>${project.version}</tag>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
