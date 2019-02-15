@@ -323,6 +323,9 @@ public class SliceContext {
             if (c == null) {
                 throw new MobiusException("Unable to load compute node");
             }
+            if(request == null || request.getAction() == null) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "Action not specified or invalid");
+            }
 
             boolean commit = false;
             switch (request.getAction()) {
