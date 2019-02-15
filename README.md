@@ -38,11 +38,7 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
       - POST workflow API to take username and credentials, controller url for each cloud type to be used later for that workflow
 - Where will mobius be deployed?
   - Run on individual laptop, node on AWS or Exogeni?
-- Lease time with Storage
-  - Results on renewal to whole slice
-  - Can multiple storage be requested with single node? If so, we need a way to distinguish them to support delete operation on them?
-  - Update operation on storage cannot be supported (increase/decrease)
-  - Keep - What is the expectation ?
+
 
 ## How to use or launch Mobius?
 - Refer to [Docker](./docker/Readme.md) to launch Mobius
