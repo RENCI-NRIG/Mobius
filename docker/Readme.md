@@ -2,14 +2,10 @@
 This repository is designed to be run in Docker out of the box using docker-compose. Optionally the user can make minor configuration changes to run portions of the project on their local machine for easier programmatic interaction with Mobius directly.
 
 ## Running everything in docker.
-### Build images
-Build docker images by cloning git repository and executing followingh steps:
+### Clone git repo
 ```
 git clone https://github.com/RENCI-NRIG/Mobius.git
-cd Mobius
-git checkout -b br2
-git pull origin br2
-mvn clean install
+cd ./Mobius/docker
 ```
 ### User specific configuration
 Once images are ready, update configuration in docker as indicated below:
@@ -47,8 +43,8 @@ Once images are ready, update configuration in docker as indicated below:
         # point to user specific keys below
          volumes:
          - "./logs/:/var/log/"
+         - "./mobius-sync:/code/mobius-sync"         
          - "./config/application.properties:/code/config/application.properties"
-         - "./mobius-sync:/code/mobius-sync"
          - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
 ```
