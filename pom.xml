@@ -7,7 +7,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
     <modules>
-        <module>notificationSink</module>
+        <module>notification</module>
         <module>mobius</module>
     </modules>
     <properties>
