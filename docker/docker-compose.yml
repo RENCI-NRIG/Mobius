@@ -40,10 +40,10 @@ services:
         - "./config/application.properties:/code/config/application.properties"
         - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
         - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
-    notificationsink:
+    notification:
         container_name: notification 
         hostname: notification 
-        image: rencinrig/notificationsink:1.0.0-SNAPSHOT
+        image: rencinrig/notification:1.0.0-SNAPSHOT
         restart: always
         depends_on:
         - rabbitmq_server
