@@ -25,41 +25,44 @@ public class ExogeniContext extends CloudContext {
 
     @Override
     public JSONArray toJson() {
-        JSONArray slices = null;
-        if(sliceContextHashMap != null && sliceContextHashMap.size() != 0) {
-            slices = new JSONArray();
-            SliceContext context = null;
-            for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
-                context = entry.getValue();
-                JSONObject slice = new JSONObject();
-                slice.put("name", context.getSliceName());
-                if(context.getExpiry() != null) {
-                    slice.put("expiry", Long.toString(context.getExpiry().getTime()));
+        synchronized (this) {
+            JSONArray slices = null;
+            if (sliceContextHashMap != null && sliceContextHashMap.size() != 0) {
+                slices = new JSONArray();
+                SliceContext context = null;
+                for (HashMap.Entry<String, SliceContext> entry : sliceContextHashMap.entrySet()) {
+                    context = entry.getValue();
+                    JSONObject slice = new JSONObject();
+                    slice.put("name", context.getSliceName());
+                    if (context.getExpiry() != null) {
+                        slice.put("expiry", Long.toString(context.getExpiry().getTime()));
+                    }
+                    slices.add(slice);
                 }
-                slices.add(slice);
             }
+            return slices;
         }
-        return slices;
     }
 
     @Override
     public void fromJson(JSONArray array) {
-        if(array != null) {
-            for (Object object : array) {
-                JSONObject slice = (JSONObject) object;
-                String sliceName = (String) slice.get("name");
-                LOGGER.debug("fromJson(): sliceName=" + sliceName);
-                SliceContext sliceContext = new SliceContext(sliceName);
-                String expiry = (String) slice.get("expiry");
-                LOGGER.debug("fromJson(): expiry=" + expiry);
-                if(expiry != null) {
-                    sliceContext.setExpiry(expiry);
+        synchronized (this) {
+            if (array != null) {
+                for (Object object : array) {
+                    JSONObject slice = (JSONObject) object;
+                    String sliceName = (String) slice.get("name");
+                    LOGGER.debug("fromJson(): sliceName=" + sliceName);
+                    SliceContext sliceContext = new SliceContext(sliceName);
+                    String expiry = (String) slice.get("expiry");
+                    LOGGER.debug("fromJson(): expiry=" + expiry);
+                    if (expiry != null) {
+                        sliceContext.setExpiry(expiry);
+                    }
+                    sliceContextHashMap.put(sliceName, sliceContext);
                 }
-                sliceContextHashMap.put(sliceName, sliceContext);
+            } else {
+                LOGGER.error("fromJson(): Null array passed");
             }
-        }
-        else {
-            LOGGER.error("fromJson(): Null array passed");
         }
     }
 
@@ -69,191 +72,199 @@ public class ExogeniContext extends CloudContext {
         if(request.getGpus() > 0) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Exogeni does not support Gpus");
         }
+
+        if(request.getHostNamePrefix() != null && !request.getHostNamePrefix().matches("[a-zA-Z]+")) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Host Name prefix can only contain alphabet characters");
+        }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
         LOGGER.debug("validateComputeRequest: OUT");
     }
 
     @Override
     public int processCompute(String workflowId, ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("processCompute: IN");
+        synchronized (this) {
+            LOGGER.debug("processCompute: IN");
 
-        validateComputeRequest(request, isFutureRequest);
+            validateComputeRequest(request, isFutureRequest);
 
-        List<String> flavorList = ExogeniFlavorAlgo.determineFlavors(request.getCpus(), request.getRamPerCpus(), request.getDiskPerCpus(), request.isCoallocate());
-        if(flavorList == null) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "None of the flavors can satisfy compute request");
-        }
-
-        String sliceName = null;
-
-        switch (request.getSlicePolicy()) {
-            case NEW:
-                // Create new slice
-                break;
-            case DEFAULT:
-                sliceName = findSlice(request);
-                break;
-            case EXISTING:
-                sliceName = request.getSliceName();
-                break;
-            default:
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "Unspported SlicePolicy");
-        }
-
-        SliceContext context = null;
-        boolean addSliceToMaps = false;
-
-        if(sliceName != null) {
-            LOGGER.debug("Using existing context=" + sliceName);
-            context = sliceContextHashMap.get(sliceName);
-        }
-        else {
-            context = new SliceContext(sliceName);
-            addSliceToMaps = true;
-            LOGGER.debug("Created new context=" + sliceName);
-        }
-
-        try {
-            nameIndex = context.processCompute(flavorList, nameIndex, request);
-
-            sliceName = context.getSliceName();
-
-            if(addSliceToMaps) {
-                long timestamp = Long.parseLong(request.getLeaseEnd());
-                Date expiry = new Date(timestamp * 1000);
-                sliceContextHashMap.put(sliceName, context);
-                leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
-                LOGGER.debug("Added " + sliceName + " with expiry= " + expiry);
+            List<String> flavorList = ExogeniFlavorAlgo.determineFlavors(request.getCpus(), request.getRamPerCpus(), request.getDiskPerCpus(), request.isCoallocate());
+            if (flavorList == null) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "None of the flavors can satisfy compute request");
             }
-            return nameIndex;
-        }
-        catch (SliceNotFoundOrDeadException e) {
-            handSliceNotFoundException(context.getSliceName());
-            sliceContextHashMap.remove(context);
-            throw new MobiusException("Slice not found");
-        }
-        finally {
-            LOGGER.debug("processCompute: OUT");
+
+            String sliceName = null;
+
+            switch (request.getSlicePolicy()) {
+                case NEW:
+                    // Create new slice
+                    break;
+                case DEFAULT:
+                    sliceName = findSlice(request);
+                    break;
+                case EXISTING:
+                    sliceName = request.getSliceName();
+                    break;
+                default:
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "Unspported SlicePolicy");
+            }
+
+            SliceContext context = null;
+            boolean addSliceToMaps = false;
+
+            if (sliceName != null) {
+                LOGGER.debug("Using existing context=" + sliceName);
+                context = sliceContextHashMap.get(sliceName);
+            } else {
+                context = new SliceContext(sliceName);
+                addSliceToMaps = true;
+                LOGGER.debug("Created new context=" + sliceName);
+            }
+
+            try {
+                nameIndex = context.processCompute(flavorList, nameIndex, request);
+
+                sliceName = context.getSliceName();
+
+                if (addSliceToMaps) {
+                    long timestamp = Long.parseLong(request.getLeaseEnd());
+                    Date expiry = new Date(timestamp * 1000);
+                    sliceContextHashMap.put(sliceName, context);
+                    leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
+                    LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
+                }
+                return nameIndex;
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("processCompute: OUT");
+            }
         }
     }
 
     @Override
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("processStorageRequest: IN");
-        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
+        synchronized (this) {
+            LOGGER.debug("processStorageRequest: IN");
+            validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
 
-        String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
-        if(sliceName == null) {
-            throw new MobiusException("hostName not found in hostNameToSliceHashMap");
-        }
-        SliceContext context = sliceContextHashMap.get(sliceName);
-        if(context == null) {
-            throw new MobiusException("slice context not found");
-        }
-        try {
-            nameIndex = context.processStorageRequest(request, nameIndex);
-            return nameIndex;
-        }
-        catch (SliceNotFoundOrDeadException e) {
-            handSliceNotFoundException(context.getSliceName());
-            sliceContextHashMap.remove(context);
-            throw new MobiusException("Slice not found");
-        }
-        finally {
-            LOGGER.debug("processStorageRequest: OUT");
+            String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap");
+            }
+            SliceContext context = sliceContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+            try {
+                nameIndex = context.processStorageRequest(request, nameIndex);
+                return nameIndex;
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("processStorageRequest: OUT");
+            }
         }
     }
 
     @Override
     public JSONObject getStatus() throws Exception {
-        LOGGER.debug("getStatus: IN");
-        JSONArray array = new JSONArray();
-        JSONObject retVal = null;
+        synchronized (this) {
+            LOGGER.debug("getStatus: IN");
+            JSONObject retVal = null;
+            JSONArray array = new JSONArray();
 
-        SliceContext context = null;
-        for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
-            context = entry.getValue();
+            SliceContext context = null;
+            for (HashMap.Entry<String, SliceContext> entry : sliceContextHashMap.entrySet()) {
+                context = entry.getValue();
 
-            try {
-                JSONObject object = context.status(hostNameSet);
-                if(!object.isEmpty()) {
-                    array.add(object);
+                try {
+                    JSONObject object = context.status(hostNameSet);
+                    if (!object.isEmpty()) {
+                        array.add(object);
+                    }
+                } catch (SliceNotFoundOrDeadException e) {
+                    handSliceNotFoundException(context.getSliceName());
+                    sliceContextHashMap.remove(context);
                 }
             }
-            catch (SliceNotFoundOrDeadException e) {
-                handSliceNotFoundException(context.getSliceName());
-                sliceContextHashMap.remove(context);
+            if (!array.isEmpty()) {
+                retVal = new JSONObject();
+                retVal.put(CloudContext.JsonKeySite, getSite());
+                retVal.put(CloudContext.JsonKeySlices, array);
             }
+            LOGGER.debug("getStatus: OUT");
+            return retVal;
         }
-        if(!array.isEmpty()) {
-            retVal = new JSONObject();
-            retVal.put(CloudContext.JsonKeySite, getSite());
-            retVal.put(CloudContext.JsonKeySlices, array);
-        }
-        LOGGER.debug("getStatus: OUT");
-        return retVal;
     }
 
     @Override
     public void stop() throws Exception {
-        LOGGER.debug("stop: IN");
-        SliceContext context = null;
-        for (HashMap.Entry<String, SliceContext> entry:sliceContextHashMap.entrySet()) {
-            context = entry.getValue();
-            context.stop();
+        synchronized (this) {
+            LOGGER.debug("stop: IN");
+            SliceContext context = null;
+            for (HashMap.Entry<String, SliceContext> entry : sliceContextHashMap.entrySet()) {
+                context = entry.getValue();
+                context.stop();
+            }
+            sliceContextHashMap.clear();
+            LOGGER.debug("stop: OUT");
         }
-        sliceContextHashMap.clear();
-        LOGGER.debug("stop: OUT");
     }
 
     @Override
     public JSONObject doPeriodic() {
-        LOGGER.debug("doPeriodic: IN");
-        SliceContext context = null;
-        JSONObject retVal = null;
-        JSONArray array = new JSONArray();
-        hostNameToSliceNameHashMap.clear();
-        leaseEndTimeToSliceNameHashMap.clear();
-        hostNameSet.clear();
-        Iterator<HashMap.Entry<String, SliceContext>> iterator = sliceContextHashMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            HashMap.Entry<String, SliceContext> entry = iterator.next();
-            context = entry.getValue();
-            Set<String> hostNames = new HashSet<>();
-            JSONObject result = null;
-            try {
-                result = context.doPeriodic(hostNames);
-            }
-            catch (SliceNotFoundOrDeadException e) {
-                handSliceNotFoundException(context.getSliceName());
-                iterator.remove();
-                continue;
-            }
-            hostNameSet.addAll(hostNames);
-            for(String h : hostNames) {
-                if(!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
-                    hostNameToSliceNameHashMap.put(h, context.getSliceName());
+        synchronized (this) {
+            LOGGER.debug("doPeriodic: IN");
+            SliceContext context = null;
+            JSONObject retVal = null;
+            JSONArray array = new JSONArray();
+            hostNameToSliceNameHashMap.clear();
+            leaseEndTimeToSliceNameHashMap.clear();
+            hostNameSet.clear();
+            Iterator<HashMap.Entry<String, SliceContext>> iterator = sliceContextHashMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                HashMap.Entry<String, SliceContext> entry = iterator.next();
+                context = entry.getValue();
+                Set<String> hostNames = new HashSet<>();
+                JSONObject result = null;
+                try {
+                    result = context.doPeriodic(hostNames);
+                } catch (SliceNotFoundOrDeadException e) {
+                    handSliceNotFoundException(context.getSliceName());
+                    iterator.remove();
+                    continue;
+                }
+                hostNameSet.addAll(hostNames);
+                for (String h : hostNames) {
+                    if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
+                        hostNameToSliceNameHashMap.put(h, context.getSliceName());
+                    }
+                }
+                if (result != null && !result.isEmpty()) {
+                    array.add(result);
+                }
+                // TODO find a way to reload expiryTime
+                if (context.getExpiry() != null) {
+                    leaseEndTimeToSliceNameHashMap.put(context.getExpiry(), context.getSliceName());
+                }
+                triggerNotification |= context.canTriggerNotification();
+                if (context.canTriggerNotification()) {
+                    context.setSendNotification(false);
                 }
             }
-            if(result != null && !result.isEmpty()) {
-                array.add(result);
+            if (!array.isEmpty()) {
+                retVal = new JSONObject();
+                retVal.put(CloudContext.JsonKeySite, getSite());
+                retVal.put(CloudContext.JsonKeySlices, array);
             }
-            // TODO find a way to reload expiryTime
-            if(context.getExpiry() != null) {
-                leaseEndTimeToSliceNameHashMap.put(context.getExpiry(), context.getSliceName());
-            }
-            triggerNotification |= context.canTriggerNotification();
-            if(context.canTriggerNotification()) {
-                context.setSendNotification(false);
-            }
+
+            LOGGER.debug("doPeriodic: OUT");
+            return retVal;
         }
-        if(!array.isEmpty()) {
-           retVal = new JSONObject();
-           retVal.put(CloudContext.JsonKeySite, getSite());
-           retVal.put(CloudContext.JsonKeySlices, array);
-        }
-        LOGGER.debug("doPeriodic: OUT");
-        return retVal;
     }
 
     @Override

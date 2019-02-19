@@ -110,6 +110,7 @@ abstract public class CloudContext {
     protected String findSlice(ComputeRequest request) {
         LOGGER.debug("findSlice: IN");
         if(leaseEndTimeToSliceNameHashMap.size() == 0) {
+            LOGGER.debug("findSlice: OUT - leaseEndTimeToSliceNameHashMap empty");
             return null;
         }
 

@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-25T09:04:06.535-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-02-19T09:28:35.200-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -79,6 +79,9 @@ public class ComputeRequest   {
 
   @JsonProperty("sliceName")
   private String sliceName = null;
+
+  @JsonProperty("hostNamePrefix")
+  private String hostNamePrefix = null;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -305,6 +308,26 @@ public class ComputeRequest   {
     this.sliceName = sliceName;
   }
 
+  public ComputeRequest hostNamePrefix(String hostNamePrefix) {
+    this.hostNamePrefix = hostNamePrefix;
+    return this;
+  }
+
+  /**
+   * prefix to be added to hostName
+   * @return hostNamePrefix
+  **/
+  @ApiModelProperty(value = "prefix to be added to hostName")
+
+
+  public String getHostNamePrefix() {
+    return hostNamePrefix;
+  }
+
+  public void setHostNamePrefix(String hostNamePrefix) {
+    this.hostNamePrefix = hostNamePrefix;
+  }
+
   public ComputeRequest imageUrl(String imageUrl) {
     this.imageUrl = imageUrl;
     return this;
@@ -405,6 +428,7 @@ public class ComputeRequest   {
         Objects.equals(this.coallocate, computeRequest.coallocate) &&
         Objects.equals(this.slicePolicy, computeRequest.slicePolicy) &&
         Objects.equals(this.sliceName, computeRequest.sliceName) &&
+        Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
@@ -413,7 +437,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, imageUrl, imageHash, imageName, postBootScript);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, imageUrl, imageHash, imageName, postBootScript);
   }
 
   @Override
@@ -431,6 +455,7 @@ public class ComputeRequest   {
     sb.append("    coallocate: ").append(toIndentedString(coallocate)).append("\n");
     sb.append("    slicePolicy: ").append(toIndentedString(slicePolicy)).append("\n");
     sb.append("    sliceName: ").append(toIndentedString(sliceName)).append("\n");
+    sb.append("    hostNamePrefix: ").append(toIndentedString(hostNamePrefix)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");

@@ -253,7 +253,13 @@ public class SliceContext {
 
             for (String flavor : flavorList) {
                 LOGGER.debug("adding node=" + nameIndex);
-                ComputeNode c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
+                ComputeNode c = null;
+                if(request.getHostNamePrefix() == null) {
+                    c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
+                }
+                else {
+                    c = slice.addComputeNode(request.getHostNamePrefix() + nameIndex);
+                }
                 ++nameIndex;
                 if (request.getImageUrl() != null && request.getImageHash() != null && request.getImageName() != null) {
                     LOGGER.debug("Request imageUrl=" + request.getImageUrl());
@@ -298,7 +304,9 @@ public class SliceContext {
             throw e;
         }
         catch (Exception e) {
-            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") ||
+                            e.getMessage().contains("slice already closed"))) {
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
             }

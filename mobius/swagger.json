@@ -418,6 +418,10 @@
           "type" : "string",
           "description" : "existing slice name to which compute resources should be added"
         },
+        "hostNamePrefix" : {
+          "type" : "string",
+          "description" : "prefix to be added to hostName"
+        },
         "imageUrl" : {
           "type" : "string",
           "description" : "image url"
