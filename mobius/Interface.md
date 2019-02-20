@@ -160,6 +160,8 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | coallocate    | Boolean       | flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false' | M         |
 | slicePolicy   | String        | Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'| M         |
 | sliceName      | String       | Existing slice name to which compute resources should be added | O         |
+| hostNamePrefix | String       | Prefix to be added to hostName | O         |
+| ipAddress      | String       | IP address to assign. should be specified only if coallocate is set to 'true'. | O         |
 | imageUrl      | String        | Image URL | O         |
 | imageHash     | String        | Image Hash | O         |
 | imageName     | String        | Image Name | O         |
