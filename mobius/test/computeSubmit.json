@@ -4,7 +4,7 @@
     "gpus":"0",
     "ramPerCpus":"3072",
     "diskPerCpus":"19200",
-    "leaseStart":"1550589314",
+    "leaseStart":"1550692471",
     "leaseEnd":"1557733832",
     "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/submit/ubuntu-dynamo-submit.xml",
     "imageHash":"fef5b1b7b8ab437342d97ff5d436503d631d3c13",

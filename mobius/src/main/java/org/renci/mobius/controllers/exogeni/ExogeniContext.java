@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers.exogeni;
 
+import com.google.common.net.InetAddresses;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
@@ -71,6 +72,14 @@ public class ExogeniContext extends CloudContext {
 
         if(request.getGpus() > 0) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Exogeni does not support Gpus");
+        }
+
+        if(!request.isCoallocate() && request.getIpAddress() != null) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "IP address can only be specified with coallocate=true");
+        }
+
+        if(request.getIpAddress() != null &&  !InetAddresses.isInetAddress(request.getIpAddress())) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Not a valid IP address");
         }
 
         if(request.getHostNamePrefix() != null && !request.getHostNamePrefix().matches("[a-zA-Z]+")) {

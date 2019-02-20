@@ -422,6 +422,10 @@
           "type" : "string",
           "description" : "prefix to be added to hostName"
         },
+        "ipAddress" : {
+          "type" : "string",
+          "description" : "ip address to assign. should be specified only if coallocate is set to 'true'."
+        },
         "imageUrl" : {
           "type" : "string",
           "description" : "image url"

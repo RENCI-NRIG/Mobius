@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-02-19T09:28:35.200-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-02-20T14:43:32.368-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -82,6 +82,9 @@ public class ComputeRequest   {
 
   @JsonProperty("hostNamePrefix")
   private String hostNamePrefix = null;
+
+  @JsonProperty("ipAddress")
+  private String ipAddress = null;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -328,6 +331,26 @@ public class ComputeRequest   {
     this.hostNamePrefix = hostNamePrefix;
   }
 
+  public ComputeRequest ipAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
+    return this;
+  }
+
+  /**
+   * ip address to assign. should be specified only if coallocate is set to 'true'.
+   * @return ipAddress
+  **/
+  @ApiModelProperty(value = "ip address to assign. should be specified only if coallocate is set to 'true'.")
+
+
+  public String getIpAddress() {
+    return ipAddress;
+  }
+
+  public void setIpAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
+  }
+
   public ComputeRequest imageUrl(String imageUrl) {
     this.imageUrl = imageUrl;
     return this;
@@ -429,6 +452,7 @@ public class ComputeRequest   {
         Objects.equals(this.slicePolicy, computeRequest.slicePolicy) &&
         Objects.equals(this.sliceName, computeRequest.sliceName) &&
         Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
+        Objects.equals(this.ipAddress, computeRequest.ipAddress) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
@@ -437,7 +461,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, imageUrl, imageHash, imageName, postBootScript);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, imageUrl, imageHash, imageName, postBootScript);
   }
 
   @Override
@@ -456,6 +480,7 @@ public class ComputeRequest   {
     sb.append("    slicePolicy: ").append(toIndentedString(slicePolicy)).append("\n");
     sb.append("    sliceName: ").append(toIndentedString(sliceName)).append("\n");
     sb.append("    hostNamePrefix: ").append(toIndentedString(hostNamePrefix)).append("\n");
+    sb.append("    ipAddress: ").append(toIndentedString(ipAddress)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");

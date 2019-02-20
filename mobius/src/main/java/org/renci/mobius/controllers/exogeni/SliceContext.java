@@ -283,7 +283,10 @@ public class SliceContext {
                 LOGGER.debug("Site=" + request.getSite());
                 LOGGER.debug("Domain=" + arrOfStr[1]);
                 c.setDomain(arrOfStr[1]);
-                net.stitch(c);
+                InterfaceNode2Net interfaceNode2Net = (InterfaceNode2Net)net.stitch(c);
+                if(request.isCoallocate() && request.getIpAddress() != null) {
+                    interfaceNode2Net.setIpAddress(request.getIpAddress());
+                }
                 if(request.getPostBootScript() != null) {
                     c.setPostBootScript(request.getPostBootScript());
                 }
