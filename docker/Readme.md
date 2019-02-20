@@ -37,7 +37,7 @@ Once images are ready, update configuration in docker as indicated below:
  mobius.amqp.user.password=
  mobius.amqp.virtual.host=
 ```
-4. Update docker-compose.yml for mobius_server to point the below parameters to user specific locations.
+4. Update docker-compose.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
         # point to user specific keys below
          volumes:
