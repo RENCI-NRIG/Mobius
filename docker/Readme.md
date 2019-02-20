@@ -59,3 +59,27 @@ Creating mobius   ... done
 Creating notification ... done
 ```
 After a few moments the docker containers will have stood up and configured themselves. User can now trigger requests to Mobius. Refer to [Interface](../mobius/Interface.md) to see the REST API
+
+#### Few example commands
+- Create a workflow
+```
+curl -X POST -i "localhost:8080/mobius/workflow?workflowID=abcd-5678" -H "accept: application/json"
+```
+- Get workflow status
+```
+curl -X GET -i "localhost:8080/mobius/workflow?workflowID=abcd-5678" -H "accept: application/json"
+```
+- Provision Compute node
+```
+curl -X POST -i "localhost:8080/mobius/compute?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @compute.json
+```
+- Provision Storage node
+```
+curl -X POST -i "localhost:8080/mobius/storage?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @storage.json
+```
+- Delete workflow
+```
+curl -X DELETE -i "localhost:8080/mobius/workflow?workflowID=abcd-5678" -H "accept: application/json"
+```
+
+Example json files available at [test](https://github.com/RENCI-NRIG/Mobius/tree/master/mobius/test) directory.
