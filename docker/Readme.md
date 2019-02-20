@@ -21,6 +21,7 @@ Once images are ready, update configuration in docker as indicated below:
  mobius.exogeni.controllerUrl=https://geni.renci.org:11443/orca/xmlrpc
 ```
 3. If connecting to pegasus, specify amqp credentials. Alternatively, amqp notificationSink can be used as shown below. 
+No changes needed until pegasus to mobius integration is complete.
 ```
  #mobius.amqp.server.host=panorama.isi.edu
  #mobius.amqp.server.port=5672
