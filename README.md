@@ -37,7 +37,7 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
     - Option 2
       - POST workflow API to take username and credentials, controller url for each cloud type to be used later for that workflow
 - Where will mobius be deployed?
-  - Run on individual laptop, node on AWS or Exogeni?
+  - Has a docker image and can be hosted on VM, AWS, laptop etc
 
 
 ## How to use or launch Mobius?
