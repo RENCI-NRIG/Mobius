@@ -1,7 +1,6 @@
 package org.renci.mobius.controllers.chameleon;
 
 
-import javafx.util.Pair;
 import org.apache.log4j.Logger;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
@@ -12,6 +11,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 import java.text.SimpleDateFormat;
@@ -191,20 +191,20 @@ public class StackContext {
             }
 
             Pair<String, String> result = api.createComputeLease(region, sliceName,
-                    reservationRequest.getKey(), 120);
+                    reservationRequest.getFirst(), 120);
 
-            if(result == null || result.getKey() == null || result.getValue() == null) {
+            if(result == null || result.getFirst() == null || result.getSecond() == null) {
                 throw new MobiusException("Failed to request lease");
             }
 
-            leaseId = result.getKey();
-            String reservationId = result.getValue();
+            leaseId = result.getFirst();
+            String reservationId = result.getSecond();
 
             LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             LOGGER.debug("Reservation Id used for instance creation=" + reservationId);
             LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            for (int i =0; i< reservationRequest.getValue(); ++i) {
+            for (int i =0; i< reservationRequest.getSecond(); ++i) {
                 LOGGER.debug("adding node=" + nameIndex);
                 String name = sliceName + "-" + CloudContext.NodeName + nameIndex;
 

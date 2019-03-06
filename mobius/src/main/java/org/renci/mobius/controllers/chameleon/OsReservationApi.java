@@ -3,7 +3,6 @@ package org.renci.mobius.controllers.chameleon;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import javafx.util.Pair;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -11,6 +10,7 @@ import org.renci.mobius.controllers.MobiusException;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.data.util.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -257,7 +257,7 @@ public class OsReservationApi {
             totalComputeNodes += e.getValue();
         }
         request.put("reservations", reservations);
-        return new Pair<String, Integer>(request.toString(), totalComputeNodes);
+        return Pair.of(request.toString(), totalComputeNodes);
     }
 
     public Pair<String, String> createComputeLease(String region, String name, String request,
@@ -329,7 +329,7 @@ public class OsReservationApi {
             e.printStackTrace();
             throw new MobiusException("failed to create leases");
         }
-        return new Pair<>(leaseId, reservationId);
+        return Pair.of(leaseId, reservationId);
     }
 
     public void deleteLease(String region, String id) throws Exception {
