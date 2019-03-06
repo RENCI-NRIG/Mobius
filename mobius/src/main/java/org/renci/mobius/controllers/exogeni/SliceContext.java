@@ -224,7 +224,8 @@ public class SliceContext {
 
             // First compute request
             if (sliceName == null) {
-                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Exogeni);
+                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Exogeni,
+                        MobiusConfig.getInstance().getDefaultExogeniUser());
                 ISliceTransportAPIv1 sliceProxy  = getSliceProxy(certKey, MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
 
                 //SSH context

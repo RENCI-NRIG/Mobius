@@ -85,7 +85,7 @@ public class ExogeniContext extends CloudContext {
         if(request.getHostNamePrefix() != null && !request.getHostNamePrefix().matches("[a-zA-Z]+")) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Host Name prefix can only contain alphabet characters");
         }
-        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
+        validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, null);
         LOGGER.debug("validateComputeRequest: OUT");
     }
 
@@ -156,7 +156,7 @@ public class ExogeniContext extends CloudContext {
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("processStorageRequest: IN");
-            validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest);
+            validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, null);
 
             String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
             if (sliceName == null) {
