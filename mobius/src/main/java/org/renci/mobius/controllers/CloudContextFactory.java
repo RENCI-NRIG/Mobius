@@ -14,8 +14,8 @@ public class CloudContextFactory {
     }
 
     public CloudContext createCloudContext(String site) throws Exception{
-        if(site.compareToIgnoreCase(CloudContext.CloudType.Chameleon.toString()) == 0) {
-            return new ChameleonContext(CloudContext.CloudType.Exogeni, site);
+        if(site.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
+            return new ChameleonContext(CloudContext.CloudType.Chameleon, site);
         }
         else if(site.compareToIgnoreCase(CloudContext.CloudType.OSG.toString()) == 0) {
             throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not Implemented");

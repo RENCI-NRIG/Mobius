@@ -3,21 +3,18 @@ package org.renci.mobius.controllers.chameleon;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.log4j.Logger;
-import org.renci.mobius.controllers.flavor.FlavorAlgo;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
-public class ChameleonFlavorAlgo  implements FlavorAlgo {
+public class ChameleonFlavorAlgo {
     private static final Logger LOGGER = Logger.getLogger(ChameleonFlavorAlgo.class.getName());
 
     enum Flavor {
         // cpus, diskspace, ram, name
-        Skylake(2, 240057, 196608, "compute_skylake"),
-        Haswell(2, 250059, 131072, "compute_haswell"),
-        InfiniBand(2, 250059, 131072, "compute_haswell_ib"),
-        Gpus(2, 250059, 131072, "XO Extra Large");
+        Skylake(48, 240057, 196608, "compute_skylake"),
+        Haswell(48, 250059, 131072, "compute_haswell"),
+        InfiniBand(48, 250059, 131072, "compute_haswell_ib"),
+        Gpus(56, 250059, 131072, "XO Extra Large");
 
         private Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
             this.cpus = cpus;
@@ -66,8 +63,9 @@ public class ChameleonFlavorAlgo  implements FlavorAlgo {
         cpusToFlavorMap = fv;
     }
 
-    public static List<String> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus, boolean isCoallocate) {
-        List<String> result = new LinkedList<String>();
+    public static Map<String, Integer> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus,
+                                                        boolean isCoallocate) {
+        Map<String, Integer> result = new HashMap<>();
         Integer requestedCpus = cpus;
         LOGGER.debug("determineFlavors: IN");
 
@@ -89,7 +87,13 @@ public class ChameleonFlavorAlgo  implements FlavorAlgo {
             if(flavors != null) {
                 for (Flavor f : flavors) {
                     if (diskPerCpus <= f.getDiskPerCpu() && ramPerCpus <= f.getRamPerCpu()) {
-                        result.add(f.getName());
+                        int value = 1;
+                        if(result.containsKey(f.getName())) {
+                            value = result.get(f.getName());
+                            ++value;
+                        }
+
+                        result.put(f.getName(), value);
                         requestedCpus = 0;
                     }
                 }
@@ -100,7 +104,13 @@ public class ChameleonFlavorAlgo  implements FlavorAlgo {
             if (requestedCpus != 0 && ramPerCpus <= Flavor.Skylake.getRamPerCpu()) {
                 if (diskPerCpus <= Flavor.Skylake.getDiskPerCpu()) {
                     for (i = 0; i < requestedCpus / Flavor.Skylake.getCpus(); i = i + Flavor.Skylake.getCpus()) {
-                        result.add(Flavor.Skylake.getName());
+                        int value = 1;
+                        if(result.containsKey(Flavor.Skylake.getName())) {
+                            value = result.get(Flavor.Skylake.getName());
+                            ++value;
+                        }
+
+                        result.put(Flavor.Skylake.getName(), value);
                     }
                     requestedCpus -= i;
                 }
@@ -108,7 +118,13 @@ public class ChameleonFlavorAlgo  implements FlavorAlgo {
             if (requestedCpus != 0 && ramPerCpus <= Flavor.Haswell.getRamPerCpu()) {
                 if (diskPerCpus <= Flavor.Haswell.getDiskPerCpu()) {
                     for (i = 0; i < requestedCpus / Flavor.Haswell.getCpus(); i = i + Flavor.Haswell.getCpus()) {
-                        result.add(Flavor.Haswell.getName());
+                        int value = 1;
+                        if(result.containsKey(Flavor.Haswell.getName())) {
+                            value = result.get(Flavor.Haswell.getName());
+                            ++value;
+                        }
+
+                        result.put(Flavor.Haswell.getName(), value);
                     }
                     requestedCpus -= i;
                 }
@@ -116,17 +132,23 @@ public class ChameleonFlavorAlgo  implements FlavorAlgo {
             if (requestedCpus != 0 && ramPerCpus <= Flavor.InfiniBand.getRamPerCpu()) {
                 if (diskPerCpus <= Flavor.InfiniBand.getDiskPerCpu()) {
                     for (i = 0; i < requestedCpus / Flavor.InfiniBand.getCpus(); i = i + Flavor.InfiniBand.getCpus()) {
-                        result.add(Flavor.InfiniBand.getName());
+                        int value = 1;
+                        if(result.containsKey(Flavor.InfiniBand.getName())) {
+                            value = result.get(Flavor.InfiniBand.getName());
+                            ++value;
+                        }
+                        
+                        result.put(Flavor.InfiniBand.getName(), value);
                     }
                     requestedCpus -= i;
                 }
             }
         }
 
-        LOGGER.debug("determineFlavors: OUT");
         if(requestedCpus != 0) {
             result = null;
         }
+        LOGGER.debug("determineFlavors: OUT");
         return result;
     }
 }

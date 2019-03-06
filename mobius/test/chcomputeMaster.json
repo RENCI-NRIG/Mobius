@@ -1,12 +1,12 @@
 {
-    "site":"Chameleon",
+    "site":"Chameleon:CHI@UC",
     "cpus":"4",
     "gpus":"0",
-    "ramPerCpus":"3072",
-    "diskPerCpus":"19200",
-    "leaseStart":"1548698379",
-    "leaseEnd":"1557733832",
+    "ramPerCpus":"4096",
+    "diskPerCpus":"5000",
+    "leaseStart":"1551900322",
+    "leaseEnd":"1552483844",
     "coallocate":"true",
-    "imageName":"CC-Ubuntu16.04"
+    "imageName":"CC-CentOS7"
 }
 
