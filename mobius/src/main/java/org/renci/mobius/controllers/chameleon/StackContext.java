@@ -59,6 +59,9 @@ public class StackContext {
             if(leaseId != null) {
                 retVal.put("leaseId", leaseId);
             }
+            if(region != null) {
+                retVal.put("region", region);
+            }
             if(instanceIdList.size() > 0) {
                 JSONArray ids = new JSONArray();
                 for (String instanceId : instanceIdList) {
@@ -77,6 +80,9 @@ public class StackContext {
             sliceName = (String) object.get("name");
             if (object.get("leaseId") != null) {
                 leaseId = (String) object.get("leaseId");
+            }
+            if (object.get("region") != null) {
+                region = (String) object.get("region");
             }
             if (object.get("ids") != null) {
                 JSONArray ids = (JSONArray) object.get("ids");

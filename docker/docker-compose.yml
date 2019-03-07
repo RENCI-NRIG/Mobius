@@ -30,14 +30,15 @@ services:
         - rabbitmq_server
         - database 
         environment:
-            MOBIUS_HOME : /code/
+        - MOBIUS_HOME=/code/
         ports:
         - "8080:8080"
         # point to user specific keys below
         volumes:
-        - "./logs/:/var/log/"
+        - "./logs:/code/logs"
         - "./mobius-sync:/code/mobius-sync"
         - "./config/application.properties:/code/config/application.properties"
+        - "./config/log4j.properties:/code/config/log4j.properties"
         - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
         - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
     notification:
@@ -49,7 +50,7 @@ services:
         - rabbitmq_server
         - mobius_server
         environment:
-            RABBITMQ_SERVER: rabbitmq
-            RABBITMQ_PORT: 5672 
-            EXCHANGE_NAME: notifications 
-            ROUTING_KEY: workflows 
+        - RABBITMQ_SERVER=rabbitmq
+        - RABBITMQ_PORT=5672 
+        - EXCHANGE_NAME=notifications 
+        - ROUTING_KEY=workflows 

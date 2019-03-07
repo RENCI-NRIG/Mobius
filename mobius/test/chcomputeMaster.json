@@ -4,7 +4,7 @@
     "gpus":"0",
     "ramPerCpus":"4096",
     "diskPerCpus":"5000",
-    "leaseStart":"1551900322",
+    "leaseStart":"1551917946",
     "leaseEnd":"1552483844",
     "coallocate":"true",
     "imageName":"CC-CentOS7"
