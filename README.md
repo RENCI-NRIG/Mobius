@@ -28,7 +28,7 @@ Responsible for triggering notfications to Pegasus on Workflow status change. It
 ### Stored Worflows
 Each workflow saves its workflowId and hashMap for CloudContexts in the Database. This information can be used to create Workflow context in case of abnormal restart of Mobius application.
 
-## Open Implementation Issues
+## TODO List
 - User / certificate information
   - Possible options
     - Option 1
@@ -36,8 +36,8 @@ Each workflow saves its workflowId and hashMap for CloudContexts in the Database
       - Pass user name when starting a new workflow
     - Option 2
       - POST workflow API to take username and credentials, controller url for each cloud type to be used later for that workflow
-- Where will mobius be deployed?
-  - Has a docker image and can be hosted on VM, AWS, laptop etc
+- Enable Mobius to pass HEAT Templates
+- Create network to connect chameleon compute resources instead of using sharednet
 
 
 ## How to use or launch Mobius?
