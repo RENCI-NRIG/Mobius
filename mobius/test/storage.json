@@ -2,8 +2,6 @@
     "mountPoint":"/mnt/",
     "target":"Node0",
     "size":"1",
-    "leaseStart":"1548434922",
-    "leaseEnd":"1557733832",
     "action":"delete"
 }
 

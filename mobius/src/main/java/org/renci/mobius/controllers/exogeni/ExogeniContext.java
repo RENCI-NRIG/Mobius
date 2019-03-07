@@ -85,6 +85,16 @@ public class ExogeniContext extends CloudContext {
         if(request.getHostNamePrefix() != null && !request.getHostNamePrefix().matches("[a-zA-Z]+")) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Host Name prefix can only contain alphabet characters");
         }
+
+        if(request.getLeaseEnd() == null) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "No end time specified");
+        }
+        if(request.getLeaseStart() == null) {
+            Date now = new Date();
+            long milliseconds = now.getTime()/1000;
+
+            request.setLeaseStart(Long.toString(milliseconds));
+        }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, null);
         LOGGER.debug("validateComputeRequest: OUT");
     }
@@ -135,11 +145,13 @@ public class ExogeniContext extends CloudContext {
                 sliceName = context.getSliceName();
 
                 if (addSliceToMaps) {
-                    long timestamp = Long.parseLong(request.getLeaseEnd());
-                    Date expiry = new Date(timestamp * 1000);
+
+                    Date expiry = context.getExpiry();
                     sliceContextHashMap.put(sliceName, context);
-                    leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
-                    LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
+                    if(expiry != null) {
+                        leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
+                        LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
+                    }
                 }
                 return nameIndex;
             } catch (SliceNotFoundOrDeadException e) {

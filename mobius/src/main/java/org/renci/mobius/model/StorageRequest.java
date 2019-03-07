@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * StorageRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-01-25T09:04:06.535-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-03-07T11:41:20.303-05:00[America/New_York]")
 
 public class StorageRequest   {
   @JsonProperty("mountPoint")
@@ -77,7 +77,8 @@ public class StorageRequest   {
    * mount point
    * @return mountPoint
   **/
-  @ApiModelProperty(value = "mount point")
+  @ApiModelProperty(required = true, value = "mount point")
+  @NotNull
 
 
   public String getMountPoint() {
@@ -97,7 +98,8 @@ public class StorageRequest   {
    * hostname or ip of the destination
    * @return target
   **/
-  @ApiModelProperty(value = "hostname or ip of the destination")
+  @ApiModelProperty(required = true, value = "hostname or ip of the destination")
+  @NotNull
 
 
   public String getTarget() {
@@ -118,7 +120,8 @@ public class StorageRequest   {
    * minimum: 0
    * @return size
   **/
-  @ApiModelProperty(value = "size in GB")
+  @ApiModelProperty(required = true, value = "size in GB")
+  @NotNull
 
 @Min(0)
   public Integer getSize() {
@@ -178,7 +181,8 @@ public class StorageRequest   {
    * Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.
    * @return action
   **/
-  @ApiModelProperty(value = "Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.")
+  @ApiModelProperty(required = true, value = "Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.")
+  @NotNull
 
 
   public ActionEnum getAction() {

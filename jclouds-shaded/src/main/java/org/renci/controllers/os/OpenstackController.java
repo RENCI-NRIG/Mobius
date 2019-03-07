@@ -291,7 +291,7 @@ public class OpenstackController implements Closeable {
 
     public String createInstance(String region, String sshKeyFile, String imageName,
                                   String flavorName, String networkName,
-                                  String reservation, String keypairName, String name) throws Exception{
+                                  String reservation, String keypairName, String name, String userData) throws Exception{
         try {
             String imageId = getImageId(region, imageName);
 
@@ -306,10 +306,21 @@ public class OpenstackController implements Closeable {
 
             String keypair = createKeyPairIfNotExists(region, sshKeyFile, keypairName);
             SchedulerHints hints = SchedulerHints.builder().reservation(reservation).build();
-            CreateServerOptions allInOneOptions = CreateServerOptions.Builder
-                    .keyPairName(keypair)
-                    .networks(networkId)
-                    .schedulerHints(hints);
+            CreateServerOptions allInOneOptions = null;
+
+            if(userData == null) {
+                allInOneOptions = CreateServerOptions.Builder
+                        .keyPairName(keypair)
+                        .networks(networkId)
+                        .schedulerHints(hints);
+            }
+            else {
+                allInOneOptions = CreateServerOptions.Builder
+                        .keyPairName(keypair)
+                        .networks(networkId)
+                        .userData(userData.getBytes())
+                        .schedulerHints(hints);
+            }
 
             System.out.println("Checking for existing instance...");
             Server instance = getInstanceFromInstanceIName(region, name);

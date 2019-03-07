@@ -298,8 +298,15 @@ public class SliceContext {
             slice.commit(MobiusConfig.getInstance().getDefaultExogeniCommitRetryCount(),
                     MobiusConfig.getInstance().getDefaultExogeniCommitSleepInterval());
             lastRequest = request;
-            long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
-            expiry = new Date(timestamp * 1000);
+            if(lastRequest.getLeaseEnd() != null) {
+                long timestamp = Long.parseLong(lastRequest.getLeaseEnd());
+                expiry = new Date(timestamp * 1000);
+            }
+            // Expiry in 24 hours
+            else {
+                expiry = new Date();
+                expiry.setTime(expiry.getTime() + 604800);
+            }
             return nameIndex;
         }
         catch (MobiusException e) {
@@ -384,6 +391,9 @@ public class SliceContext {
                 }
                     break;
                 case RENEW: {
+                    if(request.getLeaseEnd() == null) {
+                        throw new MobiusException(HttpStatus.BAD_REQUEST, "No lease end specified for renew");
+                    }
                     Collection<StorageNode> storageNodes = slice.getStorageNodes();
                     List<StorageNode> storageNodesToBeRenewed = new LinkedList<>();
                     if (storageNodes == null) {

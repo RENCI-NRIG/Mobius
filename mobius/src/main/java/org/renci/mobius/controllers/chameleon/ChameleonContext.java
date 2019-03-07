@@ -25,7 +25,6 @@ public class ChameleonContext extends CloudContext {
     }
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
-
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, maxDiffInSeconds);
         LOGGER.debug("validateComputeRequest: OUT");
     }

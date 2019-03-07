@@ -183,7 +183,13 @@ public class StackContext {
             }
 
             sdf.setTimeZone(utc);
-            Date endTime = new Date(Long.parseLong(request.getLeaseEnd()) * 1000);
+            Date endTime = new Date();
+            if(request.getLeaseEnd() != null) {
+                endTime = new Date(Long.parseLong(request.getLeaseEnd()) * 1000);
+            }
+            else {
+                endTime.setTime(endTime.getTime() + 604800);
+            }
 
             // TODO effificently create lease; current implementation creates one lease per resource
             Date now = new Date();
@@ -221,7 +227,8 @@ public class StackContext {
                         MobiusConfig.getInstance().getChameleonDefaultNetwork(),
                         reservationId,
                         sliceName,
-                        name);
+                        name,
+                        request.getPostBootScript());
 
                 if(instanceId == null) {
                     throw new MobiusException("Failed to create instance");
