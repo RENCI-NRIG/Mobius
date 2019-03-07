@@ -12,13 +12,16 @@ Once images are ready, update configuration in docker as indicated below:
 1. Update docker/config/application.properties to specify user specific values for following properties
 ```
  mobius.exogeni.user=kthare10
- mobius.exogeni.user=kthare10
  mobius.exogeni.certKeyFile=geni-kthare10.pem
  mobius.exogeni.sshKeyFile=id_rsa.pub
+ mobius.chameleon.user=kthare10
+ mobius.chameleon.user.password=
+ mobius.chameleon.sshKeyFile=id_rsa.pub
  ```
- 2. Update docker/config/application.properties to specify exogeni controller url
+ 2. Update docker/config/application.properties to specify exogeni/chameleon controller/auth url
 ```
  mobius.exogeni.controllerUrl=https://geni.renci.org:11443/orca/xmlrpc
+ mobius.chameleon.authUrl=https://chi.tacc.chameleoncloud.org:5000/v3
 ```
 3. If connecting to pegasus, specify amqp credentials. Alternatively, amqp notificationSink can be used as shown below. 
 No changes needed until pegasus to mobius integration is complete.
@@ -42,9 +45,10 @@ No changes needed until pegasus to mobius integration is complete.
 ```
         # point to user specific keys below
          volumes:
-         - "./logs/:/var/log/"
-         - "./mobius-sync:/code/mobius-sync"         
+         - "./logs:/code/logs"
+         - "./mobius-sync:/code/mobius-sync"
          - "./config/application.properties:/code/config/application.properties"
+         - "./config/log4j.properties:/code/config/log4j.properties"
          - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
 ```
