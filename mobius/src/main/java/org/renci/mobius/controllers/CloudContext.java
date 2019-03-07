@@ -2,6 +2,7 @@ package org.renci.mobius.controllers;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.apache.commons.lang.RandomStringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.model.ComputeRequest;
@@ -33,8 +34,13 @@ abstract public class CloudContext {
     public static final String JsonKeySite = "site";
     public static final String JsonKeySlices = "slices";
 
-    public static String generateSliceName(CloudType type) {
-        return "Mobius-" + type.name() + "-" + MobiusConfig.getInstance().getDefaultExogeniUser() + "-" + java.util.UUID.randomUUID().toString();
+    // Random string generator for read and write token
+    public static String generateRandomString() {
+        return RandomStringUtils.random( 10, true, true);
+    }
+
+    public static String generateSliceName(CloudType type, String user) {
+        return "Mobius-" + type.name() + "-" + user + "-" + generateRandomString();
     }
 
     private static final Logger LOGGER = Logger.getLogger( CloudContext.class.getName() );
@@ -79,30 +85,39 @@ abstract public class CloudContext {
     abstract public void fromJson(JSONArray array);
 
 
-    protected void validateLeasTime(String startTime, String endTime, boolean isFutureRequest) throws Exception {
+    protected void validateLeasTime(String startTime, String endTime, boolean isFutureRequest, Long maxDiffInSeconds) throws Exception {
         LOGGER.debug("validateLeasTime: IN");
-        long currTime = System.currentTimeMillis();
-        long beginTimestamp = Long.parseLong(startTime) * 1000;
-        long endTimestamp  = Long.parseLong(endTime) * 1000;
+        if(startTime != null && endTime != null) {
+            long currTime = System.currentTimeMillis();
+            long beginTimestamp = Long.parseLong(startTime) * 1000;
+            long endTimestamp = Long.parseLong(endTime) * 1000;
 
-        if(beginTimestamp > currTime) {
-            LOGGER.info("Future request to be started at " + beginTimestamp);
-            throw new FutureRequestException("future request " + beginTimestamp);
-        }
-
-        // Ignore Start time check for requests triggered via periodic processing
-        if(!isFutureRequest) {
-            long diff = java.lang.Math.abs(currTime - beginTimestamp);
-            if (diff > AllowedDeltaTimeInMsFromCurrentTime) {
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "startTime is before currentTime");
+            if (beginTimestamp > currTime) {
+                LOGGER.info("Future request to be started at " + beginTimestamp);
+                throw new FutureRequestException("future request " + beginTimestamp);
             }
-        }
 
-        if(endTimestamp < currTime){
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "endTime is before currTime");
-        }
-        if(endTimestamp - beginTimestamp <= minimumTimeDifInMs) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is less than 24 hours");
+            // Ignore Start time check for requests triggered via periodic processing
+            if (!isFutureRequest) {
+                long diff = java.lang.Math.abs(currTime - beginTimestamp);
+                if (diff > AllowedDeltaTimeInMsFromCurrentTime) {
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "startTime is before currentTime");
+                }
+            }
+
+            if (endTimestamp < currTime) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "endTime is before currTime");
+            }
+            if (maxDiffInSeconds != null) {
+                if ((endTimestamp - beginTimestamp) > (maxDiffInSeconds * 1000)) {
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is more than " +
+                            maxDiffInSeconds + " seconds");
+                }
+            } else {
+                if (endTimestamp - beginTimestamp <= minimumTimeDifInMs) {
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "Diff between endTime and startTime is less than 24 hours");
+                }
+            }
         }
         LOGGER.debug("validateLeasTime: OUT");
     }
@@ -111,6 +126,11 @@ abstract public class CloudContext {
         LOGGER.debug("findSlice: IN");
         if(leaseEndTimeToSliceNameHashMap.size() == 0) {
             LOGGER.debug("findSlice: OUT - leaseEndTimeToSliceNameHashMap empty");
+            return null;
+        }
+
+        if(request.getLeaseEnd() == null) {
+            LOGGER.debug("findSlice: OUT - getLeaseEnd null");
             return null;
         }
 

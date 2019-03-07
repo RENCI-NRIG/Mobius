@@ -2,15 +2,13 @@ package org.renci.mobius.controllers.exogeni;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import io.swagger.models.auth.In;
 import org.apache.log4j.Logger;
-import org.renci.mobius.controllers.flavor.FlavorAlgo;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-class ExogeniFlavorAlgo implements FlavorAlgo {
+class ExogeniFlavorAlgo {
     private static final Logger LOGGER = Logger.getLogger( ExogeniFlavorAlgo.class.getName() );
 
     enum Flavor {

@@ -32,6 +32,53 @@ public class MobiusConfig {
     public static final String amqpVirtualHost = "mobius.amqp.virtual.host";
     public static final String amqpExchangeName = "mobius.amqp.exchange.name";
     public static final String amqpRoutingKey = "mobius.amqp.exchange.routing.key";
+    public static final String chameleonAuthUrl = "mobius.chameleon.authUrl";
+    public static final String chameleonUser = "mobius.chameleon.user";
+    public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
+    public static final String chameleonUserPassword = "mobius.chameleon.user.password";
+    public static final String chameleonProject = "mobius.chameleon.project";
+    public static final String chameleonProjectDomain = "mobius.chameleon.project.domain";
+    public static final String chameleonUserKeyPath = "mobius.chameleon.KeyPath";
+    public static final String chameleonUserSshKey = "mobius.chameleon.sshKeyFile";
+    public static final String chameleonDefaultNetwork = "mobius.chameleon.default.network";
+    public static final String chameleonDefaultImageName = "mobius.chameleon.defaultImageName";
+    public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
+    public static final String chameleonDefaultReservationId = "mobius.chameleon.defaultReservationId";
+    public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
+
+    public String getChameleonAuthUrl() { return properties.getProperty(chameleonAuthUrl); }
+
+    public String getChameleonUser() { return properties.getProperty(chameleonUser); }
+
+    public String getChameleonUserDomain() { return properties.getProperty(chameleonUserDomain); }
+
+    public String getChameleonUserPassword() { return properties.getProperty(chameleonUserPassword); }
+
+    public String getChameleonProject() { return properties.getProperty(chameleonProject); }
+
+    public String getChameleonProjectDomain() { return properties.getProperty(chameleonProjectDomain); }
+
+    public String getChameleonFloatingIpPool() { return properties.getProperty(chameleonFloatingIpPool); }
+
+    public String getChameleonDefaultNetwork() { return properties.getProperty(chameleonDefaultNetwork); }
+
+    public String getDefaultChameleonImageName() { return properties.getProperty(MobiusConfig.chameleonDefaultImageName); }
+
+    public String getChameleonDefaultFlavorName() { return properties.getProperty(MobiusConfig.chameleonDefaultFlavorName); }
+
+    public String getChameleonDefaultReservationId() { return properties.getProperty(MobiusConfig.chameleonDefaultReservationId); }
+
+    public String getDefaultChameleonUserSshKey() {
+        String mobiusHome = getMobiusHome();
+        if(mobiusHome == null) {
+            return properties.getProperty(MobiusConfig.chameleonUserKeyPath) + "/" +
+                    properties.getProperty(MobiusConfig.chameleonUserSshKey);
+        }
+        else {
+            return mobiusHome + "/ssh/" +
+                    properties.getProperty(MobiusConfig.chameleonUserSshKey);
+        }
+    }
 
     public String getAmqpExchangeName() { return properties.getProperty(amqpExchangeName); }
 

@@ -1,0 +1,10 @@
+{
+    "site":"Exogeni:CIENA2 (Hanover, MD) XO Rack",
+    "cpus":"1",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"worker",
+    "leaseEnd":"1557733832"
+}
+

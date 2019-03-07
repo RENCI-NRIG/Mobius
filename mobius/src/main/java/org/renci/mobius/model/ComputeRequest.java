@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-02-20T14:43:32.368-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-03-07T11:41:20.303-05:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -216,8 +216,7 @@ public class ComputeRequest   {
    * Least Start Time
    * @return leaseStart
   **/
-  @ApiModelProperty(required = true, value = "Least Start Time")
-  @NotNull
+  @ApiModelProperty(value = "Least Start Time")
 
 
   public String getLeaseStart() {
@@ -237,8 +236,7 @@ public class ComputeRequest   {
    * Least End Time
    * @return leaseEnd
   **/
-  @ApiModelProperty(required = true, value = "Least End Time")
-  @NotNull
+  @ApiModelProperty(value = "Least End Time")
 
 
   public String getLeaseEnd() {
