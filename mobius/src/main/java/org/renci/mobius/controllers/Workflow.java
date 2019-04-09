@@ -52,7 +52,7 @@ class Workflow {
                         JSONObject c = (JSONObject) object;
                         String site = (String) c.get("site");
                         LOGGER.debug("Workflow(): site=" + site);
-                        CloudContext context = CloudContextFactory.getInstance().createCloudContext(site);
+                        CloudContext context = CloudContextFactory.getInstance().createCloudContext(site, workflow.getWorkflowId());
                         JSONArray sliceArray = (JSONArray) c.get("slices");
                         context.fromJson(sliceArray);
                         siteToContextHashMap.put(site, context);
@@ -163,12 +163,12 @@ class Workflow {
                 context = siteToContextHashMap.get(request.getSite());
                 // Create a new slice if not found
                 if (context == null) {
-                    context = CloudContextFactory.getInstance().createCloudContext(request.getSite());
+                    context = CloudContextFactory.getInstance().createCloudContext(request.getSite(), workflowID);
                     addContextToMap = true;
                 }
             }
 
-            nodeCount = context.processCompute(workflowID, request, nodeCount, isFutureRequest);
+            nodeCount = context.processCompute(request, nodeCount, isFutureRequest);
             LOGGER.debug("processComputeRequest(): nodeCount = " + nodeCount);
             if (addContextToMap) {
                 siteToContextHashMap.put(request.getSite(), context);

@@ -3,6 +3,7 @@ package org.renci.mobius.controllers.chameleon;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
@@ -17,14 +18,50 @@ public class ChameleonContext extends CloudContext {
     private static final Long maxDiffInSeconds = 604800L;
 
     private HashMap<String, StackContext> stackContextHashMap;
+    private String workflowNetwork = null;
+    private Map<String, String> metaData = null;
 
-
-    public ChameleonContext(CloudContext.CloudType t, String s) {
-        super(t, s);
+    public ChameleonContext(CloudContext.CloudType t, String s, String workflowId) {
+        super(t, s, workflowId);
         stackContextHashMap = new HashMap<>();
     }
+
+    public void init() {
+        setupNetwork();
+        setupMetaData();
+    }
+
+    private void setupNetwork() {
+
+    }
+
+    private void setupMetaData() {
+        if(MobiusConfig.getInstance().getCometHost() != null && metaData == null) {
+            metaData = new HashMap<>();
+            metaData.put("cometpubkeysgroupwrite", "all");
+            metaData.put("cometpubkeysgroupread", "all");
+            metaData.put("comethostsgroupread", "all");
+            metaData.put("comethostsgroupwrite", "all");
+            metaData.put("comethost", MobiusConfig.getInstance().getCometHost());
+            metaData.put("slicecometwritetoken", workflowId + "write");
+            metaData.put("slicecometreadtoken", workflowId + "read");
+            metaData.put("slice_id", workflowId);
+            metaData.put("reservation_id", "");
+        }
+    }
+
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
+        if(request.getGpus() > 0) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Chameleon does not support Gpus");
+        }
+        if(request.getIpAddress() != null) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "IP address allocation not allowed");
+        }
+
+        if(request.getHostNamePrefix() != null && !request.getHostNamePrefix().matches("[a-zA-Z]+")) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Host Name prefix can only contain alphabet characters");
+        }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, maxDiffInSeconds);
         LOGGER.debug("validateComputeRequest: OUT");
     }
@@ -54,7 +91,7 @@ public class ChameleonContext extends CloudContext {
                     JSONObject slice = (JSONObject) object;
                     String sliceName = (String) slice.get("name");
                     LOGGER.debug("fromJson(): sliceName=" + sliceName);
-                    StackContext sliceContext = new StackContext(sliceName);
+                    StackContext sliceContext = new StackContext(sliceName, workflowId);
                     sliceContext.fromJson(slice);
                     stackContextHashMap.put(sliceName, sliceContext);
                 }
@@ -65,7 +102,7 @@ public class ChameleonContext extends CloudContext {
     }
 
     @Override
-    public int processCompute(String workflowId, ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+    public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             validateComputeRequest(request, isFutureRequest);
 
@@ -77,12 +114,12 @@ public class ChameleonContext extends CloudContext {
             }
 
             String sliceName = null;
-            StackContext context = new StackContext(sliceName);
+            StackContext context = new StackContext(sliceName, workflowId);
 
             try {
 
                 // For chameleon; slice per request mechanism is followed
-                nameIndex = context.processCompute(flavorList, nameIndex, request);
+                nameIndex = context.processCompute(flavorList, nameIndex, request, metaData, workflowNetwork);
                 LOGGER.debug("Created new context=" + sliceName);
 
                 sliceName = context.getSliceName();

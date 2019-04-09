@@ -1,0 +1,9 @@
+{
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "coallocate":"true",
+    "hostNamePrefix":"worker",
+    "leaseEnd":"1557733832"
+}

@@ -13,15 +13,17 @@ public class CloudContextFactory {
         return fINSTANCE;
     }
 
-    public CloudContext createCloudContext(String site) throws Exception{
+    public CloudContext createCloudContext(String site, String workflowId) throws Exception{
         if(site.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
-            return new ChameleonContext(CloudContext.CloudType.Chameleon, site);
+            ChameleonContext chameleonContext = new ChameleonContext(CloudContext.CloudType.Chameleon, site, workflowId);
+            chameleonContext.init();
+            return chameleonContext;
         }
         else if(site.compareToIgnoreCase(CloudContext.CloudType.OSG.toString()) == 0) {
             throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not Implemented");
         }
         else if(site.contains(CloudContext.CloudType.Exogeni.toString()) == true) {
-            return new ExogeniContext(CloudContext.CloudType.Exogeni, site);
+            return new ExogeniContext(CloudContext.CloudType.Exogeni, site, workflowId);
         }
         throw new MobiusException(HttpStatus.BAD_REQUEST, "Unsupported cloud type=" + site);
     }
