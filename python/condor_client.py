@@ -208,16 +208,16 @@ def main():
             if response.json()["status"] != 200:
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
-            #response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
-            #if response.json()["status"] != 200:
-            #    response=mb.delete_workflow(args.mobiushost, args.workflowId)
-            #    return
-            #for x in args.workers:
-            #    print ("Provisioning worker: " + x)
-            #    response=mb.create_compute(args.mobiushost, args.workflowId, wdata)
-            #    if response.json()["status"] != 200:
-            #        response=mb.delete_workflow(args.mobiushost, args.workflowId)
-            #        return
+            response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
+            if response.json()["status"] != 200:
+                response=mb.delete_workflow(args.mobiushost, args.workflowId)
+                return
+            for x in args.workers:
+                print ("Provisioning worker: " + x)
+                response=mb.create_compute(args.mobiushost, args.workflowId, wdata)
+                if response.json()["status"] != 200:
+                    response=mb.delete_workflow(args.mobiushost, args.workflowId)
+                    return
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             if response.json()["status"] == 200 and args.comethost is not None:
                 print ("Setting up COMET for exchanging host names and keys")
