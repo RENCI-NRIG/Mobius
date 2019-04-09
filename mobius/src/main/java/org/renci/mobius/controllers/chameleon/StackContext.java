@@ -28,15 +28,18 @@ public class StackContext {
     private String region;
     private boolean notificationSent;
 
-    private String postBootScriptRequiredForComet = "pip install -U boto\n" +
+    private final static String postBootScriptRequiredForComet = "#!/bin/bash\n" +
+            "echo 'begin installing neuca'\n" +
+            "pip install -U boto\n" +
             "pip install python-daemon==2.1.2\n" +
-            "git clone https://github.com/RENCI-NRIG/neuca-guest-tools /root/neuca-guest-tools\n" +
+            "git clone  https://github.com/RENCI-NRIG/neuca-guest-tools /root/neuca-guest-tools\n" +
             "cd /root/neuca-guest-tools/neuca-py/\n" +
-            "python setup.py install\n" +
-            "python /usr/bin/neucad start -c";
+            "python setup.py  install\n" +
+            "python /usr/bin/neucad start -c\n" +
+            "echo 'neuca install complete'\n";
 
-    final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    final TimeZone utc = TimeZone.getTimeZone("UTC");
+    private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+    private final static TimeZone utc = TimeZone.getTimeZone("UTC");
 
     public StackContext(String sliceName, String workflowId) {
         this.sliceName = sliceName;
@@ -248,10 +251,8 @@ public class StackContext {
                 }
 
                 String postBootScript = postBootScriptRequiredForComet;
-                // TODO
-                postBootScript = null;
                 if(request.getPostBootScript() != null) {
-                    postBootScript =  postBootScript + request.getPostBootScript();
+                    postBootScript  = request.getPostBootScript();
                 }
 
                 String network = workflowNetwork;

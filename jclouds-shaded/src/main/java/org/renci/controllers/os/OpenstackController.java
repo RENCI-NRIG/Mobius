@@ -320,9 +320,15 @@ public class OpenstackController implements Closeable {
                     .networks(networkId)
                     .schedulerHints(hints);
             if(userData != null) {
+                System.out.println("Begin userdata=========");
+                System.out.println(userData);
+                System.out.println("End userdata=========");
                 allInOneOptions.userData(userData.getBytes());
             }
             if(metaData != null) {
+                System.out.println("Begin metdata=========");
+                System.out.println(metaData);
+                System.out.println("End metdata=========");
                 allInOneOptions.metadata(metaData);
             }
 
