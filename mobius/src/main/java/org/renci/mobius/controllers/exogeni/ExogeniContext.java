@@ -19,8 +19,8 @@ public class ExogeniContext extends CloudContext {
     private HashMap<String, SliceContext> sliceContextHashMap;
 
 
-    public ExogeniContext(CloudContext.CloudType t, String s) {
-        super(t, s);
+    public ExogeniContext(CloudContext.CloudType t, String s, String workflowId) {
+        super(t, s, workflowId);
         sliceContextHashMap = new HashMap<>();
     }
 
@@ -100,7 +100,7 @@ public class ExogeniContext extends CloudContext {
     }
 
     @Override
-    public int processCompute(String workflowId, ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+    public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("processCompute: IN");
 

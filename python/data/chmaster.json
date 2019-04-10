@@ -1,5 +1,4 @@
 {
-    "site":"Chameleon:CHI@UC",
     "cpus":"4",
     "gpus":"0",
     "ramPerCpus":"4096",
@@ -8,4 +7,3 @@
     "hostNamePrefix":"master",
     "imageName":"CC-CentOS7"
 }
-

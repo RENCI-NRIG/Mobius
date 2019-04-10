@@ -47,15 +47,17 @@ abstract public class CloudContext {
 
     protected CloudType type;
     protected String site;
+    protected String workflowId;
     protected Set<String> hostNameSet;
     protected boolean triggerNotification;
     protected Multimap<Date, String> leaseEndTimeToSliceNameHashMap;
     protected HashMap<String, String> hostNameToSliceNameHashMap;
 
 
-    public CloudContext(CloudType t, String s) {
+    public CloudContext(CloudType t, String s, String workflowId) {
         type = t;
         site = s;
+        this.workflowId = workflowId;
         hostNameSet = new HashSet<String>();
         triggerNotification = false;
 
@@ -75,7 +77,7 @@ abstract public class CloudContext {
         return hostNameSet.contains(hostname);
     }
 
-    abstract public int processCompute(String workflowId, ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
+    abstract public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
     abstract public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
     abstract public JSONObject getStatus() throws Exception;
     abstract public void stop() throws Exception;

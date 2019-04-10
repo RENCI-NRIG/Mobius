@@ -1,11 +1,9 @@
 {
-    "site":"Chameleon:CHI@UC",
     "cpus":"4",
     "gpus":"0",
     "ramPerCpus":"4096",
     "diskPerCpus":"5000",
     "coallocate":"true",
-    "hostNamePrefix":"master",
+    "hostNamePrefix":"submit",
     "imageName":"CC-CentOS7"
 }
-

@@ -46,6 +46,10 @@ public class MobiusConfig {
     public static final String chameleonDefaultReservationId = "mobius.chameleon.defaultReservationId";
     public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
 
+    public static final String cometHost = "mobius.comet.host";
+
+    public String getCometHost() { return properties.getProperty(cometHost); }
+
     public String getChameleonAuthUrl() { return properties.getProperty(chameleonAuthUrl); }
 
     public String getChameleonUser() { return properties.getProperty(chameleonUser); }

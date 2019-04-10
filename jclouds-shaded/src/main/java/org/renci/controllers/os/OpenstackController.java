@@ -9,6 +9,7 @@ import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
 import org.jclouds.openstack.neutron.v2.NeutronApi;
 import org.jclouds.openstack.neutron.v2.NeutronApiMetadata;
+import org.jclouds.openstack.neutron.v2.features.NetworkApi;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.NovaApiMetadata;
 import org.jclouds.openstack.nova.v2_0.domain.*;
@@ -16,13 +17,13 @@ import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
 import org.jclouds.openstack.nova.v2_0.extensions.KeyPairApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
-import org.jclouds.openstack.neutron.v2.features.NetworkApi;
 
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -247,16 +248,21 @@ public class OpenstackController implements Closeable {
 
     public String getFloatingIpFromInstance(Server instance) {
         String floatingIP = null;
-        System.out.println("Addresses=" + instance.getAddresses());
-        if(instance.getAddresses() != null && instance.getAddresses().size() > 0) {
-            for(Address address : instance.getAddresses().values()) {
-                System.out.println("Address =" + address);
-                if(address.getType().get().compareToIgnoreCase("floating") == 0) {
-                    floatingIP = address.getAddr();
-                    System.out.println("floatingIP =" + floatingIP);
-                    break;
+        if(instance != null) {
+            System.out.println("Addresses=" + instance.getAddresses());
+            if (instance.getAddresses() != null && instance.getAddresses().size() > 0) {
+                for (Address address : instance.getAddresses().values()) {
+                    System.out.println("Address =" + address);
+                    if (address.getType().get().compareToIgnoreCase("floating") == 0) {
+                        floatingIP = address.getAddr();
+                        System.out.println("floatingIP =" + floatingIP);
+                        break;
+                    }
                 }
             }
+        }
+        else {
+            System.out.println("Null instance passed");
         }
         return floatingIP;
     }
@@ -290,8 +296,9 @@ public class OpenstackController implements Closeable {
     }
 
     public String createInstance(String region, String sshKeyFile, String imageName,
-                                  String flavorName, String networkName,
-                                  String reservation, String keypairName, String name, String userData) throws Exception{
+                                 String flavorName, String networkName,
+                                 String reservation, String keypairName, String name,
+                                 String userData, Map<String, String> metaData) throws Exception{
         try {
             String imageId = getImageId(region, imageName);
 
@@ -308,18 +315,21 @@ public class OpenstackController implements Closeable {
             SchedulerHints hints = SchedulerHints.builder().reservation(reservation).build();
             CreateServerOptions allInOneOptions = null;
 
-            if(userData == null) {
-                allInOneOptions = CreateServerOptions.Builder
-                        .keyPairName(keypair)
-                        .networks(networkId)
-                        .schedulerHints(hints);
+            allInOneOptions = CreateServerOptions.Builder
+                    .keyPairName(keypair)
+                    .networks(networkId)
+                    .schedulerHints(hints);
+            if(userData != null) {
+                System.out.println("Begin userdata=========");
+                System.out.println(userData);
+                System.out.println("End userdata=========");
+                allInOneOptions.userData(userData.getBytes());
             }
-            else {
-                allInOneOptions = CreateServerOptions.Builder
-                        .keyPairName(keypair)
-                        .networks(networkId)
-                        .userData(userData.getBytes())
-                        .schedulerHints(hints);
+            if(metaData != null) {
+                System.out.println("Begin metdata=========");
+                System.out.println(metaData);
+                System.out.println("End metdata=========");
+                allInOneOptions.metadata(metaData);
             }
 
             System.out.println("Checking for existing instance...");
@@ -340,6 +350,8 @@ public class OpenstackController implements Closeable {
             throw e;
         }
         catch (Exception e) {
+            System.out.println("Exception e=" + e);
+            e.printStackTrace();
             throw new OpenstackException(500, "Internal server error");
         }
     }
@@ -388,16 +400,19 @@ public class OpenstackController implements Closeable {
 
         if (serverApi.delete(serverId)) {
             System.out.println("Server " + serverId + " being deleted, please wait.");
-            //ServerPredicates.awaitStatus(serverApi, Server.Status.DELETED, 600, 5).apply(serverId);
             serverApi.list().concat().forEach(instance -> System.out.println("  " + instance));
         } else {
             System.out.println("Server not deleted.");
         }
     }
-
-    public void close() throws IOException {
-        Closeables.close(novaApi, true);
-        Closeables.close(neutronApi, true);
+    public void close() {
+        try {
+            Closeables.close(novaApi, true);
+            Closeables.close(neutronApi, true);
+        }
+        catch (Exception e) {
+            System.out.println("Exception occured while closing e=" + e);
+        }
     }
 
 }
