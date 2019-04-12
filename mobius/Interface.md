@@ -162,6 +162,10 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | sliceName      | String       | Existing slice name to which compute resources should be added | O         |
 | hostNamePrefix | String       | Prefix to be added to hostName | O         |
 | ipAddress      | String       | IP address to assign. should be specified only if coallocate is set to 'true'. | O         |
+| networkType    | String       | Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used. | M         |
+| externalNetwork | String      | external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'. | O         |
+| networkCidr     | String        | network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'. | O         |
+| imageUrl      | String        | Image URL | O         |
 | imageUrl      | String        | Image URL | O         |
 | imageHash     | String        | Image Hash | O         |
 | imageName     | String        | Image Name | O         |
@@ -224,10 +228,10 @@ POST "<ip/hostname>:8080/mobius/network?workflowID=< workflowId >" -H "accept: a
 #### Body
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
-| source    | String        | Source Hostname  | M         |
-| destination        | Integer       | Destination Hostname  | M         |
-| linkSpeed          | Integer       | Link Speed  | M         |
-| qos        | String        | Qos  | M         |
+| source        | String        | Source Hostname  | M         |
+| destination   | String        | Destination Hostname  | M         |
+| linkSpeed     | Integer       | Link Speed  | M         |
+| qos           | String        | Qos  | M         |
 | action        | String        | Action to be taken i.e. add, delete, update  | M         |
 | leaseStart    | String        | Lease Start Time as Linux epoch | M         |
 | leaseEnd      | String        | Lease End Time as Linux epoch | M         |
@@ -246,3 +250,33 @@ POST "<ip/hostname>:8080/mobius/network?workflowID=< workflowId >" -H "accept: a
 | 400              | Bad Request                          |
 | 404              | Not found                           |
 | 200              | Success                              |
+## stitch
+Provision a stitchport for a node on exogeni in a  workflow
+#### URL
+POST "<ip/hostname>:8080/mobius/stitch?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @network.json 
+#### Parameters
+| Name          | Type          | Description                          | Occurence |
+| ------------- |:-------------:| ------------------------------------:| ---------:|
+| workflowID    | String        | Workflow ID identifying the workflow | M         |
+#### Body
+| Name          | Type          | Description                          | Occurence |
+| ------------- |:-------------:| ------------------------------------:| ---------:|
+| target        | String       | hostname or ip of the destination node which should be stitched to  | M         |
+| portUrl       | String       | port url for the stitch port  | M         |
+| tag           | String       | vlan tag for the stitch port   | M         |
+#### Response
+| Name          | Type          | Description                          | Occurence |
+| ------------- |:-------------:| ------------------------------------:| ---------:|
+| status        | Integer       | HTTP Status code                     | M         |
+| message       | String        | Message                              | M         |
+| Value         | Object        | null  | M         |
+| Version       | String        | Mobius API version number            | M         |
+#### Return Code
+| HTTP Status Code | Description                          |
+| ----------------:| ------------------------------------:|
+| 503              | Service Unavailable                  |
+| 500              | Internal Server Error                |
+| 400              | Bad Request                          |
+| 404              | Not found                           |
+| 200              | Success                              |
+
