@@ -1,13 +1,22 @@
-# Running the code
+# Table of contents
+
+ - [Running the code](#run1)
+   - [Running everything in docker](#run2)
+     - [Clone git repo](#clone)
+     - [User specific configuration](#config)
+     - [Run Docker](#docker)
+     - [Examples](#examples)
+ 
+# <a name="run1"></a>Running the code
 This repository is designed to be run in Docker out of the box using docker-compose. Optionally the user can make minor configuration changes to run portions of the project on their local machine for easier programmatic interaction with Mobius directly.
 
-## Running everything in docker.
-### Clone git repo
+## <a name="run2"></a>Running everything in docker
+### <a name="clone"></a>Clone git repo
 ```
 git clone https://github.com/RENCI-NRIG/Mobius.git
 cd ./Mobius/docker
 ```
-### User specific configuration
+### <a name="config"></a>User specific configuration
 Once images are ready, update configuration in docker as indicated below:
 1. Update docker/config/application.properties to specify user specific values for following properties
 ```
@@ -52,7 +61,7 @@ No changes needed until pegasus to mobius integration is complete.
          - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
 ```
-### Run Docker
+### <a name="run3"></a>Run Docker
 Run docker-compose up -d from Mobius/docker directory
 
 ```
@@ -64,7 +73,7 @@ Creating notification ... done
 ```
 After a few moments the docker containers will have stood up and configured themselves. User can now trigger requests to Mobius. Refer to [Interface](../mobius/Interface.md) to see the REST API
 
-#### Few example commands
+#### <a name="example"></a>Few example commands
 - Create a workflow
 ```
 curl -X POST -i "localhost:8080/mobius/workflow?workflowID=abcd-5678" -H "accept: application/json"
