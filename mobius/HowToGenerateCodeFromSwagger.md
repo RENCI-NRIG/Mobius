@@ -1,13 +1,13 @@
 # Table of contents
  - [API Server](#api)
- - [Documentation](#documentation)
- - [Generate a new server stub](#generate)
- - [Running the server](#run1)
- - [Modifications needed](#modifications)
- - [Run the server](#run2)
- - [Example](#example)
- - [Updates to Swagger specification](#updates)
- - [Workflow for updates](#workflow)
+   - [Documentation](#documentation)
+   - [Generate a new server stub](#generate)
+   - [Running the server](#run1)
+   - [Modifications needed](#modifications)
+   - [Run the server](#run2)
+   - [Example](#example)
+   - [Updates to Swagger specification](#updates)
+     - [Workflow for updates](#workflow)
 
 
 Prototype implementation used RabitMQ for Pegasus-Mobius interaction. As part of this feature, REST API is implemented. Please find the details for API below:
