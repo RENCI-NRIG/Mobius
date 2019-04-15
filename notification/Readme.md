@@ -1,7 +1,12 @@
-# Notification Sink
+## Table of contents
+
+ - [Notification Sink](#sink)
+ - [How to use or launch Notification Sink?](#howto)
+ 
+# <a name="sink"></a>Notification Sink
 This contains a AMQP Notification Sink which can be used for testing periodic notifications sent by Mobius. This helps in testing Mobius independently without Pegasus.
 
-## How to use or launch Notification Sink?
+## <a name="howto"></a>How to use or launch Notification Sink?
 - User should clone the code from git repo
 - Launch Notification Sink
 ```
