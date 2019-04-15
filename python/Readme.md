@@ -1,9 +1,24 @@
-# Description
+# Table of contents
+
+ - [Description](#descr)
+ - [Installation](#install)
+   - [Mobius Client](#mbclient)
+     - [Usage](#usage1)
+   - [Condor Client](#condorclient)
+     - [Usage](#usage2)   
+   - [Json Data](#json)
+   - [Certificates](#certs)
+   - [Examples](#examples)
+     - [Create a condor cluster](#create)
+     - [Get status of condor cluster](#get)
+     - [Delete condor cluster](#delete)
+ 
+# <a name="descr"></a>Description
 Python based clients
  - Mobius client to trigger Moobius REST commands.
  - Python client to create Condor clusters by invoking various supported Mobius REST commands.
 
-# Installation
+# <a name="install"></a>Installation
 `https://github.com/RENCI-NRIG/Mobius.git`
 
 `cd Mobius/python/`
@@ -12,10 +27,10 @@ You are now ready execute python client.
 
 Pre-requisites: requires python 3 or above version and python requests package installed
 
-## Mobius Client
+## <a name="mbclient"></a>Mobius Client
 Mobius client to trigger Moobius REST commands.
 
-### Usage
+### <a name="usage1"></a>Usage
 ```
 python3 mobius_client.py -h
 usage: mobius_client.py [-h] [-s SITE] [-m MOBIUSHOST] -o OPERATION -w
@@ -34,10 +49,10 @@ optional arguments:
                         workflowId
   -d DATA, --data DATA  data
 ```
-## Condor Client
+## <a name="condor"></a>Condor Client
 Python client to create Condor clusters by invoking various supported Mobius REST commands.
 
-### Usage
+### <a name="usage2"></a>Usage
 ```
 $ python3 condor_client.py  -h
 usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
@@ -65,21 +80,21 @@ optional arguments:
   -w WORKFLOWID, --workflowId WORKFLOWID
                         workflowId
 ```
-### JSON Data
+### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
 
-### Certificates
+### <a name="certs"></a>Certificates
 Example Comet Certficates are present in Mobius/python/certs directory.
 
-### Examples
-#### Create a condor cluster
+### <a name="examples"></a>Examples
+#### <a name="create"></a>Create a condor cluster
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
 `python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.218.34.48:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678`
 
-#### Get status of condor cluster
+#### <a name="get"></a>Get status of condor cluster
 `python3 condor_client.py -o get -w abcd-5678`
 
-#### Delete condor cluster
+#### <a name="delete"></a>Delete condor cluster
 `python3 condor_client.py -o delete -w abcd-5678`
