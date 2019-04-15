@@ -1,12 +1,12 @@
 # Table of contents
  - [Mobius](#mobius)
  - [Mobius Controller](#controller)
- - [Workflow](#workflow)
- - [Create Workflow](#create)
- - [Get Workflow](#get)
- - [Delete workflow](#delete)
- - [Compute](#compute)
- - [Storage](#storage)
+   - [Workflow](#workflow)
+     - [Create Workflow](#create)
+     - [Get Workflow](#get)
+     - [Delete workflow](#delete)
+   - [Compute](#compute)
+   - [Storage](#storage)
  - [Periodic Processing](#periodic)
  - [Class Diagram](#classdiagram)
  
