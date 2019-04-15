@@ -1,11 +1,24 @@
-# Introduction
+# Table of contents
+
+ - [Introduction](#Introduction)
+ - [API Operations](#API)
+ - [workflow](#workflow)
+   - [Create a workflow](#post)
+   - [Get a workflow](#get)
+   - [Delete a workflow](#delete)
+ - [Provision compute resources](#compute)
+ - [Provision storage resources](#storage)
+ - [Provision network resources](#network)
+ - [Stitch Exogeni nodes](#stitch)
+ 
+# <a name="Introduction"></a>Introduction
 Mobius is a service which enables provisioning of resources on multiple cloud infrastructure. In the current implemenation, Exogeni, Chameleon and Open Science Grid is supported.
 
-# API Operations
+# <a name="API"></a>API Operations
 Source [Mobius](https://app.swaggerhub.com/apis/kthare10/mobius/1.0.0) specification on swaggerhub. 
 
-## workflow
-### POST
+## <a name="workflow"></a>workflow
+### <a name="post"></a>POST
 Create an empty workflow with workflowID provided if no existing workflow is associated with workflowID. Returns error if workflow is already associated to an exsiting workflow. 
 #### URL
 POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
@@ -27,7 +40,7 @@ POST -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accep
 | 500              | Internal Server Error                |
 | 400              | Bad Request                          |
 | 200              | Success                              |
-### GET
+### <a name="get"></a>GET
 Get workflow status. Mobius returns JSON object indicating all the slices at diffierent sites at different clouds. For each slice, all Compute and storage nodes are returned along with IP and state information.
 #### URL
 GET -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
@@ -116,7 +129,7 @@ EXAMPLE RESPONSE:
   "version":"0.1"
 }
 ```
-### DELETE
+### <a name="delete"></a>DELETE
 Delete a workflow. It results in the deletion of all the slices at different sites on different clouds associated with the workflow.
 #### URL
 DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "accept: application/json"
@@ -139,7 +152,7 @@ DELETE -i "<ip/hostname>:8080/mobius/workflow?workflowID=< workflowID >" -H "acc
 | 400              | Bad Request                          |
 | 404              | Not found                           |
 | 200              | Success                              |
-## compute
+## <a name="compute"></a>compute
 Provision compute resources for a workflow. Compute resources are added as per SlicePolicy indicated in the request. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
 #### URL
 POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @compute.json 
@@ -185,7 +198,7 @@ POST "<ip/hostname>:8080/mobius/compute?workflowID=< workflowId >" -H "accept: a
 | 400              | Bad Request                          |
 | 404              | Not found                           |
 | 200              | Success                              |
-## storage
+## <a name="storage"></a>storage
 Provision storage resources for a workflow. For add action, Storage resource is added to target node. If target not is not found, an error is returned. For delete action, all storage nodes attached to target node are deleted. For renew action, lease of the entire slice is renewed.
 #### URL
 POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @storage.json 
@@ -217,7 +230,7 @@ POST "<ip/hostname>:8080/mobius/storage?workflowID=< workflowId >" -H "accept: a
 | 400              | Bad Request                          |
 | 404              | Not found                           |
 | 200              | Success                              |
-## network
+## <a name="network"></a>network
 Provision network resources for a workflow
 #### URL
 POST "<ip/hostname>:8080/mobius/network?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @network.json 
@@ -250,7 +263,7 @@ POST "<ip/hostname>:8080/mobius/network?workflowID=< workflowId >" -H "accept: a
 | 400              | Bad Request                          |
 | 404              | Not found                           |
 | 200              | Success                              |
-## stitch
+## <a name="stitch"></a>stitch
 Provision a stitchport for a node on exogeni in a  workflow
 #### URL
 POST "<ip/hostname>:8080/mobius/stitch?workflowID=< workflowId >" -H "accept: application/json" -H "Content-Type: application/json" -d @network.json 
