@@ -1,5 +1,7 @@
 package org.renci.mobius.controllers.exogeni;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.net.InetAddresses;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -7,6 +9,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.http.HttpStatus;
 import org.apache.log4j.Logger;
@@ -14,16 +17,38 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
+/*
+ * @brief class represents context for all resources on a specific region on exogeni. It maintains
+ *        SliceContext per slice.
+ *
+ * @author kthare10
+ */
 public class ExogeniContext extends CloudContext {
     private static final Logger LOGGER = Logger.getLogger( ExogeniContext.class.getName() );
     private HashMap<String, SliceContext> sliceContextHashMap;
+    private Multimap<Date, String> leaseEndTimeToSliceNameHashMap;
 
 
+    /*
+     * @brief constructor
+     *
+     * @param t - cloud type
+     * @param s - site
+     * @param workflowId - workflow id
+     *
+     *
+     */
     public ExogeniContext(CloudContext.CloudType t, String s, String workflowId) {
         super(t, s, workflowId);
         sliceContextHashMap = new HashMap<>();
+        leaseEndTimeToSliceNameHashMap = ArrayListMultimap.create();
     }
 
+    /*
+     * @brief function to generate JSONArray representing all the slice contexts held in this context
+     *
+     * @return JSONArray
+     */
     @Override
     public JSONArray toJson() {
         synchronized (this) {
@@ -45,6 +70,12 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief build the context from JSONArray read from database; invoked when contexts are loaded
+     *        on mobius restart
+     *
+     * @param array - json array representing all the slice contexts
+     */
     @Override
     public void fromJson(JSONArray array) {
         synchronized (this) {
@@ -67,6 +98,35 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief add cloud specific info to JSON Object representing ExogeniContext;
+     *        JSON Object is saved to database
+     *
+     * @param object - json object representing ExogeniContext
+     */
+    @Override
+    public JSONObject addCloudSpecificDataToJson(JSONObject object) {
+        return object;
+    }
+
+    /*
+     * @brief function to load cloud specific data from JSON Object representing ExogeniContext
+     *
+     * @param object - json object representing ExogeniContext
+     */
+    @Override
+    public void loadCloudSpecificDataFromJson(JSONObject object) {
+    }
+
+    /*
+     * @brief validate compute request; ignore leaseStart and leaseEnd time validation for future requests
+     *
+     * @param request - compute request
+     * @param isFutureRequest - flag indicating if request is future request
+     *
+     * @throws Exception in case validation fails
+     *
+     */
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
 
@@ -99,6 +159,17 @@ public class ExogeniContext extends CloudContext {
         LOGGER.debug("validateComputeRequest: OUT");
     }
 
+    /*
+     * @brief function to process compute request
+     *
+     * @param request - compute request
+     * @param nameIndex - number representing index to be added to instance name
+     * @param isFutureRequest - true in case this is a future request; false otherwise
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     */
     @Override
     public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
@@ -164,6 +235,17 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief function to process storge request
+     *
+     * @param request - storge request
+     * @param nameIndex - number representing index to be added to instance name
+     * @param isFutureRequest - true in case this is a future request; false otherwise
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     */
     @Override
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
@@ -191,6 +273,49 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief function to process a stitch request;
+     *
+     * @param request - stitch request
+     * @param nameIndex - number representing index to be added to instance name
+     * @param isFutureRequest - true in case this is a future request; false otherwise
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     *
+     */
+    @Override
+    public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+        synchronized (this) {
+            LOGGER.debug("processStitchRequest: IN");
+
+            String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap");
+            }
+            SliceContext context = sliceContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+            try {
+                nameIndex = context.processStitchRequest(request, nameIndex);
+                return nameIndex;
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("processStitchRequest: OUT");
+            }
+        }
+    }
+
+    /*
+     * @brief function to check get status for the context
+     *
+     * @return JSONObject representing status
+     */
     @Override
     public JSONObject getStatus() throws Exception {
         synchronized (this) {
@@ -222,6 +347,9 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief function to release all resources associated with this context
+     */
     @Override
     public void stop() throws Exception {
         synchronized (this) {
@@ -236,6 +364,15 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief performs following periodic actions
+     *        - Reload hostnames of all instances
+     *        - Reload hostNameToSliceNameHashMap
+     *        - Determine if notification to pegasus should be triggered
+     *        - Build notification JSON object
+     *
+     * @return JSONObject representing notification for context to be sent to pegasus
+     */
     @Override
     public JSONObject doPeriodic() {
         synchronized (this) {
@@ -288,8 +425,71 @@ public class ExogeniContext extends CloudContext {
         }
     }
 
+    /*
+     * @brief function to check if an instance with this hostname exists in this context
+     *
+     * @return true if hostname exists; false otherwise
+     */
     @Override
     public boolean containsSlice(String sliceName) {
         return sliceContextHashMap.containsKey(sliceName);
+    }
+
+    /*
+     * @brief find slice with lease time if exists
+     *
+     * @param request - compute request
+     *
+     * @return slice name
+     */
+    protected String findSlice(ComputeRequest request) {
+        LOGGER.debug("findSlice: IN");
+        if(leaseEndTimeToSliceNameHashMap.size() == 0) {
+            LOGGER.debug("findSlice: OUT - leaseEndTimeToSliceNameHashMap empty");
+            return null;
+        }
+
+        if(request.getLeaseEnd() == null) {
+            LOGGER.debug("findSlice: OUT - getLeaseEnd null");
+            return null;
+        }
+
+        long timestamp = Long.parseLong(request.getLeaseEnd());
+        Date expiry = new Date(timestamp * 1000);
+
+        String sliceName = null;
+        if(leaseEndTimeToSliceNameHashMap.containsKey(expiry)) {
+            sliceName = leaseEndTimeToSliceNameHashMap.get(expiry).iterator().next();
+        }
+        LOGGER.debug("findSlice: OUT");
+        return sliceName;
+    }
+
+    /*
+     * @brief function to handle slice not found
+     *
+     * @param sliceName - slice name
+     */
+    protected void handSliceNotFoundException(String sliceName) {
+        LOGGER.debug("handSliceNotFoundException: IN");
+        if(hostNameToSliceNameHashMap.containsValue(sliceName)) {
+            Iterator<HashMap.Entry<String, String>> iterator = hostNameToSliceNameHashMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                HashMap.Entry<String, String> entry = iterator.next();
+                if(entry.getValue().equalsIgnoreCase(sliceName)) {
+                    iterator.remove();
+                }
+            }
+        }
+        if(leaseEndTimeToSliceNameHashMap.containsValue(sliceName)) {
+            Iterator<Map.Entry<Date, String>> iterator = leaseEndTimeToSliceNameHashMap.entries().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Date, String> entry = iterator.next();
+                if(entry.getValue().equalsIgnoreCase(sliceName)) {
+                    iterator.remove();
+                }
+            }
+        }
+        LOGGER.debug("handSliceNotFoundException: OUT");
     }
 }

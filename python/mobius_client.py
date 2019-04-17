@@ -1,3 +1,17 @@
+#
+# Copyright (c) 2017 Renaissance Computing Institute, except where noted.
+# All rights reserved.
+#
+# This software is released under GPLv2
+#
+# Renaissance Computing Institute,
+# (A Joint Institute between the University of North Carolina at Chapel Hill,
+# North Carolina State University, and Duke University)
+# http://www.renci.org
+#
+# For questions, comments please contact software@renci.org
+#
+# Author: Komal Thareja(kthare10@renci.org)
 import sys
 import os
 import time

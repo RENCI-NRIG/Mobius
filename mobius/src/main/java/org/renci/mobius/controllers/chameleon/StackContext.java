@@ -6,17 +6,20 @@ import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.controllers.os.OpenstackController;
+import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
-import org.renci.mobius.model.ComputeRequest;
 import org.springframework.data.util.Pair;
-import org.springframework.http.HttpStatus;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/*
+ * @brief class representing resources associated with a reservation; it represents all resources associated with
+ *        a single mobius request
+ * @author kthare10
+ */
 public class StackContext {
     private static final Logger LOGGER = Logger.getLogger( StackContext.class.getName() );
 
@@ -41,22 +44,44 @@ public class StackContext {
     private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private final static TimeZone utc = TimeZone.getTimeZone("UTC");
 
-    public StackContext(String sliceName, String workflowId) {
+    /*
+     * @brief constructor
+     *
+     * @param sliceName - slice name
+     * @param workflowId - workflow id
+     * @param region - chameleon region on which resources are allocated
+     *
+     */
+    public StackContext(String sliceName, String workflowId, String region) {
         this.sliceName = sliceName;
         this.workflowId = workflowId;
         activeOrFailedInstances = 0;
         instanceIdList = new LinkedList<>();
         leaseId = null;
-        region = null;
+        this.region = region;
         notificationSent = false;
     }
 
+    /*
+     * @brief returns slice name
+     *
+     * @return slice name
+     */
     public String getSliceName() {
         return sliceName;
     }
 
+    /*
+     * @brief set notification sent flag
+     */
     public void setNotificationSent() { notificationSent = true; }
 
+    /*
+     * @brief determine if notification should be triggered
+     *
+     * @return true if notification should be triggered; false otherwise
+     *
+     */
     public boolean canTriggerNotification() {
         if(!notificationSent && (activeOrFailedInstances > 0 || activeOrFailedInstances == instanceIdList.size())) {
             return true;
@@ -64,15 +89,17 @@ public class StackContext {
         return false;
     }
 
+    /*
+     * @brief function to generate JSONobject representing this contexts
+     *
+     * @return JSONObject
+     */
     public JSONObject toJson() {
         synchronized (this) {
             JSONObject retVal = new JSONObject();
             retVal.put("name", sliceName);
             if(leaseId != null) {
                 retVal.put("leaseId", leaseId);
-            }
-            if(region != null) {
-                retVal.put("region", region);
             }
             if(instanceIdList.size() > 0) {
                 JSONArray ids = new JSONArray();
@@ -87,14 +114,16 @@ public class StackContext {
         }
     }
 
+    /*
+     * @brief construct context from JSONObject read from database representing the context
+     *
+     * @param object - json object representing context
+     */
     public void fromJson(JSONObject object) {
         synchronized (this) {
             sliceName = (String) object.get("name");
             if (object.get("leaseId") != null) {
                 leaseId = (String) object.get("leaseId");
-            }
-            if (object.get("region") != null) {
-                region = (String) object.get("region");
             }
             if (object.get("ids") != null) {
                 JSONArray ids = (JSONArray) object.get("ids");
@@ -106,6 +135,9 @@ public class StackContext {
         }
     }
 
+    /*
+     * @brief function to release all resources associated with this context
+     */
     public void stop() {
         LOGGER.debug("stop: IN");
         LOGGER.debug("Instance destruction taking plance =============================");
@@ -121,7 +153,7 @@ public class StackContext {
             String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
             // Instantiate Jclouds based Openstack Controller object
-            OpenstackController oscontroller = new OpenstackController(authurl, user, password, userDomain, project);
+            ComputeController computeController = new ComputeController(authurl, user, password, userDomain, project);
 
             // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
             // jclouds
@@ -129,7 +161,7 @@ public class StackContext {
 
             for(String instanceId : instanceIdList) {
                 try {
-                    oscontroller.destroyInstance(region, instanceId);
+                    computeController.destroyInstance(region, instanceId);
                 }
                 catch (Exception e) {
                     LOGGER.debug("Ignoring exception during destroy e=" + e);
@@ -137,7 +169,7 @@ public class StackContext {
             }
 
             try {
-                oscontroller.deleteKeyPair(region, sliceName);
+                computeController.deleteKeyPair(region, sliceName);
             }
             catch (Exception e) {
                 LOGGER.debug("Ignoring exception during destroy e=" + e);
@@ -152,12 +184,31 @@ public class StackContext {
         LOGGER.debug("stop: OUT");
     }
 
-    public int processCompute(Map<String, Integer> flavorList, int nameIndex, ComputeRequest request,
-                              Map<String, String> metaData, String workflowNetwork) throws Exception {
+    /*
+     * @brief function to provision a node on chameleon; if no post boot script is specified
+     *        default post boot script to install neuca tool is passed; creates a lease; waits for lease
+     *        to be active and then provisions the node. if lease does not become active in a timeout,
+     *        request is treated as a failure
+     *
+     * @param flavorList - map of <flavorname, number of nodes for the flavor> to be instantiated
+     * @param nameIndex - number representing index to be added to instance name
+     * @param image - image name
+     * @param leaseEnd - lease end time
+     * @param hostNamePrefix - host name prefix
+     * @param postBootScript - post boot script
+     * @param metaData - meta data
+     * @param networkId - network id to which instance is connected
+     *
+     *
+     *
+     */
+    public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
+                             String leaseEnd, String hostNamePrefix, String postBootScript,
+                             Map<String, String> metaData, String networkId) throws Exception {
 
-        LOGGER.debug("processCompute: IN");
+        LOGGER.debug("provisionNode: IN");
 
-        OpenstackController oscontroller = null;
+        ComputeController computeController = null;
         OsReservationApi api = null;
         try {
 
@@ -169,7 +220,7 @@ public class StackContext {
             String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
             // Instantiate Jclouds based Openstack Controller object
-            oscontroller = new OpenstackController(authurl, user, password, userDomain, project);
+            computeController = new ComputeController(authurl, user, password, userDomain, project);
 
             // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
             // jclouds
@@ -180,101 +231,85 @@ public class StackContext {
                 sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Chameleon, user);
             }
 
-            // Extract Region(Domain) from Site field
-            String[] arrOfStr = request.getSite().split(":");
-            if(arrOfStr.length < 2 || arrOfStr.length > 2) {
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
-            }
-            region = arrOfStr[1];
-            LOGGER.debug("Site=" + request.getSite());
-            LOGGER.debug("Region=" + region);
-
-            String image = null;
-
             // Extract image name
-            if(request.getImageName() != null) {
-                image = request.getImageName();
-            }
-            else {
+            if(image == null) {
                 image = MobiusConfig.getInstance().getDefaultChameleonImageName();
             }
 
             sdf.setTimeZone(utc);
             Date endTime = new Date();
-            if(request.getLeaseEnd() != null) {
-                endTime = new Date(Long.parseLong(request.getLeaseEnd()) * 1000);
+            if(leaseEnd != null) {
+                endTime = new Date(Long.parseLong(leaseEnd) * 1000);
             }
             else {
                 endTime.setTime(endTime.getTime() + 86400000);
             }
 
-            // TODO effificently create lease; current implementation creates one lease per resource
             Date now = new Date();
             now.setTime(now.getTime() + 60000);
 
-            Pair<String, Integer> reservationRequest = api.constructHostLeaseRequest(sliceName, sdf.format(now),
+            String reservationRequest = api.buildLeaseRequest(sliceName, sdf.format(now),
                     sdf.format(endTime), flavorList);
 
             if(reservationRequest == null) {
                 throw new MobiusException("Failed to construct reservation request");
             }
 
-            Pair<String, String> result = api.createComputeLease(region, sliceName,
-                    reservationRequest.getFirst(), 120);
+            Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName,
+                    reservationRequest, 300);
 
             if(result == null || result.getFirst() == null || result.getSecond() == null) {
                 throw new MobiusException("Failed to request lease");
             }
 
             leaseId = result.getFirst();
-            String reservationId = result.getSecond();
+            Map<String, Integer> reservationIds = result.getSecond();
 
             LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            LOGGER.debug("Reservation Id used for instance creation=" + reservationId);
+            LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
             LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            for (int i =0; i< reservationRequest.getSecond(); ++i) {
-                String name = workflowId + "-";
-                if(request.getHostNamePrefix() != null) {
-                    name = name + request.getHostNamePrefix() + nameIndex;
-                }
-                else {
-                    name = name  + CloudContext.NodeName + nameIndex;
-                }
-                name = name.toLowerCase();
-                LOGGER.debug("adding node=" + name);
+            for(Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
+                for (int i = 0; i < entry.getValue(); ++i) {
+                    String name = workflowId + "-";
+                    if (hostNamePrefix != null) {
+                        if (hostNamePrefix.contains(workflowId)) {
+                            name = hostNamePrefix + nameIndex;
+                        } else {
+                            name = name + hostNamePrefix + nameIndex;
+                        }
+                    } else {
+                        name = name + CloudContext.NodeName + nameIndex;
+                    }
+                    name = name.toLowerCase();
+                    LOGGER.debug("adding node=" + name);
 
-                Map<String, String> meta = null;
-                if(metaData != null) {
-                    metaData.put("reservation_id", name);
-                    meta = metaData;
-                }
+                    Map<String, String> meta = null;
+                    if (metaData != null) {
+                        metaData.put("reservation_id", name);
+                        meta = metaData;
+                    }
 
-                String postBootScript = postBootScriptRequiredForComet;
-                if(request.getPostBootScript() != null) {
-                    postBootScript  = request.getPostBootScript();
-                }
+                    if (postBootScript == null) {
+                        postBootScript = postBootScriptRequiredForComet;
+                    }
 
-                String network = workflowNetwork;
-                if(network == null) {
-                    network = MobiusConfig.getInstance().getChameleonDefaultNetwork();
-                }
+                    String instanceId = computeController.createInstance(region,
+                            MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                            image,
+                            MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
+                            networkId,
+                            entry.getKey(),
+                            sliceName,
+                            name,
+                            postBootScript, meta);
 
-                String instanceId = oscontroller.createInstance(region,
-                        MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
-                        image,
-                        MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
-                        network,
-                        reservationId,
-                        sliceName,
-                        name,
-                        postBootScript, meta);
-
-                if(instanceId == null) {
-                    throw new MobiusException("Failed to create instance");
+                    if (instanceId == null) {
+                        throw new MobiusException("Failed to create instance");
+                    }
+                    instanceIdList.add(instanceId);
+                    ++nameIndex;
                 }
-                instanceIdList.add(instanceId);
-                ++nameIndex;
             }
             return nameIndex;
         }
@@ -293,15 +328,22 @@ public class StackContext {
             throw new MobiusException("Failed to server compute request");
         }
         finally {
-            if(oscontroller != null) {
-                oscontroller.close();
+            if(computeController != null) {
+                computeController.close();
             }
-
             // TODO clean any allocated CPUs, keys, leases
-            LOGGER.debug("processCompute: OUT");
+            LOGGER.debug("provisionNode: OUT");
         }
     }
 
+    /*
+     * @brief function to generate JSONObject representing a single server
+     *
+     * @param server - server provisioned
+     * @param ip - ip associated with server
+     *
+     * @return JSONObject representing server
+     */
     private JSONObject nodeToJson(Server server, String ip){
         LOGGER.debug("nodeToJson: IN");
         JSONObject object = new JSONObject();
@@ -317,9 +359,16 @@ public class StackContext {
         return object;
     }
 
+    /*
+     * @brief function to generate JSONObject representing status of all resources associated with this contexts
+     *
+     * @param hostNameSet - hostname set
+     *
+     * @return JSONObject representing status of context
+     */
     public JSONObject status(Set<String> hostNameSet) {
         LOGGER.debug("status: IN");
-        OpenstackController oscontroller = null;
+        ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
             String user = MobiusConfig.getInstance().getChameleonUser();
@@ -330,30 +379,32 @@ public class StackContext {
             String floatingIpPool = MobiusConfig.getInstance().getChameleonFloatingIpPool();
 
             // Instantiate Jclouds based Openstack Controller object
-            oscontroller = new OpenstackController(authurl, user, password, userDomain, project);
+            computeController = new ComputeController(authurl, user, password, userDomain, project);
             returnValue.put(CloudContext.JsonKeySlice, sliceName);
             JSONArray array = new JSONArray();
 
             for(String instanceId : instanceIdList) {
                 try {
-                    Server instance = oscontroller.getInstanceFromInstanceId(region, instanceId);
+                    Server instance = computeController.getInstanceFromInstanceId(region, instanceId);
                     if(instance != null) {
-                        String ip = oscontroller.getFloatingIpFromInstance(instance);
+                        String ip = computeController.getFloatingIpFromInstance(instance);
+                        if (!hostNameSet.contains(instance.getName())) {
+                            LOGGER.debug("Adding hostname: " + instance.getName());
+                            hostNameSet.add(instance.getName());
+                        }
                         LOGGER.debug("Floating ip for instance = " + ip);
-                        if (instance.getStatus() == Server.Status.ACTIVE && ip == null) {
-                            activeOrFailedInstances++;
-                            FloatingIP floatingIP = oscontroller.allocateFloatingIp(region, floatingIpPool);
+                        if (instance.getStatus() == Server.Status.ACTIVE) {
+                            if(ip == null) {
+                                activeOrFailedInstances++;
+                                FloatingIP floatingIP = computeController.allocateFloatingIp(region, floatingIpPool);
 
-                            if (floatingIP == null) {
-                                throw new MobiusException("Failed to allocate floatingIP");
+                                if (floatingIP == null) {
+                                    throw new MobiusException("Failed to allocate floatingIP");
+                                }
+
+                                computeController.attachFloatingIp(region, instance, floatingIP);
+                                ip = floatingIP.getIp();
                             }
-
-                            oscontroller.attachFloatingIp(region, instance, floatingIP);
-                            if (!hostNameSet.contains(instance.getName())) {
-                                hostNameSet.add(instance.getName());
-                            }
-
-                            ip = floatingIP.getIp();
                         } else if (instance.getStatus() == Server.Status.ERROR) {
                             activeOrFailedInstances++;
                         }
@@ -378,13 +429,22 @@ public class StackContext {
             e.printStackTrace();
         }
         finally {
-            if(oscontroller != null) {
-                oscontroller.close();
+            if(computeController != null) {
+                computeController.close();
             }
             LOGGER.debug("status: OUT");
         }
         return returnValue;
     }
+
+    /*
+     * @brief function to periodically check status of all resources associated with context; assign floating ips to
+     *        any new active instances
+     *
+     * @param hostNameSet - hostname set
+     *
+     * @return JSONObject representing status of context
+     */
     public JSONObject doPeriodic(Set<String> hostNameSet) {
         LOGGER.debug("doPeriodic: IN");
 
@@ -397,5 +457,47 @@ public class StackContext {
         }
         LOGGER.debug("doPeriodic: OUT");
         return object;
+    }
+    public void renew(String leaseEnd) throws Exception{
+        LOGGER.debug("renew: IN");
+
+        try {
+
+            String user = MobiusConfig.getInstance().getChameleonUser();
+            String password = MobiusConfig.getInstance().getChameleonUserPassword();
+            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
+            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
+            String project = MobiusConfig.getInstance().getChameleonProject();
+            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
+
+            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
+            // jclouds
+            OsReservationApi api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
+
+            sdf.setTimeZone(utc);
+            Date endTime = new Date();
+            if(leaseEnd != null) {
+                endTime = new Date(Long.parseLong(leaseEnd) * 1000);
+            }
+            else {
+                endTime.setTime(endTime.getTime() + 86400000);
+            }
+
+            api.updateLease(region, leaseId, sdf.format(endTime));
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server compute request");
+        }
+        finally {
+            LOGGER.debug("renew: OUT");
+        }
+
     }
 }

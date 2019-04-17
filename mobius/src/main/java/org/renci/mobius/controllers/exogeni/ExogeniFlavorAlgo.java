@@ -8,6 +8,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+/*
+ * @brief class representing algorithm to determine flavor for storage or compute nodes
+ *
+ * @author kthare10
+ */
 class ExogeniFlavorAlgo {
     private static final Logger LOGGER = Logger.getLogger( ExogeniFlavorAlgo.class.getName() );
 
@@ -85,6 +90,17 @@ class ExogeniFlavorAlgo {
         fv.put(Flavor.BareMetal.getRamPerCpu(), Flavor.BareMetal);
         ramToFlavorMap = fv;
     }
+
+    /*
+     * @brief Determine the number of vm instances for each flavor required to satisfy the request
+     *
+     * @param cpus - Number of cpus requested
+     * @prarm ramPerCpus - Ram per cpu in MBs requested
+     * @param diskPerCpus - Disk space per cpu in MBs requested
+     *
+     * @return Returns a list of flavors
+     *
+     */
     public static List<String> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus, boolean isCoallocate) {
         LOGGER.debug("determineFlavors: IN");
 

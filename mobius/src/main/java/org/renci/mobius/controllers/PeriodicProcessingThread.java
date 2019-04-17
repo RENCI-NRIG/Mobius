@@ -7,7 +7,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-
+/*
+ * @brief class implements periodic processing thread
+ *
+ * @author kthare10
+ */
 public class PeriodicProcessingThread implements Runnable {
 
     public static final int MAX_DEFAULT_WAIT_TIME = 60; // seconds
