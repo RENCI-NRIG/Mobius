@@ -1,0 +1,7 @@
+{
+    "mountPoint":"/mnt/",
+    "target":"master0",
+    "size":"1",
+    "action":"delete"
+}
+

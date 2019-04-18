@@ -1,0 +1,8 @@
+{
+    "mountPoint":"/mnt/",
+    "target":"master0",
+    "size":"1",
+    "leaseEnd":"1557733832",
+    "action":"renew"
+}
+

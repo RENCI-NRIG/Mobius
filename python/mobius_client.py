@@ -22,18 +22,39 @@ import subprocess
 from mobius import *
 from comet_common_iface import *
 
-defaultData={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"3072",
-        "diskPerCpus":"19200",
-        "hostNamePrefix":"master",
-        "coallocate":"true",
-        "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/master/ubuntu-dynamo-master.xml",
-        "imageHash":"584564de63d3325eadbae9dc90b271d439921e2d",
-        "imageName":"ubuntu-dynamo-master",
-        "leaseEnd":"1557733832"
-        }
+defaultComputeChameleonData={
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"4096",
+    "diskPerCpus":"5000",
+    "coallocate":"true",
+    "hostNamePrefix":"master",
+    "imageName":"CC-CentOS7"
+}
+defaultComputeExogeniData={
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"master",
+    "coallocate":"true",
+    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
+    "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
+    "imageName":"centos7.4-v1.0.3-comet",
+    "leaseEnd":"1557733832"
+}
+defaultStorageChameleonData= {
+     "mountPoint":"/mnt/",
+     "target":"master0",
+     "size":"1",
+     "action":"add"
+}
+defaultStorageExogeniData= {
+     "mountPoint":"/mnt/",
+     "target":"master0",
+     "size":"1",
+     "action":"add"
+}
 
 def main():
      parser = argparse.ArgumentParser(description='Python client to provision cloud resources by invoking Mobius REST Commands.\n')
@@ -60,7 +81,7 @@ def main():
         '--operation',
         dest='operation',
         type = str,
-        help='Operation allowed values: create|get|delete',
+        help='Operation allowed values: post|get|delete; post - provision workflow or compute or storage; get - get a workflow; delete - delete a workflow',
         required=True
      )
      parser.add_argument(
@@ -76,8 +97,24 @@ def main():
          '--data',
          dest='data',
          type = str,
-         help='data',
-         required=True
+         help='data, JSON data to send; if not specified; default data is used; only used with post; must not be specified if target is indicated',
+         required=False
+     )
+     parser.add_argument(
+         '-r',
+         '--resourcetype',
+         dest='resourcetype',
+         type = str,
+         help='resourcetype allowed values: workflow|compute|storage; only used with post; must not be specified if data is passed',
+         required=False
+     )
+     parser.add_argument(
+         '-t',
+         '--target',
+         dest='target',
+         type = str,
+         help='target hostname of the server to which to attach storage; only used with resourcetype storage',
+         required=False
      )
 
      args = parser.parse_args()
@@ -88,23 +125,66 @@ def main():
         response=mb.get_workflow(args.mobiushost, args.workflowId)
      elif args.operation == 'delete':
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
-     elif args.operation == 'create':
-         if args.site is None :
-             parser.print_help()
-             sys.exit(1)
-         mdata=defaultData
-         if args.data is not None:
-             mdata=args.data
-         else:
-            mdata["site"]=args.site
+     elif args.operation == 'post':
+         if args.resourcetype is None:
+            print ("ERROR: resourcetype must be specified")
+            parser.print_help()
+            sys.exit(1)
 
-         response=mb.create_workflow(args.mobiushost, args.workflowId)
-         if response.json()["status"] == 200:
-            response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
-            if response.json()["status"] != 200:
-                response=mb.delete_workflow(args.mobiushost, args.workflowId)
-                return
+         if args.resourcetype == "workflow" :
+             response=mb.create_workflow(args.mobiushost, args.workflowId)
+         elif args.resourcetype == "compute" :
+             if args.site is None:
+                print ("ERROR: site must be specified")
+                parser.print_help()
+                sys.exit(1)
+             elif "Chameleon" in args.site :
+                mdata=defaultComputeChameleonData
+             elif "Exogeni" in args.site :
+                mdata=defaultComputeExogeniData
+             else:
+                print ("ERROR: invalid site specified")
+                parser.print_help()
+                sys.exit(1)
+
+             if args.data is not None:
+                mdata=args.data
+             else:
+                mdata["site"]=args.site
+             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
+         elif args.resourcetype == "storage" :
+             if args.site is None:
+                print ("ERROR: site must be specified")
+                parser.print_help()
+                sys.exit(1)
+             elif "Chameleon" in args.site :
+                mdata=defaultStorageChameleonData
+             elif "Exogeni" in args.site :
+                mdata=defaultStorageExogeniData
+             else:
+                print ("ERROR: invalid site specified")
+                parser.print_help()
+                sys.exit(1)
+
+             if args.target is None and args.data is None:
+                print ("ERROR: Either target or data must be specified")
+                parser.print_help()
+                sys.exit(1)
+             if args.target is not None and args.data is not None:
+                print ("ERROR: Either target or data must be specified")
+                parser.print_help()
+                sys.exit(1)
+             if args.target is not None:
+                 mdata["target"]=args.target
+             if args.data is not None:
+                 mdata = args.data
+             response=mb.create_storage(args.mobiushost, args.workflowId, mdata)
+         else :
+            print ("ERROR:Not supported resourcetype")
+            parser.print_help()
+            sys.exit(1)
      else:
+        print ("ERROR: invalid operation")
         parser.print_help()
         sys.exit(1)
 
