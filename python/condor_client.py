@@ -121,14 +121,13 @@ def main():
          m = None
          s = None
          w = None
-
          if "Chameleon" in args.site :
              m='./data/chmaster.json'
              s='./data/chsubmit.json'
              w='./data/chworker.json'
          elif "Exogeni" in args.site :
              m='./data/master.json'
-             s='./dara/submit.json'
+             s='./data/submit.json'
              w='./data/worker.json'
          else:
              parser.print_help()
