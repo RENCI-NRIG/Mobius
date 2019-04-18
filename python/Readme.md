@@ -91,10 +91,18 @@ Example Comet Certficates are present in Mobius/python/certs directory.
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
-`python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.218.34.48:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678`
+```
+python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.218.34.48:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678
+
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678
+```
 
 #### <a name="get"></a>Get status of condor cluster
-`python3 condor_client.py -o get -w abcd-5678`
+```
+python3 condor_client.py -o get -w abcd-5678
+```
 
 #### <a name="delete"></a>Delete condor cluster
-`python3 condor_client.py -o delete -w abcd-5678`
+```
+python3 condor_client.py -o delete -w abcd-5678
+```
