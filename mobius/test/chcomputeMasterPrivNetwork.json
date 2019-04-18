@@ -1,13 +1,14 @@
 {
-    "cpus":"4",
+    "site":"Chameleon:CHI@TACC",
+    "cpus":"50",
     "gpus":"0",
     "ramPerCpus":"4096",
     "diskPerCpus":"5000",
-    "coallocate":"true",
-    "hostNamePrefix":"worker",
+    "hostNamePrefix":"master",
     "imageName":"CC-CentOS7",
     "networkType":"private",
     "physicalNetwork":"physnet1",
     "externalNetwork":"public",
-    "networkCidr":"192.168.100.0/24"    
+    "networkCidr":"192.158.100.0/24"    
 }
+

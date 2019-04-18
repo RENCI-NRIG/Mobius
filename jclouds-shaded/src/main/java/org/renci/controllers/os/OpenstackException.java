@@ -1,5 +1,9 @@
 package org.renci.controllers.os;
-
+/*
+ * @brief class represents exception raised when openstack error is encountered
+ *
+ * @author kthare10
+ */
 public class OpenstackException extends Exception{
 
     private Integer status;

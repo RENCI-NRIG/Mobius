@@ -5,5 +5,9 @@
     "diskPerCpus":"5000",
     "coallocate":"true",
     "hostNamePrefix":"submit",
-    "imageName":"CC-CentOS7"
+    "imageName":"CC-CentOS7",
+    "networkType":"private",
+    "physicalNetwork":"physnet1",
+    "externalNetwork":"public",
+    "networkCidr":"192.168.100.0/24"    
 }

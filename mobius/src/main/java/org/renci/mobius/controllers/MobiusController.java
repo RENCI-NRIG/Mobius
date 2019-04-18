@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.renci.mobius.service.WorkflowService;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,14 @@ import java.util.List;
 import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
+/*
+ * @brief class implements singleton main entry point into Mobius business logic;
+ *        - maintains all workflows in a hashmap;
+ *        - maintains all workflows in database
+ *        - performs periodic operations
+ *
+ * @author kthare10
+ */
 public class MobiusController {
 
     private static final MobiusController fINSTANCE = new MobiusController();
@@ -22,15 +31,28 @@ public class MobiusController {
     private HashMap<String, Workflow> workflowHashMap;
     private WorkflowService service;
 
+    /*
+     * @brief constructor
+     */
     private MobiusController() {
         workflowHashMap = new HashMap<String, Workflow>();
         service = null;
     }
 
+    /*
+     * @brief returns factory instance
+     *
+     * @return factory instance
+     */
     public static MobiusController getInstance() {
         return fINSTANCE;
     }
 
+    /*
+     * @brief set service object
+     *
+     * @param service - service object
+     */
     public void setService(WorkflowService service) {
         synchronized (this) {
             this.service = service;
@@ -44,6 +66,12 @@ public class MobiusController {
 
     };
 
+    /*
+     * @brief function which writes context per workflow to databae
+     *
+     * @param workflow - workflow to be written
+     * @param operation - operation to be performed
+     */
     private void dbWrite(Workflow workflow, DbOperation operation) {
         try {
             if (workflow != null) {
@@ -78,6 +106,13 @@ public class MobiusController {
 
     }
 
+    /*
+     * @brief function responsible to create a worflow if one does not exist
+     *
+     * @param workflowID - worklfow id
+     *
+     * @throws exception in case of error
+     */
     public void createWorkflow(String workflowID) throws Exception{
         LOGGER.debug("createWorkflow(): IN");
         if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
@@ -106,6 +141,12 @@ public class MobiusController {
         }
     }
 
+    /*
+     * @brief function responsible to delete a worflow if one exist
+     *
+     * @param workflowID - worklfow id
+     *
+     */
     public void deleteWorkflow(Workflow workflow) {
         LOGGER.debug("deleteWorkflow(): IN");
         if(workflow != null) {
@@ -116,6 +157,13 @@ public class MobiusController {
         LOGGER.debug("deleteWorkflow(): OUT");
     }
 
+    /*
+     * @brief function responsible to delete a worflow if one exist
+     *
+     * @param workflowID - worklfow id
+     *
+     * @throws exception in case of error
+     */
     public void deleteWorkflow(String workflowId) throws Exception {
         LOGGER.debug("deleteWorkflow(): IN");
 
@@ -150,6 +198,13 @@ public class MobiusController {
         }
     }
 
+    /*
+     * @brief function responsible to return status of a worflow if one exists
+     *
+     * @param workflowID - worklfow id
+     *
+     * @throws exception in case of error
+     */
     public String getWorkflowStatus(String workflowId) throws Exception {
         LOGGER.debug("getWorkflowStatus(): IN");
 
@@ -186,6 +241,14 @@ public class MobiusController {
         return retVal;
     }
 
+    /*
+     * @brief function responsible to provision compute resources for a workflow
+     *
+     * @param workflowID - worklfow id
+     * @param request - compute request
+     *
+     * @throws exception in case of error
+     */
     public void processComputeRequest(String workflowId, ComputeRequest request) throws Exception {
         LOGGER.debug("processComputeRequest(): IN");
         try {
@@ -218,8 +281,68 @@ public class MobiusController {
             PeriodicProcessingThread.releaseLock();
         }
     }
+
+    /*
+     * @brief function responsible to stitch exogeni nodes in a workflow
+     *
+     * @param workflowID - worklfow id
+     * @param request - stitch request
+     *
+     * @throws exception in case of error
+     */
+    public void processStitchRequest(String workflowId, StitchRequest request) throws Exception {
+        LOGGER.debug("processStitchRequest(): IN");
+        try {
+            if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+                throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "system is busy, please try again in a few minutes");
+            }
+            if (workflowId != null) {
+                Workflow workflow = null;
+                synchronized (this) {
+                    workflow = workflowHashMap.get(workflowId);
+                }
+                if (workflow != null) {
+                    workflow.lock();
+                    try {
+                        workflow.processStitchRequest(request, false);
+                        dbWrite(workflow, DbOperation.Update);
+                    } finally {
+
+                        workflow.unlock();
+                    }
+                } else {
+                    throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
+                }
+            } else {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "WorkflowId is required");
+            }
+        }
+        finally {
+            LOGGER.debug("processStitchRequest(): OUT");
+            PeriodicProcessingThread.releaseLock();
+        }
+    }
+
+    /*
+     * @brief function responsible to provision network resources for a workflow
+     *
+     * @param workflowID - worklfow id
+     * @param request - network request
+     *
+     * @throws exception in case of error
+     */
     public void processNetworkRequest() throws Exception {
     }
+
+    /*
+     * @brief function responsible to provision storage resources for a workflow
+     *
+     * @param workflowID - worklfow id
+     * @param request - storage request
+     *
+     * @throws exception in case of error
+     */
     public void processStorageRequest(String workflowId, StorageRequest request) throws Exception{
         LOGGER.debug("processStorageRequest(): IN");
         try {
@@ -253,6 +376,16 @@ public class MobiusController {
         }
     }
 
+    /*
+     * @brief performs following periodic actions
+     *        - Reload hostnames of all instances
+     *        - Reload hostNameToSliceNameHashMap
+     *        - Determine if notification to pegasus should be triggered
+     *        - Build notification JSON object
+     *        - launch future requests
+     *
+     * @return JSONObject representing notification for context to be sent to pegasus
+     */
     public void doPeriodic() {
         LOGGER.debug("doPeriodic(): IN");
         synchronized (this) {
@@ -275,6 +408,9 @@ public class MobiusController {
         LOGGER.debug("doPeriodic(): OUT");
     }
 
+    /*
+     * @brief reload the controller by loading all workflows from database on process restart
+     */
     public void recover() {
         if(service != null) {
             List<WorkflowEntity> workflowEntities = service.getAllWorkflows();
@@ -295,6 +431,9 @@ public class MobiusController {
         }
     }
 
+    /*
+     * @brief start threads
+     */
     public static void startThreads() {
         LOGGER.debug("startThreads(): IN");
 

@@ -9,13 +9,15 @@ import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.MobiusException;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.data.util.Pair;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
+/*
+ * @brief class representing interface to perform CRUD operations for reservations
+ * @author kthare10
+ */
 public class OsReservationApi {
     private String authUrl;
     private String username;
@@ -56,6 +58,16 @@ public class OsReservationApi {
             "     }\n" +
             " }";
 
+    /*
+     * @brief constructor
+     *
+     * @param authUrl - auth url for chameleon
+     * @parm username - chameleon user name
+     * @param password - chameleon user password
+     * @param userDomain - chameleon user domain
+     * @param projectName - chameleon project Name
+     * @param projectDomain - chameleon project Domain
+     */
     public OsReservationApi(String authUrl, String username, String password,
                             String userDomain, String projectName, String projectDomain) {
         this.authUrl = authUrl;
@@ -67,6 +79,15 @@ public class OsReservationApi {
         reservationUrl = null;
     }
 
+    /*
+     * @brief function to generate auth tokens to be used for openstack rest apis for reservations
+     *
+     * @param region - chameleon region
+     *
+     * @return token id
+     *
+     * @throws exception in case of error
+     */
     private String auth(String region) throws Exception {
         try {
 
@@ -122,7 +143,6 @@ public class OsReservationApi {
                         break;
                     }
                 }
-
                 return token;
             }
         }
@@ -144,7 +164,17 @@ public class OsReservationApi {
         return null;
     }
 
-    private String leaseExists(String region, String name, String token) throws Exception {
+    /*
+     * @brief function to check if a lease with a name already exists
+     *
+     * @param name - lease name
+     * @param token - token id
+     *
+     * @return lease id
+     *
+     * @throws exception in case of error
+     */
+    private String leaseExists(String name, String token) throws Exception {
         String retVal = null;
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -197,7 +227,17 @@ public class OsReservationApi {
         return retVal;
     }
 
-    private Map<String, Object> getLease(String region, String id, String token) throws Exception {
+    /*
+     * @brief function to fetch a lease with lease id
+     *
+     * @param name - lease id
+     * @param token - token id
+     *
+     * @return map containing lease object
+     *
+     * @throws exception in case of error
+     */
+    private Map<String, Object> getLease(String id, String token) throws Exception {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Auth-Token", token);
@@ -231,7 +271,17 @@ public class OsReservationApi {
         }
     }
 
-    public Pair<String, Integer> constructHostLeaseRequest(String name, String startTime, String endTime,
+    /*
+     * @brief Construct Lease Request body
+     *
+     * @param name - name for the lease
+     * @param startTime - lease start time
+     * @param endTime - lease end time
+     * @param nodeTypeCountMap - mapping of nodeType to nodeCount for each type
+     *
+     * @return returns lease request body
+     */
+    public String buildLeaseRequest(String name, String startTime, String endTime,
                                              Map<String, Integer> nodeTypeCountMap) {
         if(name == null || startTime == null || endTime == null ||
                 nodeTypeCountMap == null || nodeTypeCountMap.size() == 0) {
@@ -244,7 +294,6 @@ public class OsReservationApi {
         JSONArray events = new JSONArray();
         request.put("events", events);
         JSONArray reservations  = new JSONArray();
-        Integer totalComputeNodes = 0;
         for (Map.Entry<String, Integer> e : nodeTypeCountMap.entrySet()) {
             JSONObject r = new JSONObject();
             r.put("resource_type", "physical:host");
@@ -254,31 +303,47 @@ public class OsReservationApi {
             r.put("before_end", "default");
             r.put("hypervisor_properties", "[\"==\",\"$node_type\",\"" + e.getKey() + "\"]");
             reservations.add(r);
-            totalComputeNodes += e.getValue();
         }
         request.put("reservations", reservations);
-        return Pair.of(request.toString(), totalComputeNodes);
+        return request.toString();
     }
 
-    public Pair<String, String> createComputeLease(String region, String name, String request,
+    /*
+     * @brief function to provision a reservation and wait for it to become active; incase reservation
+     *        does not become active; it is deleted and a failure is returned
+     *
+     * @param region - region for which reservation to be created
+     * @param name - reservation name
+     * @param request - reservation request
+     * @param timeoutInSeconds - timeout in seconds for which to wait for reservation to become active
+     *
+     * @return return a pair of leaseId and map of <reservation id, node count>
+     *
+     * @throws execption in case of failure
+     *
+     */
+    public Pair<String, Map<String, Integer>> createLease(String region, String name, String request,
                                                    int timeoutInSeconds) throws Exception {
-        LOGGER.debug("Sending request=" + request);
-        String reservationId = null, leaseId = null;
+
+        if(region == null || name == null || request == null) {
+            throw new MobiusException("Failed to construct lease request; invalid input params");
+        }
+        Map<String, Integer> reservationIds = new HashMap<>();
+        String leaseId = null;
         try {
             String token = auth(region);
             if (token != null) {
-                leaseId = leaseExists(region, name, token);
+                leaseId = leaseExists(name, token);
 
                 if (leaseId == null) {
-                    if(request == null) {
-                        throw new MobiusException("Failed to construct lease request");
-                    }
                     HttpHeaders headers = new HttpHeaders();
                     headers.set("X-Auth-Token", token);
                     headers.setContentType(MediaType.APPLICATION_JSON);
                     headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
                     HttpEntity<String> requestEntity = new HttpEntity<>(request, headers);
+
+                    LOGGER.debug("Sending request=" + request);
 
                     ResponseEntity<Map> result = rest.exchange(reservationUrl + leaseUrl, HttpMethod.POST,
                             requestEntity, Map.class);
@@ -292,31 +357,52 @@ public class OsReservationApi {
                         Map<String, Object> lease = (Map<String, Object>) result.getBody().get("lease");
                         if (lease != null) {
                             leaseId = (String) lease.get("id");
-                            List<Map<String, Object>> reservation = (List<Map<String, Object>>) lease.get("reservations");
-                            if (reservation != null && reservation.size() != 0) {
-                                LOGGER.debug("Reservation=" + reservation);
-                                reservationId = (String) reservation.get(0).get("id");
+                            List<Map<String, Object>> reservations = (List<Map<String, Object>>) lease.get("reservations");
+                            if (reservations != null) {
+                                for(Map<String, Object> r : reservations) {
+                                    LOGGER.debug("Reservation=" + r);
+                                    reservationIds.put((String) r.get("id"), (Integer)r.get("max"));
+                                }
                             }
                         }
                     }
                 }
                 String status = "Failed";
-                while(status.compareToIgnoreCase("active") != 0 && timeoutInSeconds != 0) {
-                    Map<String, Object> lease = getLease(region, leaseId, token);
+                int reservationCount = reservationIds.size();
+                LOGGER.debug("Reservation count: " + reservationCount);
+                while(reservationCount != 0 && timeoutInSeconds != 0) {
+                    Map<String, Object> lease = getLease(leaseId, token);
+                    int activeCount = 0;
                     if (lease != null) {
-                        List<Map<String, Object>> reservation = (List<Map<String, Object>>) lease.get("reservations");
-                        if (reservation != null && reservation.size() != 0) {
-                            LOGGER.debug("Reservation=" + reservation);
-                            status = (String) reservation.get(0).get("status");
+                        List<Map<String, Object>> reservations = (List<Map<String, Object>>) lease.get("reservations");
+                        if (reservations != null) {
+                            for(Map<String, Object> r : reservations) {
+                                LOGGER.debug("Reservation=" + r);
+                                status = (String)r.get("status");
+                                if(status.compareToIgnoreCase("active") == 0) {
+                                    activeCount++;
+                                }
+                                else if(status.compareToIgnoreCase("error") == 0) {
+                                    LOGGER.debug("Lease in error state");
+                                    break;
+                                }
+                            }
                         }
                     }
+                    reservationCount -= activeCount;
+                    LOGGER.debug("Reservation count: " + reservationCount);
                     Thread.sleep(1000);
                     --timeoutInSeconds;
                 }
-
+                if(reservationCount != 0) {
+                    LOGGER.debug("Lease did not transition to Active status in " + timeoutInSeconds + " seconds!");
+                    deleteLease(region, leaseId);
+                    throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Lease did not transition to Active status in " + timeoutInSeconds + " seconds!");
+                }
             }
         }
-        catch (HttpClientErrorException e) {
+        catch (HttpClientErrorException|HttpServerErrorException e) {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
@@ -329,11 +415,23 @@ public class OsReservationApi {
             e.printStackTrace();
             throw new MobiusException("failed to create leases");
         }
-        return Pair.of(leaseId, reservationId);
+        return Pair.of(leaseId, reservationIds);
     }
 
+    /*
+     * @brief function to provision delete a reservation
+     *
+     * @param region - region for which reservation to be created
+     * @param id - lease id
+     *
+     * @throws execption in case of failure
+     *
+     */
     public void deleteLease(String region, String id) throws Exception {
         try {
+            if(region == null || id == null) {
+                return;
+            }
             String token = auth(region);
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Auth-Token", token);
@@ -363,5 +461,86 @@ public class OsReservationApi {
             throw new MobiusException("failed to delete lease");
         }
     }
+
+    /*
+     * @brief function to update a reservation
+     *
+     * @param region - region for which reservation to be created
+     * @param id - reservation id
+     * @param leaseEndTime - new lease end time
+     *
+     * @throws execption in case of failure
+     *
+     */
+    public void updateLease(String region, String id, String leaseEndTime) throws Exception {
+        try {
+            if(region == null || id == null || leaseEndTime == null) {
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "region, lease id or endtime null");
+            }
+            String token = auth(region);
+            if(token != null) {
+                Map<String, Object> lease = getLease(id, token);
+                if(lease != null) {
+                    LOGGER.debug("lease=" + lease);
+                    JSONArray updatedReservations  = null;
+                    List<Map<String, Object>> reservations = (List<Map<String, Object>>) lease.get("reservations");
+                    if(reservations != null) {
+                        updatedReservations  = new JSONArray();
+                        for (Map<String, Object> r : reservations) {
+                            JSONObject newReservation = new JSONObject();
+                            newReservation.put("id", (String) r.get("id"));
+                            newReservation.put("max", (Integer) r.get("max"));
+                            newReservation.put("hypervisor_properties", (String) r.get("hypervisor_properties"));
+                            updatedReservations.add(newReservation);
+                        }
+                    }
+                    JSONObject request = new JSONObject();
+                    request.put("name", (String)lease.get("name"));
+                    request.put("end_date", leaseEndTime);
+                    if(updatedReservations != null) {
+                        request.put("reservations", updatedReservations);
+                    }
+
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.set("X-Auth-Token", token);
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+                    HttpEntity<String> requestEntity = new HttpEntity<>(request.toString(), headers);
+
+                    LOGGER.debug("Sending request=" + request.toString());
+
+                    ResponseEntity<Map> result = rest.exchange(reservationUrl + leaseUrl + "/" + id, HttpMethod.PUT,
+                            requestEntity, Map.class);
+
+                    LOGGER.debug("Update Lease Response Status Code=" + result.getStatusCode());
+
+                    if (result.getStatusCode() == HttpStatus.OK ||
+                            result.getStatusCode() == HttpStatus.ACCEPTED ||
+                            result.getStatusCode() == HttpStatus.CREATED) {
+                        LOGGER.debug("Response= " + result.getBody());
+                    }
+                    else {
+                        LOGGER.debug("Update lease failed; Response= " + result.getBody());
+                    }
+                }
+            }
+        }
+        catch (HttpClientErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            e.printStackTrace();
+            throw new MobiusException(e.getResponseBodyAsString());
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occured while update lease e=" + e);
+            LOGGER.error("Message= " + e.getMessage());
+            LOGGER.error("Message= " + e.getLocalizedMessage());
+            e.printStackTrace();
+            throw new MobiusException("failed to update lease");
+        }
+    }
+
 
 }

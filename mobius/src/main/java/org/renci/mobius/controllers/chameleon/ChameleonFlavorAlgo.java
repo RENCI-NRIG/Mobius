@@ -1,20 +1,25 @@
 package org.renci.mobius.controllers.chameleon;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import org.apache.log4j.Logger;
-
 import java.util.*;
 
+/*
+ * @brief class representing algorithm to determine flavor for storage or compute nodes
+ *
+ * @author kthare10
+ */
 public class ChameleonFlavorAlgo {
     private static final Logger LOGGER = Logger.getLogger(ChameleonFlavorAlgo.class.getName());
 
+    private static final Integer minCpus = Flavor.Haswell.getCpus();
+
     enum Flavor {
         // cpus, diskspace, ram, name
-        Skylake(48, 240057, 196608, "compute_skylake"),
         Haswell(48, 250059, 131072, "compute_haswell"),
         InfiniBand(48, 250059, 131072, "compute_haswell_ib"),
-        Gpus(56, 250059, 131072, "XO Extra Large");
+        Skylake(48, 240057, 196608, "compute_skylake"),
+        Gpus(56, 250059, 131072, "gpu_k80, gpu_m40, gpu_p100, gpu_p100_nvlink"),
+        Storage(40, 30000000, 64000, "storage");
 
         private Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
             this.cpus = cpus;
@@ -53,101 +58,90 @@ public class ChameleonFlavorAlgo {
         private String name;
     }
 
-    public static final Multimap<Integer, ChameleonFlavorAlgo.Flavor> cpusToFlavorMap;
+    public static final List<Flavor> computeflavors;
     static {
-        Multimap<Integer, ChameleonFlavorAlgo.Flavor> fv = ArrayListMultimap.create();
-        fv.put(Flavor.Skylake.getCpus(), ChameleonFlavorAlgo.Flavor.Skylake);
-        fv.put(Flavor.Haswell.getCpus(), ChameleonFlavorAlgo.Flavor.Haswell);
-        fv.put(Flavor.InfiniBand.getCpus(), ChameleonFlavorAlgo.Flavor.InfiniBand);
-        fv.put(Flavor.Gpus.getCpus(), Flavor.Gpus);
-        cpusToFlavorMap = fv;
+        List<Flavor> fv = new ArrayList<>();
+        fv.add(Flavor.Haswell);
+        fv.add(Flavor.InfiniBand);
+        fv.add(Flavor.Skylake);
+        computeflavors = fv;
     }
 
-    public static Map<String, Integer> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus,
-                                                        boolean isCoallocate) {
+
+    /*
+     * @brief Determine the number of storage instances to satisfy the request
+     *
+     * @param size - Disk space requested in GBs
+     *
+     * @return Returns a map of flavor name to number of instances required for the flavor
+     *
+     */
+    public static Map<String, Integer> determineFlavors(Integer size) {
+        Map<String, Integer> result = new HashMap<>();
+
+        int count = ((1000 * size)/ Flavor.Storage.getDiskSpace());
+        if((1000 * size) % (Flavor.Storage.getDiskSpace()) != 0) {
+            count++;
+        }
+        result.put(Flavor.Storage.getName(), count);
+        return result;
+    }
+
+    /*
+     * @brief Determine the number of vm instances for each flavor required to satisfy the request
+     *
+     * @param cpus - Number of cpus requested
+     * @param gpus - Number of gpus requested
+     * @prarm ramPerCpus - Ram per cpu in MBs requested
+     * @param diskPerCpus - Disk space per cpu in MBs requested
+     *
+     * @return Returns a map of flavor name to number of instances required for the flavor
+     *
+     */
+
+    public static Map<String, Integer> determineFlavors(Integer cpus, Integer gpus, Integer ramPerCpus, Integer diskPerCpus) {
         Map<String, Integer> result = new HashMap<>();
         Integer requestedCpus = cpus;
         LOGGER.debug("determineFlavors: IN");
 
-        if(isCoallocate) {
-            Collection<Flavor> flavors = null;
-            // Number of CPUs matches a flavor
-            if(cpusToFlavorMap.containsKey(requestedCpus)){
-                flavors = cpusToFlavorMap.get(requestedCpus);
+        // Number of CPUs, DiskSpace and RAM for Haswell, Skylake and InfinityBand nodes is almost similar
+        // Current algorithm; just picks a flavor in a round robin fashion between these 3 compute flavors
+        if(cpus != 0) {
+            int count = cpus / minCpus;
+            if ((cpus % minCpus) != 0) {
+                count++;
             }
-            // Find flavor which can accommodate cpus
-            else {
-                for(Integer cpu : cpusToFlavorMap.keySet()) {
-                    if(cpus <= cpu) {
-                        flavors = cpusToFlavorMap.get(cpu);
-                        break;
-                    }
-                }
-            }
-            if(flavors != null) {
-                for (Flavor f : flavors) {
-                    if (diskPerCpus <= f.getDiskPerCpu() && ramPerCpus <= f.getRamPerCpu()) {
-                        int value = 1;
-                        if(result.containsKey(f.getName())) {
-                            value = result.get(f.getName());
-                            ++value;
-                        }
 
-                        result.put(f.getName(), value);
-                        requestedCpus = 0;
-                    }
-                }
-            }
-        }
-        else {
-            int i = 0;
-            if (requestedCpus != 0 && ramPerCpus <= Flavor.Skylake.getRamPerCpu()) {
-                if (diskPerCpus <= Flavor.Skylake.getDiskPerCpu()) {
-                    for (i = 0; i < requestedCpus / Flavor.Skylake.getCpus(); i = i + Flavor.Skylake.getCpus()) {
-                        int value = 1;
-                        if(result.containsKey(Flavor.Skylake.getName())) {
-                            value = result.get(Flavor.Skylake.getName());
-                            ++value;
-                        }
+            LOGGER.debug("computeflavors before shuffle: " + computeflavors);
+            Collections.shuffle(computeflavors);
+            LOGGER.debug("computeflavors after shuffle: " + computeflavors);
+            result.put(computeflavors.get(0).getName(), count);
 
-                        result.put(Flavor.Skylake.getName(), value);
-                    }
-                    requestedCpus -= i;
-                }
-            }
-            if (requestedCpus != 0 && ramPerCpus <= Flavor.Haswell.getRamPerCpu()) {
-                if (diskPerCpus <= Flavor.Haswell.getDiskPerCpu()) {
-                    for (i = 0; i < requestedCpus / Flavor.Haswell.getCpus(); i = i + Flavor.Haswell.getCpus()) {
-                        int value = 1;
-                        if(result.containsKey(Flavor.Haswell.getName())) {
-                            value = result.get(Flavor.Haswell.getName());
-                            ++value;
-                        }
 
-                        result.put(Flavor.Haswell.getName(), value);
-                    }
-                    requestedCpus -= i;
-                }
-            }
-            if (requestedCpus != 0 && ramPerCpus <= Flavor.InfiniBand.getRamPerCpu()) {
-                if (diskPerCpus <= Flavor.InfiniBand.getDiskPerCpu()) {
-                    for (i = 0; i < requestedCpus / Flavor.InfiniBand.getCpus(); i = i + Flavor.InfiniBand.getCpus()) {
-                        int value = 1;
-                        if(result.containsKey(Flavor.InfiniBand.getName())) {
-                            value = result.get(Flavor.InfiniBand.getName());
-                            ++value;
-                        }
-                        
-                        result.put(Flavor.InfiniBand.getName(), value);
-                    }
-                    requestedCpus -= i;
-                }
+            if (result.isEmpty()) {
+                return null;
             }
         }
 
-        if(requestedCpus != 0) {
-            result = null;
+        if(gpus != 0) {
+            int count = (gpus/ Flavor.Gpus.getCpus());
+            if(gpus % Flavor.Gpus.getCpus() != 0) {
+                count++;
+            }
+
+            String flavorNames = Flavor.Gpus.getName();
+            List<String> gpuflavors = Arrays.asList(flavorNames.split(","));
+            LOGGER.debug("gpuflavors before shuffle: " + gpuflavors);
+            Collections.shuffle(gpuflavors);
+            LOGGER.debug("gpuflavors after shuffle: " + gpuflavors);
+            result.put(gpuflavors.get(0), count);
+
+            if (result.isEmpty()) {
+                return null;
+            }
         }
+
+
         LOGGER.debug("determineFlavors: OUT");
         return result;
     }

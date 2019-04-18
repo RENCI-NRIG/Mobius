@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-03-07T11:41:20.303-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-04-10T11:42:12.106-04:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -85,6 +85,49 @@ public class ComputeRequest   {
 
   @JsonProperty("ipAddress")
   private String ipAddress = null;
+
+  /**
+   * Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.
+   */
+  public enum NetworkTypeEnum {
+    PRIVATE("private"),
+    
+    DEFAULT("default");
+
+    private String value;
+
+    NetworkTypeEnum(String value) {
+      this.value = value;
+    }
+
+    @Override
+    @JsonValue
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static NetworkTypeEnum fromValue(String text) {
+      for (NetworkTypeEnum b : NetworkTypeEnum.values()) {
+        if (String.valueOf(b.value).equals(text)) {
+          return b;
+        }
+      }
+      return null;
+    }
+  }
+
+  @JsonProperty("networkType")
+  private NetworkTypeEnum networkType = NetworkTypeEnum.DEFAULT;
+
+  @JsonProperty("physicalNetwork")
+  private String physicalNetwork = null;
+
+  @JsonProperty("externalNetwork")
+  private String externalNetwork = null;
+
+  @JsonProperty("networkCidr")
+  private String networkCidr = null;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -349,6 +392,87 @@ public class ComputeRequest   {
     this.ipAddress = ipAddress;
   }
 
+  public ComputeRequest networkType(NetworkTypeEnum networkType) {
+    this.networkType = networkType;
+    return this;
+  }
+
+  /**
+   * Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.
+   * @return networkType
+  **/
+  @ApiModelProperty(required = true, value = "Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.")
+  @NotNull
+
+
+  public NetworkTypeEnum getNetworkType() {
+    return networkType;
+  }
+
+  public void setNetworkType(NetworkTypeEnum networkType) {
+    this.networkType = networkType;
+  }
+
+  public ComputeRequest physicalNetwork(String physicalNetwork) {
+    this.physicalNetwork = physicalNetwork;
+    return this;
+  }
+
+  /**
+   * physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'.
+   * @return physicalNetwork
+  **/
+  @ApiModelProperty(value = "physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'.")
+
+
+  public String getPhysicalNetwork() {
+    return physicalNetwork;
+  }
+
+  public void setPhysicalNetwork(String physicalNetwork) {
+    this.physicalNetwork = physicalNetwork;
+  }
+
+  public ComputeRequest externalNetwork(String externalNetwork) {
+    this.externalNetwork = externalNetwork;
+    return this;
+  }
+
+  /**
+   * external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'.
+   * @return externalNetwork
+  **/
+  @ApiModelProperty(value = "external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'.")
+
+
+  public String getExternalNetwork() {
+    return externalNetwork;
+  }
+
+  public void setExternalNetwork(String externalNetwork) {
+    this.externalNetwork = externalNetwork;
+  }
+
+  public ComputeRequest networkCidr(String networkCidr) {
+    this.networkCidr = networkCidr;
+    return this;
+  }
+
+  /**
+   * network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'.
+   * @return networkCidr
+  **/
+  @ApiModelProperty(value = "network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'.")
+
+
+  public String getNetworkCidr() {
+    return networkCidr;
+  }
+
+  public void setNetworkCidr(String networkCidr) {
+    this.networkCidr = networkCidr;
+  }
+
   public ComputeRequest imageUrl(String imageUrl) {
     this.imageUrl = imageUrl;
     return this;
@@ -451,6 +575,10 @@ public class ComputeRequest   {
         Objects.equals(this.sliceName, computeRequest.sliceName) &&
         Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
         Objects.equals(this.ipAddress, computeRequest.ipAddress) &&
+        Objects.equals(this.networkType, computeRequest.networkType) &&
+        Objects.equals(this.physicalNetwork, computeRequest.physicalNetwork) &&
+        Objects.equals(this.externalNetwork, computeRequest.externalNetwork) &&
+        Objects.equals(this.networkCidr, computeRequest.networkCidr) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
@@ -459,7 +587,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, imageUrl, imageHash, imageName, postBootScript);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript);
   }
 
   @Override
@@ -479,6 +607,10 @@ public class ComputeRequest   {
     sb.append("    sliceName: ").append(toIndentedString(sliceName)).append("\n");
     sb.append("    hostNamePrefix: ").append(toIndentedString(hostNamePrefix)).append("\n");
     sb.append("    ipAddress: ").append(toIndentedString(ipAddress)).append("\n");
+    sb.append("    networkType: ").append(toIndentedString(networkType)).append("\n");
+    sb.append("    physicalNetwork: ").append(toIndentedString(physicalNetwork)).append("\n");
+    sb.append("    externalNetwork: ").append(toIndentedString(externalNetwork)).append("\n");
+    sb.append("    networkCidr: ").append(toIndentedString(networkCidr)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");

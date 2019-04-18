@@ -341,6 +341,65 @@
           }
         }
       }
+    },
+    "/stitch" : {
+      "post" : {
+        "summary" : "Request/modify stitching\n",
+        "description" : "Request/modify stitching\n",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "workflowID",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "string",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/stitchRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions" : {
@@ -369,7 +428,7 @@
     },
     "computeRequest" : {
       "type" : "object",
-      "required" : [ "coallocate", "cpus", "diskPerCpus", "gpus", "leaseEnd", "leaseStart", "ramPerCpus", "site", "slicePolicy" ],
+      "required" : [ "coallocate", "cpus", "diskPerCpus", "gpus", "networkType", "ramPerCpus", "site", "slicePolicy" ],
       "properties" : {
         "site" : {
           "type" : "string",
@@ -426,6 +485,24 @@
           "type" : "string",
           "description" : "ip address to assign. should be specified only if coallocate is set to 'true'."
         },
+        "networkType" : {
+          "type" : "string",
+          "description" : "Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.",
+          "default" : "default",
+          "enum" : [ "private", "default" ]
+        },
+        "physicalNetwork" : {
+          "type" : "string",
+          "description" : "physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'."
+        },
+        "externalNetwork" : {
+          "type" : "string",
+          "description" : "external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'."
+        },
+        "networkCidr" : {
+          "type" : "string",
+          "description" : "network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'."
+        },
         "imageUrl" : {
           "type" : "string",
           "description" : "image url"
@@ -480,6 +557,7 @@
     },
     "storageRequest" : {
       "type" : "object",
+      "required" : [ "action", "mountPoint", "size", "target" ],
       "properties" : {
         "mountPoint" : {
           "type" : "string",
@@ -506,6 +584,24 @@
           "type" : "string",
           "description" : "Action to be taken i.e. add, delete, renew. For 'add' action, Storage resource is added to target node. If target not is not found, an error is returned. For 'delete' action, all storage nodes attached to target node are deleted. For 'renew' action, lease of the entire slice is renewed.",
           "enum" : [ "add", "delete", "renew" ]
+        }
+      }
+    },
+    "stitchRequest" : {
+      "type" : "object",
+      "required" : [ "portUrl", "tag", "target" ],
+      "properties" : {
+        "target" : {
+          "type" : "string",
+          "description" : "hostname or ip of the destination node which should be stitched to"
+        },
+        "portUrl" : {
+          "type" : "string",
+          "description" : "port url for the stitch port"
+        },
+        "tag" : {
+          "type" : "string",
+          "description" : "vlan tag for the stitch port"
         }
       }
     }

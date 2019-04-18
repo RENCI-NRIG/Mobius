@@ -5,6 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/*
+ * @brief class implements singleton interface to load config info from applications.properties
+ *
+ * @author kthare10
+ */
 public class MobiusConfig {
     private Properties properties;
     private boolean load = true;

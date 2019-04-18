@@ -1,3 +1,18 @@
+#
+# Copyright (c) 2017 Renaissance Computing Institute, except where noted.
+# All rights reserved.
+#
+# This software is released under GPLv2
+#
+# Renaissance Computing Institute,
+# (A Joint Institute between the University of North Carolina at Chapel Hill,
+# North Carolina State University, and Duke University)
+# http://www.renci.org
+#
+# For questions, comments please contact software@renci.org
+#
+# Author: Komal Thareja(kthare10@renci.org)
+
 import sys
 import os
 import time
@@ -8,66 +23,6 @@ import subprocess
 from mobius import *
 from comet_common_iface import *
 
-masterdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"3072",
-        "diskPerCpus":"19200",
-        "hostNamePrefix":"master",
-        "coallocate":"true",
-        "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/master/ubuntu-dynamo-master.xml",
-        "imageHash":"584564de63d3325eadbae9dc90b271d439921e2d",
-        "imageName":"ubuntu-dynamo-master",
-        "leaseEnd":"1557733832"
-        }
-submitdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"3072",
-        "diskPerCpus":"19200",
-        "coallocate":"true",
-        "hostNamePrefix":"submit",
-        "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/submit/ubuntu-dynamo-submit.xml",
-        "imageHash":"fef5b1b7b8ab437342d97ff5d436503d631d3c13",
-        "imageName":"ubuntu-dynamo-submit",
-        "leaseEnd":"1557733832"
-        }
-workerdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"3072",
-        "diskPerCpus":"19200",
-        "coallocate":"true",
-        "hostNamePrefix":"worker",
-        "leaseEnd":"1557733832"
-        }
-chmasterdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"4096",
-        "diskPerCpus":"5000",
-        "coallocate":"true",
-        "hostNamePrefix":"master",
-        "imageName":"CC-CentOS7"
-        }
-chsubmitdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"4096",
-        "diskPerCpus":"5000",
-        "coallocate":"true",
-        "hostNamePrefix":"submit",
-        "imageName":"CC-CentOS7"
-        }
-chworkerdata={
-        "cpus":"4",
-        "gpus":"0",
-        "ramPerCpus":"4096",
-        "diskPerCpus":"5000",
-        "coallocate":"true",
-        "hostNamePrefix":"worker",
-        "imageName":"CC-CentOS7"
-        }
 pubKeysVal={"val_":"[{\"publicKey\":\"\"}]"}
 hostNameVal={"val_":"[{\"hostName\":\"REPLACE\",\"ip\":\"\"}]"}
 
@@ -168,16 +123,10 @@ def main():
          w = None
 
          if "Chameleon" in args.site :
-             mdata = chmasterdata
-             sdata = chsubmitdata
-             wdata = chworkerdata
              m='./data/chmaster.json'
              s='./data/chsubmit.json'
              w='./data/chworker.json'
          elif "Exogeni" in args.site :
-             mdata = masterdata
-             sdata = submitdata
-             wdata = workerdata
              m='./data/master.json'
              s='./dara/submit.json'
              w='./data/worker.json'
@@ -189,16 +138,25 @@ def main():
              m_f = open(m, 'r')
              mdata = json.load(m_f)
              m_f.close()
+         else:
+             parser.print_help()
+             sys.exit(1)
          if os.path.exists(s):
              print ("Using " + s + " file for submit data")
              s_f = open(s, 'r')
              sdata = json.load(s_f)
              s_f.close()
+         else:
+             parser.print_help()
+             sys.exit(1)
          if os.path.exists(w):
              print ("Using " + w + " file for worker data")
              w_f = open(w, 'r')
              wdata = json.load(w_f)
              w_f.close()
+         else:
+             parser.print_help()
+             sys.exit(1)
          response=mb.create_workflow(args.mobiushost, args.workflowId)
          if response.json()["status"] == 200:
             mdata["site"]=args.site

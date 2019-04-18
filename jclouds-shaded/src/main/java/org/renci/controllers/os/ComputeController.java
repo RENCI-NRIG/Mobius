@@ -7,9 +7,6 @@ import com.google.inject.Module;
 import org.jclouds.ContextBuilder;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
-import org.jclouds.openstack.neutron.v2.NeutronApi;
-import org.jclouds.openstack.neutron.v2.NeutronApiMetadata;
-import org.jclouds.openstack.neutron.v2.features.NetworkApi;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.NovaApiMetadata;
 import org.jclouds.openstack.nova.v2_0.domain.*;
@@ -29,8 +26,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-
-public class OpenstackController implements Closeable {
+/*
+ * @brief class represents api to provision compute resources on openstack via NOVA API
+ *
+ * @author kthare10
+ */
+public class ComputeController implements Closeable {
 
     private String authUrl;
     private String user;
@@ -38,10 +39,17 @@ public class OpenstackController implements Closeable {
     private String domain;
     private String project;
     private final NovaApi novaApi;
-    private final NeutronApi neutronApi;
     private final Set<String> regions;
-
-    public OpenstackController(String authUrl, String user, String password, String domain, String project) {
+    /*
+     * @brief constructor
+     *
+     * @param authUrl - auth url for chameleon
+     * @parm username - chameleon user name
+     * @param password - chameleon user password
+     * @param domain - chameleon user domain
+     * @param project - chameleon project Name
+     */
+    public ComputeController(String authUrl, String user, String password, String domain, String project) {
         this.authUrl = authUrl;
         this.user = user;
         this.password = password;
@@ -57,13 +65,6 @@ public class OpenstackController implements Closeable {
 
         String identity = domain + ":" + user;
 
-        neutronApi = ContextBuilder.newBuilder(new NeutronApiMetadata())
-                .endpoint(authUrl)
-                .credentials(identity, password)
-                .overrides(overrides)
-                .modules(modules)
-                .buildApi(NeutronApi.class);
-
         novaApi = ContextBuilder.newBuilder(new NovaApiMetadata())
                 .endpoint(authUrl)
                 .credentials(identity, password)
@@ -74,6 +75,14 @@ public class OpenstackController implements Closeable {
         regions = novaApi.getConfiguredRegions();
     }
 
+    /*
+     * @brief determine image id for an image
+     *
+     * @param region - region
+     * @param imageName - image name
+     *
+     * @return image id
+     */
     private String getImageId(String region, String imageName) {
 
         for (Image image : novaApi.getImageApi(region).listInDetail().concat()) {
@@ -84,6 +93,14 @@ public class OpenstackController implements Closeable {
         return null;
     }
 
+    /*
+     * @brief determine flavor id for an flavor
+     *
+     * @param region - region
+     * @param flavorName - flavor name
+     *
+     * @return flavor id
+     */
     private String getFlavorId(String region, String flavorName) {
         Flavor flavor = novaApi.getFlavorApi(region).get(flavorName);
         if(flavor != null) {
@@ -93,6 +110,14 @@ public class OpenstackController implements Closeable {
         return null;
     }
 
+    /*
+     * @brief get instance provided its name
+     *
+     * @param region - region
+     * @param instanceName - instance name
+     *
+     * @return instance
+     */
     private Server getInstanceFromInstanceIName(String region, String instanceName) {
         Server instance = null;
         ServerApi serverApi = novaApi.getServerApi(region);
@@ -105,6 +130,16 @@ public class OpenstackController implements Closeable {
         return instance;
     }
 
+    /*
+     * @brief create a key pair if does not exist
+     *
+     * @param region - region
+     * @param sshKeyFile - ssh key
+     * @param name - key pair name
+     *
+     * @return key pair id
+     * @throws exception in case of error
+     */
     private String createKeyPairIfNotExists(String region, String sshKeyFile, String name) throws Exception {
         Optional<? extends KeyPairApi> keyPairApiExtension = novaApi.getKeyPairApi(region);
         try {
@@ -146,21 +181,14 @@ public class OpenstackController implements Closeable {
         }
     }
 
-    private String getNetworkId(String region, String networkName) {
-        org.jclouds.openstack.neutron.v2.domain.Network network = null;
-        NetworkApi networkApi = neutronApi.getNetworkApi(region);
-
-        for (org.jclouds.openstack.neutron.v2.domain.Network thisNetwork : networkApi.list().concat()) {
-            if (thisNetwork.getName().equals(networkName)) {
-                network = thisNetwork;
-            }
-        }
-        if(network != null) {
-            return network.getId();
-        }
-        return null;
-    }
-
+    /*
+     * @brief get instance provided its id
+     *
+     * @param region - region
+     * @param instanceId - instance id
+     *
+     * @return instance
+     */
     public Server getInstanceFromInstanceId(String region, String instanceId) {
         Server server = novaApi.getServerApi(region).get(instanceId);
         if(server != null) {
@@ -169,6 +197,15 @@ public class OpenstackController implements Closeable {
         return server;
     }
 
+    /*
+     * @brief allocate floating ip
+     *
+     * @param region - region
+     * @param poolName - floating ip pool name
+     *
+     * @return floating ip
+     * @throws exception in case of error
+     */
     public FloatingIP allocateFloatingIp(String region, String poolName) throws Exception {
         System.out.println("Checking for unused floating IP's...");
 
@@ -201,6 +238,14 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief deallocate floating ip
+     *
+     * @param region - region
+     * @param ip - floating ip
+     *
+     * @throws exception in case of error
+     */
     public void deallocateFloatingIp(String region, String ip) throws Exception {
         if (novaApi.getFloatingIPApi(region).isPresent()) {
 
@@ -221,6 +266,14 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief attach floating ip
+     *
+     * @param region - region
+     * @param instance - server to be attached to
+     * @param poolName - floating ip
+     *
+     */
     public void attachFloatingIp(String region, Server instance, FloatingIP floatingIP) {
 
         System.out.println(instance.getAddresses());
@@ -246,6 +299,13 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief get floating ip from instance
+     *
+     * @param instance - server
+     *
+     * @return floating ip
+     */
     public String getFloatingIpFromInstance(Server instance) {
         String floatingIP = null;
         if(instance != null) {
@@ -267,6 +327,13 @@ public class OpenstackController implements Closeable {
         return floatingIP;
     }
 
+    /*
+     * @brief deattach floating ip
+     *
+     * @param region - region
+     * @param instance - server to be attached to
+     *
+     */
     public void deattachFloatingIp(String region, Server instance) {
 
         System.out.println(instance.getAddresses());
@@ -295,16 +362,32 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief create instance
+     *
+     * @param region - region
+     * @param sshKeyFile - sshKeyFile
+     * @param imageName - imageName
+     * @param flavorName - flavorName
+     * @param networkId - networkId
+     * @param reservation - reservation
+     * @param keypairName - keypairName
+     * @param name - name
+     * @param userData - userData
+     * @param metaData - metaData
+     *
+     * @return instance id
+     *
+     * @throws exception in case of error
+     */
     public String createInstance(String region, String sshKeyFile, String imageName,
-                                 String flavorName, String networkName,
+                                 String flavorName, String networkId,
                                  String reservation, String keypairName, String name,
                                  String userData, Map<String, String> metaData) throws Exception{
         try {
             String imageId = getImageId(region, imageName);
 
             String flavorId = getFlavorId(region, flavorName);
-
-            String networkId = getNetworkId(region, networkName);
 
             if (imageId == null || flavorId == null || networkId == null || reservation == null) {
                 System.out.println("BAD_REQUEST: invalid flavor or image or network or reservation");
@@ -356,6 +439,14 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief delete key pair
+     *
+     * @param region - region
+     * @param name - name
+     *
+     * @throws exception in case of error
+     */
     public void deleteKeyPair(String region, String name) throws Exception {
         Optional<? extends KeyPairApi> keyPairApiExtension = novaApi.getKeyPairApi(region);
 
@@ -376,6 +467,15 @@ public class OpenstackController implements Closeable {
         }
     }
 
+    /*
+     * @brief destroy instance
+     *
+     * @param region - region
+     * @param serverId - serverId
+     *
+     *
+     * @throws exception in case of error
+     */
     public void destroyInstance(String region, String serverId) throws Exception {
         ServerApi serverApi = novaApi.getServerApi(region);
         Server server = getInstanceFromInstanceId(region, serverId);
@@ -405,10 +505,14 @@ public class OpenstackController implements Closeable {
             System.out.println("Server not deleted.");
         }
     }
+
+    /*
+     * @brief close the controller
+     *
+     */
     public void close() {
         try {
             Closeables.close(novaApi, true);
-            Closeables.close(neutronApi, true);
         }
         catch (Exception e) {
             System.out.println("Exception occured while closing e=" + e);

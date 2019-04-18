@@ -2,6 +2,11 @@ package org.renci.mobius.controllers;
 
 import org.springframework.http.HttpStatus;
 
+/*
+ * @brief class represents exception raised by mobius
+ *
+ * @author kthare10
+ */
 public class MobiusException extends Exception{
 
     private HttpStatus status;

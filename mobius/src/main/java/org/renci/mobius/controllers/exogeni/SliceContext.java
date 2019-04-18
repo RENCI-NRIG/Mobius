@@ -14,6 +14,7 @@ import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.http.HttpStatus;
 
@@ -21,6 +22,12 @@ import java.net.URL;
 import java.util.*;
 import org.apache.log4j.Logger;
 
+/*
+ * @brief class representing resources associated with a slice; it represents all resources associated with
+ *        a single mobius request
+ *
+ * @author kthare10
+ */
 public class SliceContext {
     private static final Logger LOGGER = Logger.getLogger( SliceContext.class.getName() );
 
@@ -30,6 +37,12 @@ public class SliceContext {
     private NDLGenerator.SliceState state;
     private Date expiry;
 
+    /*
+     * @brief constructor
+     *
+     * @param sliceName - slice name
+     *
+     */
     public SliceContext(String sliceName) {
         this.sliceName = sliceName;
         this.lastRequest = null;
@@ -37,6 +50,13 @@ public class SliceContext {
         state = NDLGenerator.SliceState.NULL;
         expiry = null;
     }
+
+    /*
+     * @brief determine if notification should be triggered
+     *
+     * @return true if notification should be triggered; false otherwise
+     *
+     */
     public boolean canTriggerNotification() {
         if(sendNotification &&
                 (state == NDLGenerator.SliceState.STABLE_OK || state == NDLGenerator.SliceState.STABLE_ERROR)) {
@@ -45,19 +65,49 @@ public class SliceContext {
         return false;
     }
 
+    /*
+     * @brief set notification sent flag
+     */
     public void setSendNotification(boolean value) {
         sendNotification = value;
     }
+
+    /*
+     * @brief get expiry time
+     *
+     * @return expiry time
+     *
+     */
     public Date getExpiry() { return expiry; }
+
+    /*
+     * @brief returns slice name
+     *
+     * @return slice name
+     */
     public String getSliceName() {
         return sliceName;
     }
 
+    /*
+     * @brief set expiry time
+     *
+     * @parm expiry time
+     *
+     */
     public void setExpiry(String expiry) {
         long timestamp = Long.parseLong(expiry);
         this.expiry = new Date(timestamp);
     }
 
+    /*
+     * @brief get slice proxy
+     *
+     * @param pem - certificate
+     * @param controllerUrl - controller Url
+     *
+     * @return ISliceTransportAPIv1
+     */
     private ISliceTransportAPIv1 getSliceProxy(String pem, String controllerUrl){
         LOGGER.debug("getSliceProxy: IN");
 
@@ -79,6 +129,13 @@ public class SliceContext {
         return sliceProxy;
     }
 
+    /*
+     * @brief get slice
+     *
+     * @return Slice
+     *
+     * @throws exception in case of error
+     */
     private Slice getSlice() throws Exception {
         LOGGER.debug("getSlice: IN");
         ISliceTransportAPIv1 sliceProxy = getSliceProxy(MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
@@ -87,6 +144,13 @@ public class SliceContext {
         return Slice.loadManifestFile(sliceProxy,sliceName);
     }
 
+    /*
+     * @brief function to generate JSONObject representing a single server
+     *
+     * @param n - server provisioned
+     *
+     * @return JSONObject representing server
+     */
     private JSONObject nodeToJson(Node n){
         LOGGER.debug("nodeToJson: IN");
         JSONObject object = new JSONObject();
@@ -113,6 +177,13 @@ public class SliceContext {
         return object;
     }
 
+    /*
+     * @brief function to generate JSONObject representing status of all resources associated with this contexts
+     *
+     * @param hostNameSet - hostname set
+     *
+     * @return JSONObject representing status of context
+     */
     public JSONObject status(Set<String> hostNameSet) throws Exception{
         LOGGER.debug("status: IN");
         JSONObject returnValue = new JSONObject();
@@ -174,6 +245,10 @@ public class SliceContext {
         }
         return returnValue;
     }
+
+    /*
+     * @brief function to release all resources associated with this context
+     */
     public void stop() {
         LOGGER.debug("stop: IN");
 
@@ -189,6 +264,16 @@ public class SliceContext {
         }
         LOGGER.debug("stop: OUT");
     }
+
+    /*
+     * @brief function to periodically check status of all resources associated with slice
+     *
+     * @param hostNameSet - hostname set
+     *
+     * @return JSONObject representing status of context
+     *
+     * @throws SliceNotFoundOrDeadException exception in case slice no longer exists
+     */
     public JSONObject doPeriodic(Set<String> hostNameSet) throws SliceNotFoundOrDeadException {
         LOGGER.debug("doPeriodic: IN");
 
@@ -211,6 +296,18 @@ public class SliceContext {
         LOGGER.debug("doPeriodic: OUT");
         return object;
     }
+
+    /*
+     * @brief function to process compute request
+     *
+     * @param nameIndex - number representing index to be added to instance name
+     * @param flavorList - list of flavors
+     * @param request - compute request
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     */
     public int processCompute(List<String> flavorList, int nameIndex, ComputeRequest request) throws Exception {
         LOGGER.debug("processCompute: IN");
 
@@ -329,6 +426,17 @@ public class SliceContext {
             LOGGER.debug("processCompute: OUT");
         }
     }
+
+    /*
+     * @brief function to process storge request
+     *
+     * @param request - storge request
+     * @param nameIndex - number representing index to be added to instance name
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     */
     public int processStorageRequest(StorageRequest request, int nameIndex) throws Exception {
         LOGGER.debug("processStorageRequest: IN");
 
@@ -441,6 +549,61 @@ public class SliceContext {
         }
         finally {
             LOGGER.debug("processStorageRequest: OUT");
+        }
+    }
+
+    /*
+     * @brief function to process a stitch request;
+     *
+     * @param request - stitch request
+     * @param nameIndex - number representing index to be added to instance name
+     *
+     * @throws Exception in case of error
+     *
+     * @return number representing index to be added for the instance name
+     *
+     */
+    public int processStitchRequest(StitchRequest request, int nameIndex) throws Exception {
+        LOGGER.debug("processStitchRequest: IN");
+
+        try {
+            Slice slice = getSlice();
+            if (slice == null) {
+                throw new MobiusException("Unable to load slice");
+            }
+
+            ComputeNode c = (ComputeNode) slice.getResourceByName(request.getTarget());
+            if (c == null) {
+                throw new MobiusException("Unable to load compute node");
+            }
+
+            String spName = CloudContext.StitchPortName + nameIndex;
+
+            StitchPort stitchPort = slice.addStitchPort(spName, request.getTag(), request.getPortUrl(), 10000000L);
+
+            c.stitch(stitchPort);
+
+            slice.commit();
+
+            nameIndex++;
+            return nameIndex;
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server compute request");
+        }
+        finally {
+            LOGGER.debug("processStitchRequest: OUT");
         }
     }
 }
