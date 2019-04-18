@@ -5,8 +5,8 @@
     "diskPerCpus":"19200",
     "coallocate":"true",
     "hostNamePrefix":"submit",
-    "imageUrl":"http://geni-images.renci.org/images/kthare10/ubuntu/dynamo/submit/ubuntu-dynamo-submit.xml",
-    "imageHash":"fef5b1b7b8ab437342d97ff5d436503d631d3c13",
-    "imageName":"ubuntu-dynamo-submit",
+    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
+    "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
+    "imageName":"centos7.4-v1.0.3-comet",
     "leaseEnd":"1557733832"
 }
