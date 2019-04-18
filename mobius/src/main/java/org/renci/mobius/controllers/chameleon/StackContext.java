@@ -39,8 +39,82 @@ public class StackContext {
             "cd /root/neuca-guest-tools/neuca-py/\n" +
             "python setup.py  install\n" +
             "python /usr/bin/neucad start -c\n" +
+            "cd /root\n" +
             "echo 'neuca install complete'\n";
 
+    public final static String postBootScriptRequiredForStorage = "#!/bin/bash\n" +
+            "WORKING_DIR=/root\n" +
+            "{\n" +
+            "echo 'begin installing neuca'\n" +
+            "pip install -U boto\n" +
+            "pip install python-daemon==2.1.2\n" +
+            "git clone  https://github.com/RENCI-NRIG/neuca-guest-tools /root/neuca-guest-tools\n" +
+            "cd /root/neuca-guest-tools/neuca-py/\n" +
+            "python setup.py  install\n" +
+            "python /usr/bin/neucad start -c\n" +
+            "cd /root\n" +
+            "echo 'neuca install complete'\n" +
+            "#install some tools \n" +
+            "echo nameserver 8.8.8.8 >> /etc/resolv.conf\n" +
+            "yum install -y vim mlocate xfsprogs\n" +
+            "\n" +
+            "#Clean up node\n" +
+            "ROOT_DISK=`mount -l | grep img-rootfs | awk '{ print $1 }'`\n" +
+            "for i in `ls /dev/md*`; do\n" +
+            "  #need to mdadm --stop /dev/md*\n" +
+            "  echo removing $i\n" +
+            "  dd if=/dev/zero of=$i bs=512 count=1 conv=notrunc \n" +
+            "  wipefs -a $i\n" +
+            "  mdadm --stop $i\n" +
+            "  mdadm --remove $i\n" +
+            "done\n" +
+            "\n" +
+            "for i in `ls /dev/sd*`; do\n" +
+            "    echo cleaning $i\n" +
+            "    [[ ! -b \"$i\" ]] && echo $i is not a block device... removing && rm -rf $i && continue\n" +
+            "    [[ ! $ROOT_DISK =~ $i ]] && echo Destroying $i && dd if=/dev/zero of=$i bs=512 count=1 conv=notrunc && sleep 10 && wipefs -a $i\n" +
+            "done\n" +
+            "\n" +
+            " \n" +
+            "#Find all extra disks\n" +
+            "count=0\n" +
+            "devs=' '\n" +
+            "for i in `ls /dev/sd*`; do\n" +
+            "    #echo $i\n" +
+            "    [[ ! $ROOT_DISK =~ $i ]] && echo Adding $i && (( ++count )) && devs=${devs}' '${i}\n" +
+            "done\n" +
+            "\n" +
+            "echo ROOT_DISK $ROOT_DISK\n" +
+            "echo count: $count\n" +
+            "echo devs:  $devs\n" +
+            "\n" +
+            "#Make software RAID\n" +
+            "yes | mdadm --create --verbose /dev/md0 --level=0 --raid-devices=$count $devs\n" +
+            "wipefs -a /dev/md0\n" +
+            "\n" +
+            "echo Create FS\n" +
+            "mkfs.xfs -i size=512 /dev/md0\n" +
+            "mkdir -p /bricks/brick1\n" +
+            "\n" +
+            "echo /dev/md0 /bricks/brick1 xfs defaults 1 2 >> /etc/fstab\n" +
+            "mount -a\n" +
+            "if [[ $? != 0 ]]; then echo mkfs failed. bailing out; exit 1; fi\n" +
+            "\n" +
+            "mkdir /bricks/brick1/gv0\n" +
+            "\n" +
+            "echo Install GlusterFS\n" +
+            "yum install -y centos-release-gluster\n" +
+            "yum remove -y userspace-rcu\n" +
+            "yum install -y glusterfs-server\n" +
+            "\n" +
+            "\n" +
+            "\n" +
+            "echo Start glusterfs\n" +
+            "systemctl enable glusterd\n" +
+            "#ln -s '/usr/lib/systemd/system/glusterd.service' '/etc/systemd/system/multi-user.target.wants/glusterd.service'\n" +
+            "systemctl start glusterd\n" +
+            "systemctl status glusterd\n" +
+            "} > ${WORKING_DIR}/boot.log 2>&1";
     private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private final static TimeZone utc = TimeZone.getTimeZone("UTC");
 

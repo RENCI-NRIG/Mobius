@@ -349,7 +349,7 @@ public class ChameleonContext extends CloudContext {
 
                         String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
                         nameIndex = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
-                                prefix, null, metaData, networkId);
+                                prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId);
                         LOGGER.debug("Created new context=" + sliceName);
 
                         sliceName = context.getSliceName();
