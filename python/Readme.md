@@ -32,9 +32,8 @@ Mobius client to trigger Moobius REST commands.
 
 ### <a name="usage1"></a>Usage
 ```
-python3 mobius_client.py -h
 usage: mobius_client.py [-h] [-s SITE] [-m MOBIUSHOST] -o OPERATION -w
-                        WORKFLOWID -d DATA
+                        WORKFLOWID [-d DATA] [-r RESOURCETYPE] [-t TARGET]
 
 Python client to provision cloud resources by invoking Mobius REST Commands.
 
@@ -44,10 +43,21 @@ optional arguments:
   -m MOBIUSHOST, --mobiushost MOBIUSHOST
                         Mobius Host e.g. http://localhost:8080/mobius
   -o OPERATION, --operation OPERATION
-                        Operation allowed values: create|get|delete
+                        Operation allowed values: post|get|delete; post -
+                        provision workflow or compute or storage; get - get a
+                        workflow; delete - delete a workflow
   -w WORKFLOWID, --workflowId WORKFLOWID
                         workflowId
-  -d DATA, --data DATA  data
+  -d DATA, --data DATA  data, JSON data to send; if not specified; default
+                        data is used; only used with post; must not be
+                        specified if target is indicated
+  -r RESOURCETYPE, --resourcetype RESOURCETYPE
+                        resourcetype allowed values: workflow|compute|storage;
+                        only used with post; must not be specified if data is
+                        passed
+  -t TARGET, --target TARGET
+                        target hostname of the server to which to attach
+                        storage; only used with resourcetype storage
 ```
 ## <a name="condor"></a>Condor Client
 Python client to create Condor clusters by invoking various supported Mobius REST commands.
