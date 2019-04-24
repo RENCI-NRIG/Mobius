@@ -41,7 +41,7 @@ def main():
          '-n',
          '--workers',
          dest='workers',
-         type = str,
+         type = int,
          help='Number of workers',
          required=False
      )
@@ -169,8 +169,8 @@ def main():
             if response.json()["status"] != 200:
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
-            for x in args.workers:
-                print ("Provisioning worker: " + x)
+            for x in range(args.workers):
+                print ("Provisioning worker: " + str(x))
                 response=mb.create_compute(args.mobiushost, args.workflowId, wdata)
                 if response.json()["status"] != 200:
                     response=mb.delete_workflow(args.mobiushost, args.workflowId)
