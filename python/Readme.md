@@ -116,7 +116,7 @@ python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
     "ramPerCpus":"3072",
     "diskPerCpus":"19200",
     "hostNamePrefix":"master",
-    "ipAddress": "72.16.0.1",
+    "ipAddress": "172.16.0.1",
     "coallocate":"true",
     "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
     "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
@@ -128,10 +128,11 @@ python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
 #### <a name="createstitchport"></a>Create a stitch port in a workflow
 ```
 python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
->     "target":"master0",
->     "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
->     "tag":"2001"
-> }'
+     "target":"master0",
+     "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
+     "tag":"2001",
+     "stitchIP": "72.16.0.1"
+}'
 ```
 #### <a name="getworkflow"></a>Get status of a workflow
 ```
