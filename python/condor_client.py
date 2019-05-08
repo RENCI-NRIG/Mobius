@@ -19,12 +19,41 @@ import time
 import json
 import argparse
 import subprocess
+import socket
+
 
 from mobius import *
 from comet_common_iface import *
 
 pubKeysVal={"val_":"[{\"publicKey\":\"\"}]"}
 hostNameVal={"val_":"[{\"hostName\":\"REPLACE\",\"ip\":\"\"}]"}
+
+
+def is_valid_ipv4_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+
+    return True
+
+def can_ip_satisfy_range(ip, n):
+    octets = ip.split('.')
+    octets[3] = str(int(octets[3]) + n)
+    print ("Last IP: " + '.'.join(octets))
+    return is_valid_ipv4_address('.'.join(octets))
+
+def get_next_ip(ip):
+    octets = ip.split('.')
+    octets[3] = str(int(octets[3]) + 1)
+    print ("Next IP: " + '.'.join(octets))
+    return '.'.join(octets)
 
 def main():
      parser = argparse.ArgumentParser(description='Python client to create Condor cluster using mobius.\nUses json object for compute requests present in data directory if present, otherwises uses the default.\nCurrently only supports provisioning compute resources.\nCreates COMET contexts for Chameleon resources and thus enables exchanging keys and hostnames within workflow')
@@ -50,7 +79,7 @@ def main():
          '--comethost',
          dest='comethost',
          type = str,
-         help='Comet Host e.g. https://18.218.34.48:8111/',
+         help='Comet Host e.g. https://18.218.34.48:8111/; used only for provisioning resources on chameleon',
          required=False
      )
      parser.add_argument(
@@ -58,7 +87,7 @@ def main():
          '--cert',
          dest='cert',
          type = str,
-         help='Comet Certificate',
+         help='Comet Certificate; used only for provisioning resources on chameleon',
          required=False
      )
      parser.add_argument(
@@ -66,7 +95,7 @@ def main():
          '--key',
          dest='key',
          type = str,
-         help='Comet Certificate key',
+         help='Comet Certificate key; used only for provisioning resources on chameleon',
          required=False
      )
      parser.add_argument(
@@ -94,14 +123,24 @@ def main():
          help='workflowId',
          required=True
      )
+     parser.add_argument(
+         '-i',
+         '--ipStart',
+         dest='ipStart',
+         type = str,
+         help='Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; used only with create operation',
+         required=False
+     )
 
      args = parser.parse_args()
 
      mb=MobiusInterface()
 
      if args.operation == 'get':
+        print ("Getting status of workflow")
         response=mb.get_workflow(args.mobiushost, args.workflowId)
      elif args.operation == 'delete':
+        print ("Deleting workflow")
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
         if args.comethost is not None:
            print ("Cleaning up COMET context for workflow")
@@ -109,10 +148,21 @@ def main():
            response=comet.delete_families(args.comethost, args.workflowId, None, args.workflowId, args.workflowId)
      elif args.operation == 'create':
          if args.site is None or args.workers is None:
+             print ("ERROR: site name and number of workers must be specified for create operation")
              parser.print_help()
              sys.exit(1)
+         if args.ipStart is not None:
+             if is_valid_ipv4_address(args.ipStart) == False :
+                 print ("ERROR: Invalid start ip address specified")
+                 parser.print_help()
+                 sys.exit(1)
+             if can_ip_satisfy_range(args.ipStart, args.workers + 1) == False:
+                 print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+                 parser.print_help()
+                 sys.exit(1)
          if args.comethost is not None:
             if args.cert is None or args.key is None:
+             print ("ERROR: comet certificate and key must be specified when comethost is indicated")
              parser.print_help()
              sys.exit(1)
          mdata = None
@@ -130,6 +180,7 @@ def main():
              s='./data/submit.json'
              w='./data/worker.json'
          else:
+             print ("ERROR: Invalid site specified")
              parser.print_help()
              sys.exit(1)
          if os.path.exists(m):
@@ -138,6 +189,7 @@ def main():
              mdata = json.load(m_f)
              m_f.close()
          else:
+             print ("ERROR: json file for master node could not be found")
              parser.print_help()
              sys.exit(1)
          if os.path.exists(s):
@@ -146,6 +198,7 @@ def main():
              sdata = json.load(s_f)
              s_f.close()
          else:
+             print ("ERROR: json file for submit node could not be found")
              parser.print_help()
              sys.exit(1)
          if os.path.exists(w):
@@ -154,25 +207,40 @@ def main():
              wdata = json.load(w_f)
              w_f.close()
          else:
+             print ("ERROR: json file for worker node could not be found")
              parser.print_help()
              sys.exit(1)
+         print ("Creating workflow")
          response=mb.create_workflow(args.mobiushost, args.workflowId)
          if response.json()["status"] == 200:
             mdata["site"]=args.site
             sdata["site"]=args.site
             wdata["site"]=args.site
+            print ("Provisioning master node")
+            if args.ipStart is not None :
+                mdata["ipAddress"] = args.ipStart
             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
             if response.json()["status"] != 200:
+                print ("Deleting workflow")
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
+            print ("Provisioning submit node")
+            if args.ipStart is not None :
+                args.ipStart = get_next_ip(args.ipStart)
+                sdata["ipAddress"] = args.ipStart
             response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
             if response.json()["status"] != 200:
+                print ("Deleting workflow")
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
             for x in range(args.workers):
                 print ("Provisioning worker: " + str(x))
+                if args.ipStart is not None :
+                    args.ipStart = get_next_ip(args.ipStart)
+                    wdata["ipAddress"] = args.ipStart
                 response=mb.create_compute(args.mobiushost, args.workflowId, wdata)
                 if response.json()["status"] != 200:
+                    print ("Deleting workflow")
                     response=mb.delete_workflow(args.mobiushost, args.workflowId)
                     return
             response=mb.get_workflow(args.mobiushost, args.workflowId)
