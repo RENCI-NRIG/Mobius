@@ -8,7 +8,13 @@
      - [Usage](#usage2)   
    - [Json Data](#json)
    - [Certificates](#certs)
-   - [Examples](#examples)
+   - [Mobius Client Examples](#mobius_client_examples)
+     - [Create a workflow](#createworkflow)
+     - [Create a compute node in a workflow](#createcompute)
+     - [Create a stitch port in a workflow](#createstitchport)
+     - [Get status of a workflow](#getworkflow)
+     - [Delete a workflow](#deleteworkflow)
+   - [Condor Client Examples](#condor_client_examples)
      - [Create a condor cluster](#create)
      - [Get status of condor cluster](#get)
      - [Delete condor cluster](#delete)
@@ -52,9 +58,8 @@ optional arguments:
                         data is used; only used with post; must not be
                         specified if target is indicated
   -r RESOURCETYPE, --resourcetype RESOURCETYPE
-                        resourcetype allowed values: workflow|compute|storage;
-                        only used with post; must not be specified if data is
-                        passed
+                        resourcetype allowed values: workflow|compute|storage|stitchPort;
+                        only used with post and must be specified;
   -t TARGET, --target TARGET
                         target hostname of the server to which to attach
                         storage; only used with resourcetype storage
@@ -96,8 +101,49 @@ Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data di
 ### <a name="certs"></a>Certificates
 Example Comet Certficates are present in Mobius/python/certs directory.
 
-### <a name="examples"></a>Examples
-#### <a name="create"></a>Create a condor cluster
+### <a name="mobius_client_examples"></a>Mobius Client Examples
+#### <a name="createworkflow"></a>Create a workflow
+```
+python3 mobius_client.py -o post -r workflow -w abcd-1234
+```
+#### <a name="createcompute"></a>Create a compute node in a workflow
+The following example also shows IP address assignment controlled by user.
+```
+python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
+    "site":"Exogeni:UH (Houston, TX USA) XO Rack",
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"master",
+    "ipAddress": "72.16.0.1",
+    "coallocate":"true",
+    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
+    "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
+    "imageName":"centos7.4-v1.0.3-comet",
+    "leaseEnd":"1557733832",
+    "postBootScript":"curl http://geni-images.renci.org/images/cwang/Condor/scripts/exogeni-scripts/master.sh -o /root/master.sh; sh /root/master.sh"
+}'
+```
+#### <a name="createstitchport"></a>Create a stitch port in a workflow
+```
+python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
+    "target":"master0",
+    "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1",
+    "tag":"3291"
+}'
+```
+#### <a name="getworkflow"></a>Get status of a workflow
+```
+python3 mobius_client.py -o get -w abcd-1234
+```
+#### <a name="deleteworkflow"></a>Delete a workflow
+```
+python3 mobius_client.py -o delete -w abcd-1234
+```
+
+### <a name="condor_client_examples"></a>Condor Client Examples
+#### <a name="Condor"></a>Create a condor cluster
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
