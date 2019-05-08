@@ -97,3 +97,15 @@ class MobiusInterface:
         if response.json()["status"] == 200:
             print ("Received Response Value: " + str(response.json()["value"]))
         return response
+
+    @classmethod
+    def create_stitchport(self, host, workflowId, data):
+        params = {
+            'workflowID':workflowId
+            }
+        response = requests.post((host + '/stitch'), headers=self._headers(), params=params, json=data, verify=False)
+        print ("Received Response Message: " + response.json()["message"])
+        print ("Received Response Status: " + str(response.json()["status"]))
+        if response.json()["status"] == 200:
+            print ("Received Response Value: " + str(response.json()["value"]))
+        return response

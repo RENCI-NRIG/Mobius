@@ -56,6 +56,62 @@ defaultStorageExogeniData= {
      "action":"add"
 }
 
+def processCompute(args):
+    if args.site is None:
+        if args.data is None:
+            print ("ERROR: site must be specified")
+            return None
+    elif "Chameleon" in args.site :
+        mdata=defaultComputeChameleonData
+    elif "Exogeni" in args.site :
+        mdata=defaultComputeExogeniData
+    else:
+        print ("ERROR: invalid site specified")
+        return None
+
+    if args.data is not None:
+        mdata=json.loads(args.data)
+    else:
+        mdata["site"]=args.site
+    mb=MobiusInterface()
+    print ("mdata=" + str(mdata))
+    response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
+    return response
+
+def processStorage(args):
+    if args.site is None:
+        print ("ERROR: site must be specified")
+        return None
+    elif "Chameleon" in args.site :
+        mdata=defaultStorageChameleonData
+    elif "Exogeni" in args.site :
+        mdata=defaultStorageExogeniData
+    else:
+        print ("ERROR: invalid site specified")
+        return None
+
+    if args.target is None and args.data is None:
+        print ("ERROR: Either target or data must be specified")
+        return None
+    if args.target is not None and args.data is not None:
+        print ("ERROR: Either target or data must be specified")
+        return None
+    if args.target is not None:
+        mdata["target"]=args.target
+    if args.data is not None:
+        mdata=json.loads(args.data)
+    mb=MobiusInterface()
+    response=mb.create_storage(args.mobiushost, args.workflowId, mdata)
+    return response
+
+def processStitchPort(args):
+    if args.data is None:
+        print ("ERROR: data must be specified")
+        return None
+    mb=MobiusInterface()
+    response=mb.create_stitchport(args.mobiushost, args.workflowId, json.loads(args.data))
+    return response
+
 def main():
      parser = argparse.ArgumentParser(description='Python client to provision cloud resources by invoking Mobius REST Commands.\n')
 
@@ -81,7 +137,7 @@ def main():
         '--operation',
         dest='operation',
         type = str,
-        help='Operation allowed values: post|get|delete; post - provision workflow or compute or storage; get - get a workflow; delete - delete a workflow',
+        help='Operation allowed values: post|get|delete; post - provision workflow or compute or storage or stitchport; get - get a workflow; delete - delete a workflow',
         required=True
      )
      parser.add_argument(
@@ -97,7 +153,7 @@ def main():
          '--data',
          dest='data',
          type = str,
-         help='data, JSON data to send; if not specified; default data is used; only used with post; must not be specified if target is indicated',
+         help='data, JSON data to send; if not specified; default data is used; only used with post; must not be specified if target is indicated; must be specified for stitchport',
          required=False
      )
      parser.add_argument(
@@ -105,7 +161,7 @@ def main():
          '--resourcetype',
          dest='resourcetype',
          type = str,
-         help='resourcetype allowed values: workflow|compute|storage; only used with post; must not be specified if data is passed',
+         help='resourcetype allowed values: workflow|compute|storage|stitchport; only used with post; must be specified',
          required=False
      )
      parser.add_argument(
@@ -119,11 +175,12 @@ def main():
 
      args = parser.parse_args()
 
-     mb=MobiusInterface()
 
      if args.operation == 'get':
+        mb=MobiusInterface()
         response=mb.get_workflow(args.mobiushost, args.workflowId)
      elif args.operation == 'delete':
+        mb=MobiusInterface()
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
      elif args.operation == 'post':
          if args.resourcetype is None:
@@ -132,55 +189,19 @@ def main():
             sys.exit(1)
 
          if args.resourcetype == "workflow" :
+             mb=MobiusInterface()
              response=mb.create_workflow(args.mobiushost, args.workflowId)
          elif args.resourcetype == "compute" :
-             if args.site is None:
-                print ("ERROR: site must be specified")
-                parser.print_help()
-                sys.exit(1)
-             elif "Chameleon" in args.site :
-                mdata=defaultComputeChameleonData
-             elif "Exogeni" in args.site :
-                mdata=defaultComputeExogeniData
-             else:
-                print ("ERROR: invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-
-             if args.data is not None:
-                mdata=args.data
-             else:
-                mdata["site"]=args.site
-             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
+             response = processCompute(args)
          elif args.resourcetype == "storage" :
-             if args.site is None:
-                print ("ERROR: site must be specified")
-                parser.print_help()
-                sys.exit(1)
-             elif "Chameleon" in args.site :
-                mdata=defaultStorageChameleonData
-             elif "Exogeni" in args.site :
-                mdata=defaultStorageExogeniData
-             else:
-                print ("ERROR: invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-
-             if args.target is None and args.data is None:
-                print ("ERROR: Either target or data must be specified")
-                parser.print_help()
-                sys.exit(1)
-             if args.target is not None and args.data is not None:
-                print ("ERROR: Either target or data must be specified")
-                parser.print_help()
-                sys.exit(1)
-             if args.target is not None:
-                 mdata["target"]=args.target
-             if args.data is not None:
-                 mdata = args.data
-             response=mb.create_storage(args.mobiushost, args.workflowId, mdata)
+             response = processStorage(args)
+         elif args.resourcetype == "stitchPort" :
+             response = processStitchPort(args)
          else :
             print ("ERROR:Not supported resourcetype")
+            parser.print_help()
+            sys.exit(1)
+         if response is None:
             parser.print_help()
             sys.exit(1)
      else:

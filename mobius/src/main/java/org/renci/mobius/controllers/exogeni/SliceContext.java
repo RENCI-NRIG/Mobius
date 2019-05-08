@@ -198,17 +198,18 @@ public class SliceContext {
                 }
                 returnValue.put(CloudContext.JsonKeySlice, sliceName);
                 JSONArray array = new JSONArray();
-                int nodeCount = slice.getNodes().size();
                 for (Node n : slice.getNodes()) {
-                    LOGGER.debug("Node=" + n.getName());
-                    JSONObject object = nodeToJson(n);
-                    if(object != null && !object.isEmpty()) {
-                        array.add(object);
-                    }
-                    String state = n.getState();
-                    if (state.compareToIgnoreCase("Active") == 0) {
-                        if(n instanceof ComputeNode && !hostNameSet.contains(n.getName())) {
-                            hostNameSet.add(n.getName());
+                    if(n != null) {
+                        LOGGER.debug("Node=" + n.getName());
+                        JSONObject object = nodeToJson(n);
+                        if (object != null && !object.isEmpty()) {
+                            array.add(object);
+                        }
+                        String state = n.getState();
+                        if (state.compareToIgnoreCase("Active") == 0) {
+                            if (n instanceof ComputeNode && !hostNameSet.contains(n.getName())) {
+                                hostNameSet.add(n.getName());
+                            }
                         }
                     }
                 }
@@ -232,7 +233,8 @@ public class SliceContext {
             throw e;
         }
         catch (Exception e){
-            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
             }
@@ -286,7 +288,7 @@ public class SliceContext {
             throw e;
         }
         catch (Exception e){
-            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+            if(e.getMessage() != null && (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
                 LOGGER.debug("doPeriodic: OUT");
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
@@ -383,6 +385,7 @@ public class SliceContext {
                 c.setDomain(arrOfStr[1]);
                 InterfaceNode2Net interfaceNode2Net = (InterfaceNode2Net)net.stitch(c);
                 if(request.isCoallocate() && request.getIpAddress() != null) {
+                    LOGGER.debug("Attaching IP address to the broadcast interface interfaceNode2Net=" + interfaceNode2Net);
                     interfaceNode2Net.setIpAddress(request.getIpAddress());
                 }
                 if(request.getPostBootScript() != null) {
@@ -420,7 +423,7 @@ public class SliceContext {
             }
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to server compute request");
+            throw new MobiusException("Failed to server compute request = " + e.getLocalizedMessage());
         }
         finally {
             LOGGER.debug("processCompute: OUT");
@@ -510,7 +513,7 @@ public class SliceContext {
 
                     for(StorageNode s: storageNodes) {
                         if(s.isAttachedTo(c)) {
-                            LOGGER.debug("Added storage=" + s.getName() + " to tobedeleted list");
+                            LOGGER.debug("Added storage=" + s.getName() + " to toberenewed list");
                             storageNodesToBeRenewed.add(s);
                         }
                     }
@@ -539,13 +542,14 @@ public class SliceContext {
             throw e;
         }
         catch (Exception e) {
-            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
             }
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to server compute request");
+            throw new MobiusException("Failed to server storage request = " + e.getLocalizedMessage());
         }
         finally {
             LOGGER.debug("processStorageRequest: OUT");
@@ -580,9 +584,13 @@ public class SliceContext {
             String spName = CloudContext.StitchPortName + nameIndex;
 
             StitchPort stitchPort = slice.addStitchPort(spName, request.getTag(), request.getPortUrl(), 10000000L);
+            InterfaceNode2Net interfaceNode2Net = (InterfaceNode2Net) c.stitch(stitchPort);
 
-            c.stitch(stitchPort);
-
+            if(request.getStitchIP() != null) {
+                LOGGER.debug("Attaching IP address to the stitch interface interfaceNode2Net=" + interfaceNode2Net);
+                interfaceNode2Net.setIpAddress(request.getStitchIP());
+            }
+            slice.autoIP();
             slice.commit();
 
             nameIndex++;
@@ -594,13 +602,14 @@ public class SliceContext {
             throw e;
         }
         catch (Exception e) {
-            if(e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed")) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
             }
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to server compute request");
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
         }
         finally {
             LOGGER.debug("processStitchRequest: OUT");

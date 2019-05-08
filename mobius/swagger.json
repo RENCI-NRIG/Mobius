@@ -602,6 +602,10 @@
         "tag" : {
           "type" : "string",
           "description" : "vlan tag for the stitch port"
+        },
+        "stitchIP" : {
+          "type" : "string",
+          "description" : "IP address for the StitchPort interface on VM"
         }
       }
     }
