@@ -277,6 +277,7 @@ POST "<ip/hostname>:8080/mobius/stitch?workflowID=< workflowId >" -H "accept: ap
 | target        | String       | hostname or ip of the destination node which should be stitched to  | M         |
 | portUrl       | String       | port url for the stitch port  | M         |
 | tag           | String       | vlan tag for the stitch port   | M         |
+| stitchIP      | String       | IP address for the StitchPort interface on VM | O |
 #### Response
 | Name          | Type          | Description                          | Occurence |
 | ------------- |:-------------:| ------------------------------------:| ---------:|
