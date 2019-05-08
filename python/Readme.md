@@ -50,16 +50,19 @@ optional arguments:
                         Mobius Host e.g. http://localhost:8080/mobius
   -o OPERATION, --operation OPERATION
                         Operation allowed values: post|get|delete; post -
-                        provision workflow or compute or storage; get - get a
-                        workflow; delete - delete a workflow
+                        provision workflow or compute or storage or
+                        stitchport; get - get a workflow; delete - delete a
+                        workflow
   -w WORKFLOWID, --workflowId WORKFLOWID
                         workflowId
   -d DATA, --data DATA  data, JSON data to send; if not specified; default
                         data is used; only used with post; must not be
-                        specified if target is indicated
+                        specified if target is indicated; must be specified
+                        for stitchport
   -r RESOURCETYPE, --resourcetype RESOURCETYPE
-                        resourcetype allowed values: workflow|compute|storage|stitchPort;
-                        only used with post and must be specified;
+                        resourcetype allowed values:
+                        workflow|compute|storage|stitchport; only used with
+                        post; must be specified
   -t TARGET, --target TARGET
                         target hostname of the server to which to attach
                         storage; only used with resourcetype storage
@@ -69,9 +72,9 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 
 ### <a name="usage2"></a>Usage
 ```
-$ python3 condor_client.py  -h
 usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
                         [-k KEY] [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
+                        [-i IPSTART]
 
 Python client to create Condor cluster using mobius. Uses json object for
 compute requests present in data directory if present, otherwises uses the
@@ -85,15 +88,23 @@ optional arguments:
   -n WORKERS, --workers WORKERS
                         Number of workers
   -c COMETHOST, --comethost COMETHOST
-                        Comet Host e.g. https://18.218.34.48:8111/
-  -t CERT, --cert CERT  Comet Certificate
-  -k KEY, --key KEY     Comet Certificate key
+                        Comet Host e.g. https://18.218.34.48:8111/; used only
+                        for provisioning resources on chameleon
+  -t CERT, --cert CERT  Comet Certificate; used only for provisioning
+                        resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key; used only for provisioning
+                        resources on chameleon
   -m MOBIUSHOST, --mobiushost MOBIUSHOST
                         Mobius Host e.g. http://localhost:8080/mobius
   -o OPERATION, --operation OPERATION
                         Operation allowed values: create|get|delete
   -w WORKFLOWID, --workflowId WORKFLOWID
                         workflowId
+  -i IPSTART, --ipStart IPSTART
+                        Start IP Address of the range of IPs to be used for
+                        VMs; 1st IP is assigned to master and subsequent IPs
+                        are assigned to submit node and workers; used only
+                        with create operation
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -152,6 +163,11 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678
 
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678
+```
+
+In case user intends to specify ip address for nodes; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
+```
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1"
 ```
 
 #### <a name="get"></a>Get status of condor cluster
