@@ -128,10 +128,10 @@ python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
 #### <a name="createstitchport"></a>Create a stitch port in a workflow
 ```
 python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
-    "target":"master0",
-    "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1",
-    "tag":"3291"
-}'
+>     "target":"master0",
+>     "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
+>     "tag":"2001"
+> }'
 ```
 #### <a name="getworkflow"></a>Get status of a workflow
 ```
