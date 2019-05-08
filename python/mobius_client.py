@@ -74,7 +74,6 @@ def processCompute(args):
     else:
         mdata["site"]=args.site
     mb=MobiusInterface()
-    print ("mdata=" + str(mdata))
     response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
     return response
 
