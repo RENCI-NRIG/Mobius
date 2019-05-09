@@ -142,7 +142,8 @@ python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
      "target":"master0",
      "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
      "tag":"2001",
-     "stitchIP": "72.16.0.1"
+     "stitchIP": "72.16.0.1",
+     "bandwidth":"10000000"
 }'
 ```
 #### <a name="getworkflow"></a>Get status of a workflow
