@@ -13,7 +13,7 @@ import javax.validation.constraints.*;
  * StitchRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-08T09:32:17.112-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-09T09:08:59.381-04:00[America/New_York]")
 
 public class StitchRequest   {
   @JsonProperty("target")
@@ -27,6 +27,9 @@ public class StitchRequest   {
 
   @JsonProperty("stitchIP")
   private String stitchIP = null;
+
+  @JsonProperty("bandwidth")
+  private String bandwidth = null;
 
   public StitchRequest target(String target) {
     this.target = target;
@@ -111,6 +114,26 @@ public class StitchRequest   {
     this.stitchIP = stitchIP;
   }
 
+  public StitchRequest bandwidth(String bandwidth) {
+    this.bandwidth = bandwidth;
+    return this;
+  }
+
+  /**
+   * Bandwidth for the StitchPort in bps
+   * @return bandwidth
+  **/
+  @ApiModelProperty(value = "Bandwidth for the StitchPort in bps")
+
+
+  public String getBandwidth() {
+    return bandwidth;
+  }
+
+  public void setBandwidth(String bandwidth) {
+    this.bandwidth = bandwidth;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -124,12 +147,13 @@ public class StitchRequest   {
     return Objects.equals(this.target, stitchRequest.target) &&
         Objects.equals(this.portUrl, stitchRequest.portUrl) &&
         Objects.equals(this.tag, stitchRequest.tag) &&
-        Objects.equals(this.stitchIP, stitchRequest.stitchIP);
+        Objects.equals(this.stitchIP, stitchRequest.stitchIP) &&
+        Objects.equals(this.bandwidth, stitchRequest.bandwidth);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(target, portUrl, tag, stitchIP);
+    return Objects.hash(target, portUrl, tag, stitchIP, bandwidth);
   }
 
   @Override
@@ -141,6 +165,7 @@ public class StitchRequest   {
     sb.append("    portUrl: ").append(toIndentedString(portUrl)).append("\n");
     sb.append("    tag: ").append(toIndentedString(tag)).append("\n");
     sb.append("    stitchIP: ").append(toIndentedString(stitchIP)).append("\n");
+    sb.append("    bandwidth: ").append(toIndentedString(bandwidth)).append("\n");
     sb.append("}");
     return sb.toString();
   }

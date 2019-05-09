@@ -131,6 +131,14 @@ def main():
          help='Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; used only with create operation',
          required=False
      )
+     parser.add_argument(
+         '-l',
+         '--leaseEnd',
+         dest='leaseEnd',
+         type = str,
+         help='Lease End Time',
+         required=False
+     )
 
      args = parser.parse_args()
 
@@ -219,6 +227,9 @@ def main():
             print ("Provisioning master node")
             if args.ipStart is not None :
                 mdata["ipAddress"] = args.ipStart
+            if args.leaseEnd is not None:
+                print ("Setting leaseEnd to " + args.leaseEnd)
+                mdata["leaseEnd"] = args.leaseEnd
             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
             if response.json()["status"] != 200:
                 print ("Deleting workflow")
@@ -228,11 +239,17 @@ def main():
             if args.ipStart is not None :
                 args.ipStart = get_next_ip(args.ipStart)
                 sdata["ipAddress"] = args.ipStart
+            if args.leaseEnd is not None:
+                print ("Setting leaseEnd to " + args.leaseEnd)
+                sdata["leaseEnd"] = args.leaseEnd
             response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
             if response.json()["status"] != 200:
                 print ("Deleting workflow")
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
+            if args.leaseEnd is not None:
+                print ("Setting leaseEnd to " + args.leaseEnd)
+                wdata["leaseEnd"] = args.leaseEnd
             for x in range(args.workers):
                 print ("Provisioning worker: " + str(x))
                 if args.ipStart is not None :

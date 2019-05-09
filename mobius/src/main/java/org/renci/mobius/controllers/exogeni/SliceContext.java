@@ -583,7 +583,11 @@ public class SliceContext {
 
             String spName = CloudContext.StitchPortName + nameIndex;
 
-            StitchPort stitchPort = slice.addStitchPort(spName, request.getTag(), request.getPortUrl(), 10000000L);
+            long bandwidth = 10000000L;
+            if(request.getBandwidth() != null) {
+                bandwidth = Long.parseLong(request.getBandwidth());
+            }
+            StitchPort stitchPort = slice.addStitchPort(spName, request.getTag(), request.getPortUrl(), bandwidth);
             InterfaceNode2Net interfaceNode2Net = (InterfaceNode2Net) c.stitch(stitchPort);
 
             if(request.getStitchIP() != null) {

@@ -606,6 +606,10 @@
         "stitchIP" : {
           "type" : "string",
           "description" : "IP address for the StitchPort interface on VM"
+        },
+        "bandwidth" : {
+          "type" : "string",
+          "description" : "Bandwidth for the StitchPort in bps"
         }
       }
     }
