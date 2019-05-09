@@ -168,9 +168,9 @@ python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678
 ```
 
-In case user intends to specify ip address for nodes; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
+In case user intends to specify ip address for nodes and also pass lease end time; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
 ```
-python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1"
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1" -l 1557584201
 ```
 
 #### <a name="get"></a>Get status of condor cluster
