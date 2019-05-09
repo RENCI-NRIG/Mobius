@@ -74,7 +74,7 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ```
 usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
                         [-k KEY] [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                        [-i IPSTART]
+                        [-i IPSTART] [-l LEASEEND]
 
 Python client to create Condor cluster using mobius. Uses json object for
 compute requests present in data directory if present, otherwises uses the
@@ -105,6 +105,8 @@ optional arguments:
                         VMs; 1st IP is assigned to master and subsequent IPs
                         are assigned to submit node and workers; used only
                         with create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -142,7 +144,8 @@ python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
      "target":"master0",
      "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
      "tag":"2001",
-     "stitchIP": "72.16.0.1"
+     "stitchIP": "72.16.0.1",
+     "bandwidth":"10000000"
 }'
 ```
 #### <a name="getworkflow"></a>Get status of a workflow
@@ -165,9 +168,9 @@ python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678
 ```
 
-In case user intends to specify ip address for nodes; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
+In case user intends to specify ip address for nodes and also pass lease end time; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
 ```
-python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1"
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1" -l 1557584201
 ```
 
 #### <a name="get"></a>Get status of condor cluster
