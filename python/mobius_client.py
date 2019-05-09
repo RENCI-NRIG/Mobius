@@ -58,8 +58,11 @@ defaultStorageExogeniData= {
 
 def processCompute(args):
     if args.site is None:
-        if args.data is None:
-            print ("ERROR: site must be specified")
+        if args.data is None and args.file is None:
+            print ("ERROR: data or file must be specified")
+            return None
+        if args.data is not None and args.file is not None:
+            print ("ERROR: Either data or file must be specified")
             return None
     elif "Chameleon" in args.site :
         mdata=defaultComputeChameleonData
@@ -71,8 +74,19 @@ def processCompute(args):
 
     if args.data is not None:
         mdata=json.loads(args.data)
-    else:
+    if args.file is not None:
+        if os.path.exists(args.file):
+            print ("Using file " + args.file)
+            m_f = open(args.file, 'r')
+            mdata=json.load(m_f)
+            m_f.close()
+        else:
+            print ("ERROR: file does not exist")
+            return None
+
+    if args.data is None and args.file is None:
         mdata["site"]=args.site
+
     mb=MobiusInterface()
     response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
     return response
@@ -89,26 +103,51 @@ def processStorage(args):
         print ("ERROR: invalid site specified")
         return None
 
-    if args.target is None and args.data is None:
-        print ("ERROR: Either target or data must be specified")
+    if args.target is None and args.data is None and args.file is None:
+        print ("ERROR: Either target or data or file must be specified")
         return None
-    if args.target is not None and args.data is not None:
-        print ("ERROR: Either target or data must be specified")
+    if args.target is not None and args.data is not None and args.file is not None:
+        print ("ERROR: Either target or data or file must be specified")
+        return None
+    if args.data is not None and args.file is not None:
+        print ("ERROR: Either data or file must be specified")
         return None
     if args.target is not None:
         mdata["target"]=args.target
     if args.data is not None:
         mdata=json.loads(args.data)
+    if args.file is not None:
+        if os.path.exists(args.file):
+            f = open(args.file, 'r')
+            mdata=json.load(f)
+            f.close()
+        else:
+            print ("ERROR: file does not exist")
+            return None
     mb=MobiusInterface()
     response=mb.create_storage(args.mobiushost, args.workflowId, mdata)
     return response
 
 def processStitchPort(args):
-    if args.data is None:
-        print ("ERROR: data must be specified")
+    if args.data is None and args.file is None:
+        print ("ERROR: data or file must be specified")
         return None
+    if args.data is not None and args.file is not None:
+        print ("ERROR: Either data or file must be specified")
+        return None
+    if args.data is not None:
+        mdata=json.loads(args.data)
+    if args.file is not None:
+        if os.path.exists(args.file):
+            f = open(args.file, 'r')
+            mdata=json.load(f)
+            f.close()
+        else:
+            print ("ERROR: file does not exist")
+            return None
+
     mb=MobiusInterface()
-    response=mb.create_stitchport(args.mobiushost, args.workflowId, json.loads(args.data))
+    response=mb.create_stitchport(args.mobiushost, args.workflowId, mdata)
     return response
 
 def main():
@@ -152,7 +191,15 @@ def main():
          '--data',
          dest='data',
          type = str,
-         help='data, JSON data to send; if not specified; default data is used; only used with post; must not be specified if target is indicated; must be specified for stitchport',
+         help='data, JSON data to send; if not specified; default data is used; only used with post; must not be specified if target or file is indicated; must be specified for stitchport',
+         required=False
+     )
+     parser.add_argument(
+         '-f',
+         '--file',
+         dest='file',
+         type = str,
+         help='file, JSON file to send; if not specified; default data is used; only used with post; must not be specified if target or data is indicated; must be specified for stitchport',
          required=False
      )
      parser.add_argument(
