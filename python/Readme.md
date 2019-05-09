@@ -74,7 +74,7 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ```
 usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
                         [-k KEY] [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                        [-i IPSTART]
+                        [-i IPSTART] [-l LEASEEND]
 
 Python client to create Condor cluster using mobius. Uses json object for
 compute requests present in data directory if present, otherwises uses the
@@ -105,6 +105,8 @@ optional arguments:
                         VMs; 1st IP is assigned to master and subsequent IPs
                         are assigned to submit node and workers; used only
                         with create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
