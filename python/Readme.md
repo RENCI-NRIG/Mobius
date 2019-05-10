@@ -137,6 +137,8 @@ python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
     "leaseEnd":"1557733832",
     "postBootScript":"curl http://geni-images.renci.org/images/cwang/Condor/scripts/exogeni-scripts/master.sh -o /root/master.sh; sh /root/master.sh"
 }'
+
+python3 mobius_client.py -o post -r compute -w abcd-1234 -f ../mobius/test/computeMaster.json
 ```
 #### <a name="createstitchport"></a>Create a stitch port in a workflow
 ```
@@ -147,6 +149,8 @@ python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
      "stitchIP": "72.16.0.1",
      "bandwidth":"10000000"
 }'
+
+python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -f ../mobius/test/stitch.json
 ```
 #### <a name="getworkflow"></a>Get status of a workflow
 ```
