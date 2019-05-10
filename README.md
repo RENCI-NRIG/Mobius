@@ -1,6 +1,7 @@
 # Table of contents
 
 - [Mobius](#Mobius)
+  - [Component Diagram](#component)
   - [Block Diagram](#block)
     - [Rest Interface](#rest)
     - [Mobius Controller](#controller)
@@ -20,7 +21,8 @@ Spring Boot Rest Server which has the capability to provision resources on diffe
 - Design details can be found in [Design](./mobius/Readme.md)
 - Interface specifications can be found in [Interface](./mobius/Interface.md)
 - Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](./mobius/HowToGenerateCodeFromSwagger.md)
-
+## <a name="component"></a>Component Diagram
+![Component Diagram](./mobius/plantuml/images/mobius.png)
 ## <a name="block"></a>Block Diagram
 ![Component Diagram](./mobius/plantuml/images/component.png)
 ### <a name="rest"></a>Rest Interface
