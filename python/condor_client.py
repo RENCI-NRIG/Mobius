@@ -56,14 +56,14 @@ def get_next_ip(ip):
     return '.'.join(octets)
 
 def main():
-     parser = argparse.ArgumentParser(description='Python client to create Condor cluster using mobius.\nUses json object for compute requests present in data directory if present, otherwises uses the default.\nCurrently only supports provisioning compute resources.\nCreates COMET contexts for Chameleon resources and thus enables exchanging keys and hostnames within workflow')
+     parser = argparse.ArgumentParser(description='Python client to create Condor cluster using mobius.\nUses master.json, submit.json and worker.json for compute requests present in data directory specified.\nCurrently only supports provisioning compute resources. Other resources can be provisioned via mobius_client.\nCreates COMET contexts for Chameleon resources and thus enables exchanging keys and hostnames within workflow')
 
      parser.add_argument(
          '-s',
          '--site',
          dest='site',
          type = str,
-         help='Site',
+         help='Site at which resources must be provisioned; must be specified for create operation',
          required=False
      )
      parser.add_argument(
@@ -71,7 +71,7 @@ def main():
          '--workers',
          dest='workers',
          type = int,
-         help='Number of workers',
+         help='Number of workers to be provisioned; must be specified for create operation',
          required=False
      )
      parser.add_argument(
@@ -128,7 +128,7 @@ def main():
          '--ipStart',
          dest='ipStart',
          type = str,
-         help='Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; used only with create operation',
+         help='Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
          required=False
      )
      parser.add_argument(
@@ -136,7 +136,15 @@ def main():
          '--leaseEnd',
          dest='leaseEnd',
          type = str,
-         help='Lease End Time',
+         help='Lease End Time; can be specified for create operation',
+         required=False
+     )
+     parser.add_argument(
+         '-d',
+         '--datadir',
+         dest='datadir',
+         type = str,
+         help='Data directory where to look for master.json, submit.json and worker.json; must be specified for create operation',
          required=False
      )
 
@@ -155,8 +163,8 @@ def main():
            comet=CometInterface(args.comethost, None, args.cert, args.key, None)
            response=comet.delete_families(args.comethost, args.workflowId, None, args.workflowId, args.workflowId)
      elif args.operation == 'create':
-         if args.site is None or args.workers is None:
-             print ("ERROR: site name and number of workers must be specified for create operation")
+         if args.site is None or args.workers is None or args.datadir is None:
+             print ("ERROR: site name, number of workers and data directory must be specified for create operation")
              parser.print_help()
              sys.exit(1)
          if args.ipStart is not None:
@@ -179,14 +187,10 @@ def main():
          m = None
          s = None
          w = None
-         if "Chameleon" in args.site :
-             m='./data/chmaster.json'
-             s='./data/chsubmit.json'
-             w='./data/chworker.json'
-         elif "Exogeni" in args.site :
-             m='./data/master.json'
-             s='./data/submit.json'
-             w='./data/worker.json'
+         if "Chameleon" in args.site or "Exogeni" in args.site :
+             m = args.datadir + "/master.json"
+             s = args.datadir + "/submit.json"
+             w = args.datadir + "/worker.json"
          else:
              print ("ERROR: Invalid site specified")
              parser.print_help()

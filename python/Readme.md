@@ -74,19 +74,22 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ```
 usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
                         [-k KEY] [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                        [-i IPSTART] [-l LEASEEND]
+                        [-i IPSTART] [-l LEASEEND] [-d DATADIR]
 
-Python client to create Condor cluster using mobius. Uses json object for
-compute requests present in data directory if present, otherwises uses the
-default. Currently only supports provisioning compute resources. Creates COMET
-contexts for Chameleon resources and thus enables exchanging keys and
-hostnames within workflow
+Python client to create Condor cluster using mobius. Uses master.json,
+submit.json and worker.json for compute requests present in data directory
+specified. Currently only supports provisioning compute resources. Other
+resources can be provisioned via mobius_client. Creates COMET contexts for
+Chameleon resources and thus enables exchanging keys and hostnames within
+workflow
 
 optional arguments:
   -h, --help            show this help message and exit
-  -s SITE, --site SITE  Site
+  -s SITE, --site SITE  Site at which resources must be provisioned; must be
+                        specified for create operation
   -n WORKERS, --workers WORKERS
-                        Number of workers
+                        Number of workers to be provisioned; must be specified
+                        for create operation
   -c COMETHOST, --comethost COMETHOST
                         Comet Host e.g. https://18.218.34.48:8111/; used only
                         for provisioning resources on chameleon
@@ -103,10 +106,14 @@ optional arguments:
   -i IPSTART, --ipStart IPSTART
                         Start IP Address of the range of IPs to be used for
                         VMs; 1st IP is assigned to master and subsequent IPs
-                        are assigned to submit node and workers; used only
-                        with create operation
+                        are assigned to submit node and workers; can be
+                        specified for create operation
   -l LEASEEND, --leaseEnd LEASEEND
-                        Lease End Time
+                        Lease End Time; can be specified for create operation
+  -d DATADIR, --datadir DATADIR
+                        Data directory where to look for master.json,
+                        submit.json and worker.json; must be specified for
+                        create operation
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -167,14 +174,14 @@ Create a condor cluster with 1 master, 1 submit and 1 worker node.
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
 ```
-python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678
+python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678 -d ./chameleon/
 
-python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -d ./exogeni/
 ```
 
 In case user intends to specify ip address for nodes and also pass lease end time; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
 ```
-python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1" -l 1557584201
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -i "172.16.0.1" -l 1557584201 -d ./exogeni/
 ```
 
 #### <a name="get"></a>Get status of condor cluster
