@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-04-10T11:42:12.106-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-09T15:51:30.871-04:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -140,6 +140,18 @@ public class ComputeRequest   {
 
   @JsonProperty("postBootScript")
   private String postBootScript = null;
+
+  @JsonProperty("stitchPortUrl")
+  private String stitchPortUrl = null;
+
+  @JsonProperty("stitchTag")
+  private String stitchTag = null;
+
+  @JsonProperty("stitchIP")
+  private String stitchIP = null;
+
+  @JsonProperty("stitchBandwidth")
+  private String stitchBandwidth = null;
 
   public ComputeRequest site(String site) {
     this.site = site;
@@ -553,6 +565,86 @@ public class ComputeRequest   {
     this.postBootScript = postBootScript;
   }
 
+  public ComputeRequest stitchPortUrl(String stitchPortUrl) {
+    this.stitchPortUrl = stitchPortUrl;
+    return this;
+  }
+
+  /**
+   * port url for the stitch port
+   * @return stitchPortUrl
+  **/
+  @ApiModelProperty(value = "port url for the stitch port")
+
+
+  public String getStitchPortUrl() {
+    return stitchPortUrl;
+  }
+
+  public void setStitchPortUrl(String stitchPortUrl) {
+    this.stitchPortUrl = stitchPortUrl;
+  }
+
+  public ComputeRequest stitchTag(String stitchTag) {
+    this.stitchTag = stitchTag;
+    return this;
+  }
+
+  /**
+   * vlan tag for the stitch port
+   * @return stitchTag
+  **/
+  @ApiModelProperty(value = "vlan tag for the stitch port")
+
+
+  public String getStitchTag() {
+    return stitchTag;
+  }
+
+  public void setStitchTag(String stitchTag) {
+    this.stitchTag = stitchTag;
+  }
+
+  public ComputeRequest stitchIP(String stitchIP) {
+    this.stitchIP = stitchIP;
+    return this;
+  }
+
+  /**
+   * IP address for the StitchPort interface on VM
+   * @return stitchIP
+  **/
+  @ApiModelProperty(value = "IP address for the StitchPort interface on VM")
+
+
+  public String getStitchIP() {
+    return stitchIP;
+  }
+
+  public void setStitchIP(String stitchIP) {
+    this.stitchIP = stitchIP;
+  }
+
+  public ComputeRequest stitchBandwidth(String stitchBandwidth) {
+    this.stitchBandwidth = stitchBandwidth;
+    return this;
+  }
+
+  /**
+   * Bandwidth for the StitchPort in bps
+   * @return stitchBandwidth
+  **/
+  @ApiModelProperty(value = "Bandwidth for the StitchPort in bps")
+
+
+  public String getStitchBandwidth() {
+    return stitchBandwidth;
+  }
+
+  public void setStitchBandwidth(String stitchBandwidth) {
+    this.stitchBandwidth = stitchBandwidth;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -582,12 +674,16 @@ public class ComputeRequest   {
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
-        Objects.equals(this.postBootScript, computeRequest.postBootScript);
+        Objects.equals(this.postBootScript, computeRequest.postBootScript) &&
+        Objects.equals(this.stitchPortUrl, computeRequest.stitchPortUrl) &&
+        Objects.equals(this.stitchTag, computeRequest.stitchTag) &&
+        Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
+        Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth);
   }
 
   @Override
@@ -615,6 +711,10 @@ public class ComputeRequest   {
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");
     sb.append("    postBootScript: ").append(toIndentedString(postBootScript)).append("\n");
+    sb.append("    stitchPortUrl: ").append(toIndentedString(stitchPortUrl)).append("\n");
+    sb.append("    stitchTag: ").append(toIndentedString(stitchTag)).append("\n");
+    sb.append("    stitchIP: ").append(toIndentedString(stitchIP)).append("\n");
+    sb.append("    stitchBandwidth: ").append(toIndentedString(stitchBandwidth)).append("\n");
     sb.append("}");
     return sb.toString();
   }

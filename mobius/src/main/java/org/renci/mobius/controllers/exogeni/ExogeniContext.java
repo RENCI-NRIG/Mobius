@@ -11,6 +11,7 @@ import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.apache.log4j.Logger;
 
@@ -171,7 +172,7 @@ public class ExogeniContext extends CloudContext {
      * @return number representing index to be added for the instance name
      */
     @Override
-    public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+    public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("processCompute: IN");
 
@@ -211,7 +212,7 @@ public class ExogeniContext extends CloudContext {
             }
 
             try {
-                nameIndex = context.processCompute(flavorList, nameIndex, request);
+                Pair<Integer, Integer> r = context.processCompute(flavorList, nameIndex, spNameIndex, request);
 
                 sliceName = context.getSliceName();
 
@@ -224,7 +225,7 @@ public class ExogeniContext extends CloudContext {
                         LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
                     }
                 }
-                return nameIndex;
+                return r;
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);

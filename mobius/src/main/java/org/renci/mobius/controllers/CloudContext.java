@@ -6,6 +6,7 @@ import org.json.simple.JSONObject;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
@@ -140,7 +141,7 @@ abstract public class CloudContext {
      *
      * @return number representing index to be added for the instance name
      */
-    abstract public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
+    abstract public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception;
 
     /*
      * @brief function to process storge request

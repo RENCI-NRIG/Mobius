@@ -518,6 +518,22 @@
         "postBootScript" : {
           "type" : "string",
           "description" : "post boot script"
+        },
+        "stitchPortUrl" : {
+          "type" : "string",
+          "description" : "port url for the stitch port"
+        },
+        "stitchTag" : {
+          "type" : "string",
+          "description" : "vlan tag for the stitch port"
+        },
+        "stitchIP" : {
+          "type" : "string",
+          "description" : "IP address for the StitchPort interface on VM"
+        },
+        "stitchBandwidth" : {
+          "type" : "string",
+          "description" : "Bandwidth for the StitchPort in bps"
         }
       }
     },

@@ -13,6 +13,7 @@ import org.renci.mobius.model.StorageRequest;
 import java.util.*;
 
 import org.apache.log4j.Logger;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 /*
@@ -268,7 +269,7 @@ public class ChameleonContext extends CloudContext {
      * @return number representing index to be added for the instance name
      */
     @Override
-    public int processCompute(ComputeRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+    public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             validateComputeRequest(request, isFutureRequest);
 
@@ -294,7 +295,7 @@ public class ChameleonContext extends CloudContext {
                 stackContextHashMap.put(sliceName, context);
                 LOGGER.debug("Added " + sliceName);
 
-                return nameIndex;
+                return Pair.of(nameIndex, spNameIndex);
             } finally {
                 LOGGER.debug("processCompute: OUT");
             }

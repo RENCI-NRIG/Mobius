@@ -16,6 +16,7 @@ import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 import java.net.URL;
@@ -310,7 +311,8 @@ public class SliceContext {
      *
      * @return number representing index to be added for the instance name
      */
-    public int processCompute(List<String> flavorList, int nameIndex, ComputeRequest request) throws Exception {
+    public Pair<Integer, Integer> processCompute(List<String> flavorList, int nameIndex,
+                                                 int spNameIndex, ComputeRequest request) throws Exception {
         LOGGER.debug("processCompute: IN");
 
         try {
@@ -391,6 +393,25 @@ public class SliceContext {
                 if(request.getPostBootScript() != null) {
                     c.setPostBootScript(request.getPostBootScript());
                 }
+                if(request.isCoallocate()) {
+                    if(request.getStitchPortUrl() != null && request.getStitchTag() != null) {
+                        long bandwidth = 10000000L;
+                        if(request.getStitchBandwidth() != null) {
+                            bandwidth = Long.parseLong(request.getStitchBandwidth());
+                        }
+
+                        String spName = CloudContext.StitchPortName + spNameIndex;
+
+                        StitchPort stitchPort = slice.addStitchPort(spName, request.getStitchTag(), request.getStitchPortUrl(), bandwidth);
+                        InterfaceNode2Net interfaceNode2NetStitch = (InterfaceNode2Net) c.stitch(stitchPort);
+
+                        if(request.getStitchIP() != null) {
+                            LOGGER.debug("Attaching IP address to the stitch interface interfaceNode2Net=" + interfaceNode2NetStitch);
+                            interfaceNode2NetStitch.setIpAddress(request.getStitchIP());
+                        }
+                        ++spNameIndex;
+                    }
+                }
             }
 
             slice.autoIP();
@@ -407,7 +428,7 @@ public class SliceContext {
                 expiry = new Date();
                 expiry.setTime(expiry.getTime() + 604800);
             }
-            return nameIndex;
+            return  Pair.of(nameIndex, spNameIndex);
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

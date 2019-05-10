@@ -8,12 +8,15 @@ import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.notification.NotificationPublisher;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StorageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.log4j.Logger;
+
+import javax.swing.*;
 
 /*
  * @brief class represents a worflow and maintains hashmap of cloud context per site
@@ -231,7 +234,9 @@ class Workflow {
                 }
             }
 
-            nodeCount = context.processCompute(request, nodeCount, isFutureRequest);
+            Pair<Integer, Integer> r = context.processCompute(request, nodeCount, stitchCount, isFutureRequest);
+            nodeCount = r.getFirst();
+            stitchCount = r.getSecond();
             LOGGER.debug("processComputeRequest(): nodeCount = " + nodeCount);
             if (addContextToMap) {
                 siteToContextHashMap.put(request.getSite(), context);
