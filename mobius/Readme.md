@@ -27,7 +27,7 @@ Mobius is Spring-Boot based REST Webserver with the ability to provision compute
 - Open Science Grid
 
 # <a name="block"></a>Block Diagram
-![Component Diagram](./mobius/plantuml/images/component.png)
+![Component Diagram](../mobius/plantuml/images/component.png)
 ## <a name="rest"></a>Rest Interface
 It represents Swagger generated REST API interface with Spring framework controllers through which Mobius controller logic is invoked.
 ## <a name="controller"></a>Mobius Controller
