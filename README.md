@@ -2,15 +2,6 @@
 
 - [Mobius](#Mobius)
   - [Component Diagram](#component)
-  - [Block Diagram](#block)
-    - [Rest Interface](#rest)
-    - [Mobius Controller](#controller)
-    - [Workflow](#workflow)
-    - [CloudContext](#cloudcontext)
-      - [ExogeniContext & SliceContext](#context)
-    - [Periodic Processing](#periodic)  
-    - [Notification Publisher](#notification)
-    - [Stored Worflows](#stored)
   - [To do list](#todo)
   - [How to use or launch Mobius?](#docker)
 # <a name="Mobius"></a>Mobius
