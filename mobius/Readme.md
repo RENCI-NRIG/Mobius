@@ -1,5 +1,14 @@
 # Table of contents
- - [Mobius](#mobius)
+- [Mobius](#mobius)
+- [Block Diagram](#block)
+  - [Rest Interface](#rest)
+  - [Mobius Controller](#controller)
+  - [Workflow](#workflow)
+  - [CloudContext](#cloudcontext)
+  - [ExogeniContext & SliceContext](#context)
+  - [Periodic Processing](#periodic)  
+  - [Notification Publisher](#notification)
+  - [Stored Worflows](#stored)
  - [Mobius Controller](#controller)
    - [Workflow](#workflow)
      - [Create Workflow](#create)
@@ -9,7 +18,14 @@
    - [Storage](#storage)
  - [Periodic Processing](#periodic)
  - [Class Diagram](#classdiagram)
- 
+
+# <a name="mobius"></a>Mobius
+
+Mobius is Spring-Boot based REST Webserver with the ability to provision compute, network or storage resources on multiple clouds. In the first release, following 3 cloud providers will be supported:
+- Exogeni
+- Chameleon
+- Open Science Grid
+
 # <a name="block"></a>Block Diagram
 ![Component Diagram](./mobius/plantuml/images/component.png)
 ## <a name="rest"></a>Rest Interface
@@ -30,17 +46,6 @@ Represents Periodic Processing Thread is responsible for periodically performing
 Responsible for triggering notfications to Pegasus on Workflow status change. It currently uses AMQP but is easily extendible to use other frameworks like kafka.
 ## <a name="stored"></a>Stored Worflows
 Each workflow saves its workflowId and hashMap for CloudContexts in the Database. This information can be used to create Workflow context in case of abnormal restart of Mobius application.
-
-# <a name="mobius"></a>Mobius
-
-Mobius is Spring-Boot based REST Webserver with the ability to provision compute, network or storage resources on multiple clouds. In the first release, following 3 cloud providers will be supported:
-- Exogeni
-- Chameleon
-- Open Science Grid
-
-It has 2 main processing components:
-- Mobius Controller
-- Periodic Processing Thread
 
 ## <a name="controller"></a>Mobius Controller
 Mobius controller is responsible for handling Rest APIs. It is a Singleton class and maintains all the workflows in workflowHashMap with workFlowId as the key.
