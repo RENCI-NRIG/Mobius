@@ -234,6 +234,14 @@ def main():
             if args.leaseEnd is not None:
                 print ("Setting leaseEnd to " + args.leaseEnd)
                 mdata["leaseEnd"] = args.leaseEnd
+            if mdata["postBootScript"] is not None:
+               s=mdata["postBootScript"]
+               s=s.replace("WORKFLOW", args.workflowId)
+               nodename="Node0"
+               if mdata["hostNamePrefix"] is not None:
+                   nodename=mdata["hostNamePrefix"]+"0"
+               s=s.replace("NODENAME", nodename)
+               mdata["postBootScript"]=s
             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
             if response.json()["status"] != 200:
                 print ("Deleting workflow")
@@ -246,6 +254,14 @@ def main():
             if args.leaseEnd is not None:
                 print ("Setting leaseEnd to " + args.leaseEnd)
                 sdata["leaseEnd"] = args.leaseEnd
+            if sdata["postBootScript"] is not None:
+               s=sdata["postBootScript"]
+               s=s.replace("WORKFLOW", args.workflowId)
+               nodename="Node1"
+               if sdata["hostNamePrefix"] is not None:
+                   nodename=sdata["hostNamePrefix"]+"1"
+               s=s.replace("NODENAME",nodename)
+               sdata["postBootScript"]=s
             response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
             if response.json()["status"] != 200:
                 print ("Deleting workflow")
@@ -254,8 +270,26 @@ def main():
             if args.leaseEnd is not None:
                 print ("Setting leaseEnd to " + args.leaseEnd)
                 wdata["leaseEnd"] = args.leaseEnd
+            if wdata["postBootScript"] is not None:
+                s=wdata["postBootScript"]
+                s=s.replace("WORKFLOW", args.workflowId)
+                wdata["postBootScript"]=s
+            prefix = wdata["hostNamePrefix"]
+            oldname = None
             for x in range(args.workers):
                 print ("Provisioning worker: " + str(x))
+                if wdata["postBootScript"] is not None:
+                   nodename="Node" + str(x+2)
+                   if prefix is not None:
+                      nodename= prefix + str(x+2)
+                if oldname is None:
+                   print ("Replacing NODENAME to " + nodename)
+                   s=s.replace("NODENAME", nodename)
+                else:
+                   print ("Replacing " + oldname + " to " + nodename)
+                   s=s.replace(oldname, nodename)
+                oldname = nodename
+                wdata["postBootScript"]=s
                 if args.ipStart is not None :
                     args.ipStart = get_next_ip(args.ipStart)
                     wdata["ipAddress"] = args.ipStart
@@ -287,7 +321,10 @@ def main():
                                 print ("Received Response Value: " + str(response.json()["value"]))
 
                             hostVal = json.dumps(hostNameVal)
-                            hostname=n["name"] + ".novalocal"
+                            if "Chameleon" in args.site :
+                                hostname=n["name"] + ".novalocal"
+                            else :
+                                hostname=n["name"]
                             hostVal = hostVal.replace("REPLACE", hostname)
                             val = json.loads(hostVal)
                             response=comet.update_family(args.comethost, args.workflowId, n["name"],
