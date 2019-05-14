@@ -173,10 +173,17 @@ python3 mobius_client.py -o delete -w abcd-1234
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
+Chameleon
 ```
 python3 condor_client.py -s Chameleon:CHI@UC -n 1 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -o create -w abcd-5678 -d ./chameleon/
-
+```
+Exogeni: For controller where COMET is enabled
+```
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -d ./exogeni/
+```
+Exogeni: For controller where COMET is enabled
+```
+python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 2 -o create -w abcd-56781 -d ./exogeni/ -l 1558112270 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
 ```
 
 In case user intends to specify ip address for nodes and also pass lease end time; use below commands instead and specify the first ip address for the cluster. First IP is assigned to master node and next IP address in the range is assigned to submit node and worker nodes in order.
