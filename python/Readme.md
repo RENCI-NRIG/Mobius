@@ -181,7 +181,7 @@ Exogeni: For controller where COMET is enabled
 ```
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 1 -o create -w abcd-5678 -d ./exogeni/
 ```
-Exogeni: For controller where COMET is enabled
+Exogeni: For controller where COMET is not enabled (EXOSOM)
 ```
 python3 condor_client.py -s 'Exogeni:UH (Houston, TX USA) XO Rack' -n 2 -o create -w abcd-56781 -d ./exogeni/ -l 1558112270 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
 ```
@@ -199,4 +199,8 @@ python3 condor_client.py -o get -w abcd-5678
 #### <a name="delete"></a>Delete condor cluster
 ```
 python3 condor_client.py -o delete -w abcd-5678
+```
+Delete cluster when created by specifying COMET
+```
+python3 condor_client.py -o delete -w abcd-5678 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
 ```
