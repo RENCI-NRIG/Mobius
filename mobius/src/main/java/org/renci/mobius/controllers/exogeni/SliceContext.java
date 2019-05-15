@@ -331,12 +331,14 @@ public class SliceContext {
 
                 //SSH context
                 SliceAccessContext<SSHAccessToken> sctx = new SliceAccessContext<>();
-                SSHAccessTokenFileFactory fac = new SSHAccessTokenFileFactory(sshKey, false);
-                SSHAccessToken t = fac.getPopulatedToken();
-                sctx.addToken("root", "root", t);
-                sctx.addToken("root", t);
-                sctx.addToken(user, user, t);
-                sctx.addToken(user, t);
+                SSHAccessTokenFileFactory facRoot = new SSHAccessTokenFileFactory(sshKey, false);
+                SSHAccessToken tRoot = facRoot.getPopulatedToken();
+                sctx.addToken("root", "root", tRoot);
+                sctx.addToken("root", tRoot);
+                SSHAccessTokenFileFactory facUser = new SSHAccessTokenFileFactory(sshKey, true);
+                SSHAccessToken tUser = facUser.getPopulatedToken();
+                sctx.addToken(user, user, tUser);
+                sctx.addToken(user, tUser);
 
                 slice = Slice.create(sliceProxy, sctx, sliceName);
                 net = slice.addBroadcastLink(CloudContext.NetworkName);
