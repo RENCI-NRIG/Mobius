@@ -345,10 +345,18 @@ public class SliceContext {
             }
             else {
                 slice = getSlice();
-                if(slice.getBroadcastLinks().isEmpty() || slice.getBroadcastLinks().size() > 1) {
-                    throw new MobiusException("Invalid number of broadcast network");
+                Collection<BroadcastNetwork> broadcastNetworks = slice.getBroadcastLinks();
+                if(broadcastNetworks.isEmpty()) {
+                    throw new MobiusException("No broadcast network found");
                 }
-                net = slice.getBroadcastLinks().iterator().next();
+                for(BroadcastNetwork b : broadcastNetworks) {
+                    if(b.getName().compareToIgnoreCase(CloudContext.NetworkName) == 0) {
+                        net = slice.getBroadcastLinks().iterator().next();
+                    }
+                }
+                if(net == null) {
+                    throw new MobiusException("No broadcast network found");
+                }
             }
 
             if(slice == null) {
