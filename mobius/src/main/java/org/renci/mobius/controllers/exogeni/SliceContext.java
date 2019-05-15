@@ -351,7 +351,7 @@ public class SliceContext {
                 }
                 for(BroadcastNetwork b : broadcastNetworks) {
                     if(b.getName().compareToIgnoreCase(CloudContext.NetworkName) == 0) {
-                        net = slice.getBroadcastLinks().iterator().next();
+                        net = b;
                     }
                 }
                 if(net == null) {
