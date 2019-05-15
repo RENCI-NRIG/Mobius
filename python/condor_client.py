@@ -26,7 +26,7 @@ from mobius import *
 from comet_common_iface import *
 
 pubKeysVal={"val_":"[{\"publicKey\":\"\"}]"}
-hostNameVal={"val_":"[{\"hostName\":\"REPLACE\",\"ip\":\"\"}]"}
+hostNameVal={"val_":"[{\"hostName\":\"REPLACE\",\"ip\":\"IPADDR\"}]"}
 
 
 def is_valid_ipv4_address(address):
@@ -163,6 +163,7 @@ def main():
            comet=CometInterface(args.comethost, None, args.cert, args.key, None)
            response=comet.delete_families(args.comethost, args.workflowId, None, args.workflowId, args.workflowId)
      elif args.operation == 'create':
+         ipMap = dict()
          if args.site is None or args.workers is None or args.datadir is None:
              print ("ERROR: site name, number of workers and data directory must be specified for create operation")
              parser.print_help()
@@ -229,17 +230,18 @@ def main():
             sdata["site"]=args.site
             wdata["site"]=args.site
             print ("Provisioning master node")
+            nodename="Node0"
+            if mdata["hostNamePrefix"] is not None:
+               nodename=mdata["hostNamePrefix"]+"0"
             if args.ipStart is not None :
-                mdata["ipAddress"] = args.ipStart
+               mdata["ipAddress"] = args.ipStart
+               ipMap[nodename] = args.ipStart
             if args.leaseEnd is not None:
-                print ("Setting leaseEnd to " + args.leaseEnd)
-                mdata["leaseEnd"] = args.leaseEnd
+               print ("Setting leaseEnd to " + args.leaseEnd)
+               mdata["leaseEnd"] = args.leaseEnd
             if mdata["postBootScript"] is not None:
                s=mdata["postBootScript"]
                s=s.replace("WORKFLOW", args.workflowId)
-               nodename="Node0"
-               if mdata["hostNamePrefix"] is not None:
-                   nodename=mdata["hostNamePrefix"]+"0"
                s=s.replace("NODENAME", nodename)
                mdata["postBootScript"]=s
             response=mb.create_compute(args.mobiushost, args.workflowId, mdata)
@@ -248,18 +250,19 @@ def main():
                 response=mb.delete_workflow(args.mobiushost, args.workflowId)
                 return
             print ("Provisioning submit node")
+            nodename="Node1"
+            if sdata["hostNamePrefix"] is not None:
+               nodename=sdata["hostNamePrefix"]+"1"
             if args.ipStart is not None :
-                args.ipStart = get_next_ip(args.ipStart)
-                sdata["ipAddress"] = args.ipStart
+               args.ipStart = get_next_ip(args.ipStart)
+               sdata["ipAddress"] = args.ipStart
+               ipMap[nodename] = args.ipStart
             if args.leaseEnd is not None:
-                print ("Setting leaseEnd to " + args.leaseEnd)
-                sdata["leaseEnd"] = args.leaseEnd
+               print ("Setting leaseEnd to " + args.leaseEnd)
+               sdata["leaseEnd"] = args.leaseEnd
             if sdata["postBootScript"] is not None:
                s=sdata["postBootScript"]
                s=s.replace("WORKFLOW", args.workflowId)
-               nodename="Node1"
-               if sdata["hostNamePrefix"] is not None:
-                   nodename=sdata["hostNamePrefix"]+"1"
                s=s.replace("NODENAME",nodename)
                sdata["postBootScript"]=s
             response=mb.create_compute(args.mobiushost, args.workflowId, sdata)
@@ -278,21 +281,22 @@ def main():
             oldname = None
             for x in range(args.workers):
                 print ("Provisioning worker: " + str(x))
+                nodename="Node" + str(x+2)
+                if prefix is not None:
+                   nodename= prefix + str(x+2)
                 if wdata["postBootScript"] is not None:
-                   nodename="Node" + str(x+2)
-                   if prefix is not None:
-                      nodename= prefix + str(x+2)
-                if oldname is None:
-                   print ("Replacing NODENAME to " + nodename)
-                   s=s.replace("NODENAME", nodename)
-                else:
-                   print ("Replacing " + oldname + " to " + nodename)
-                   s=s.replace(oldname, nodename)
-                oldname = nodename
-                wdata["postBootScript"]=s
+                   if oldname is None:
+                       print ("Replacing NODENAME to " + nodename)
+                       s=s.replace("NODENAME", nodename)
+                   else:
+                       print ("Replacing " + oldname + " to " + nodename)
+                       s=s.replace(oldname, nodename)
+                   oldname = nodename
+                   wdata["postBootScript"]=s
                 if args.ipStart is not None :
                     args.ipStart = get_next_ip(args.ipStart)
                     wdata["ipAddress"] = args.ipStart
+                    ipMap[nodename] = args.ipStart
                 response=mb.create_compute(args.mobiushost, args.workflowId, wdata)
                 if response.json()["status"] != 200:
                     print ("Deleting workflow")
@@ -326,6 +330,12 @@ def main():
                             else :
                                 hostname=n["name"]
                             hostVal = hostVal.replace("REPLACE", hostname)
+                            if hostname in ipMap:
+                                print ("Replacing IPADDR with " + ipMap[hostname])
+                                hostVal = hostVal.replace("IPADDR", ipMap[hostname])
+                            else:
+                                print ("Replacing IPADDR with empty string")
+                                hostVal = hostVal.replace("IPADDR", "")
                             val = json.loads(hostVal)
                             response=comet.update_family(args.comethost, args.workflowId, n["name"],
                                     readToken, writeToken, "hostsall", val)
