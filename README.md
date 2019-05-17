@@ -1,4 +1,4 @@
-a# Table of contents
+# Table of contents
 
 - [Mobius](#Mobius)
   - [Component Diagram](#component)
