@@ -1,4 +1,4 @@
-# Table of contents
+a# Table of contents
 
 - [Mobius](#Mobius)
   - [Component Diagram](#component)
@@ -11,7 +11,8 @@
   - [Mobius Controller](#mc)
   - [To do list](#todo)
   - [How to use or launch Mobius?](#docker)
-# <a name="Mobius"></a>Mobius
+# <a name="Mobius"></a>DyNamo Network-centric Platform: Mobius
+In this work, we have developed new capabilities in a network-centric platform called Mobius~\cite{mandal-ucc-2015,mobius-github}. These include (a) support for integrated, multi-cloud resource provisioning and high-performance science data flows across diverse infrastructures, and (b) enhanced mechanisms for interacting with higher level application and workflow management systems and transforming high-level resource requests to low-level provisioning actions, thereby bridging the abstraction gap between data-driven science applications and resource provisioning systems. Another goal for Mobius, not addressed in this work, is to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control.
 
 The  Mobius  platform  has  been  implemented  as  a  Springframework  based  REST  server  and  exposes  a  REST  API  forautomated provisioning of network and compute resources. Itconsumes high level application-aware resource requests fromscientists or from workflow systems managing the applicationson  behalf  of  scientists  and  automatically  provisions  computeresources and network paths using the native APIs of differentresource  providers.  The  structure  of  the  different  high-levelprovisioning  requests  for  compute,  storage  and  network  re-sources are documented in the Mobius github repository [Design](./mobius/Readme.md). Es-sentially, the applications can specify to Mobius their resourcerequirements over time in the form of a Gantt chart. Scientists can easily set up application-specific environments by invokingthe Mobius REST API. 
 
@@ -20,7 +21,7 @@ The  Mobius  platform  has  been  implemented  as  a  Springframework  based  RE
 - Interface specifications can be found in [Interface](./mobius/Interface.md)
 - Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](./mobius/HowToGenerateCodeFromSwagger.md)
 ## <a name="component"></a>Component Diagram
-![Component Diagram](./mobius/plantuml/images/mobius.png)
+![Component Diagram](./mobius/plantuml/images/mobius.pdf)
 
 ## <a name="api"></a> Multi-cloud and Network Resource Manager
 At this layer, Mobius translates application requests to native cloud specific requests. Since we are leveraging the ExoGENI network overlay to set up data flow paths, the application-level data movement requests get translated to ExoGENI network provisioning requests. The Multi-cloud and Network Resource Manager consists of two native cloud specific adapters to provision resources on our target infrastructures.
