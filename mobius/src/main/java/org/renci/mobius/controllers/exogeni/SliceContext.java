@@ -341,7 +341,14 @@ public class SliceContext {
                 sctx.addToken(user, tUser);
 
                 slice = Slice.create(sliceProxy, sctx, sliceName);
-                net = slice.addBroadcastLink(CloudContext.NetworkName);
+                if(request.getBandwidth() == null) {
+                    net = slice.addBroadcastLink(CloudContext.NetworkName);
+                }
+                else {
+                    long bandwidth = 10000000L;
+                    bandwidth = Long.parseLong(request.getBandwidth());
+                    net = slice.addBroadcastLink(CloudContext.NetworkName, bandwidth);
+                }
             }
             else {
                 slice = getSlice();

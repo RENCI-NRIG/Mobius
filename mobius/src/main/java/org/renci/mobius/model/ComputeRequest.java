@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-09T15:51:30.871-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-23T11:18:34.505-04:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -85,6 +85,9 @@ public class ComputeRequest   {
 
   @JsonProperty("ipAddress")
   private String ipAddress = null;
+
+  @JsonProperty("bandwidth")
+  private String bandwidth = null;
 
   /**
    * Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.
@@ -404,6 +407,26 @@ public class ComputeRequest   {
     this.ipAddress = ipAddress;
   }
 
+  public ComputeRequest bandwidth(String bandwidth) {
+    this.bandwidth = bandwidth;
+    return this;
+  }
+
+  /**
+   * bandwidth for subnet interface.
+   * @return bandwidth
+  **/
+  @ApiModelProperty(value = "bandwidth for subnet interface.")
+
+
+  public String getBandwidth() {
+    return bandwidth;
+  }
+
+  public void setBandwidth(String bandwidth) {
+    this.bandwidth = bandwidth;
+  }
+
   public ComputeRequest networkType(NetworkTypeEnum networkType) {
     this.networkType = networkType;
     return this;
@@ -667,6 +690,7 @@ public class ComputeRequest   {
         Objects.equals(this.sliceName, computeRequest.sliceName) &&
         Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
         Objects.equals(this.ipAddress, computeRequest.ipAddress) &&
+        Objects.equals(this.bandwidth, computeRequest.bandwidth) &&
         Objects.equals(this.networkType, computeRequest.networkType) &&
         Objects.equals(this.physicalNetwork, computeRequest.physicalNetwork) &&
         Objects.equals(this.externalNetwork, computeRequest.externalNetwork) &&
@@ -683,7 +707,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth);
   }
 
   @Override
@@ -703,6 +727,7 @@ public class ComputeRequest   {
     sb.append("    sliceName: ").append(toIndentedString(sliceName)).append("\n");
     sb.append("    hostNamePrefix: ").append(toIndentedString(hostNamePrefix)).append("\n");
     sb.append("    ipAddress: ").append(toIndentedString(ipAddress)).append("\n");
+    sb.append("    bandwidth: ").append(toIndentedString(bandwidth)).append("\n");
     sb.append("    networkType: ").append(toIndentedString(networkType)).append("\n");
     sb.append("    physicalNetwork: ").append(toIndentedString(physicalNetwork)).append("\n");
     sb.append("    externalNetwork: ").append(toIndentedString(externalNetwork)).append("\n");
