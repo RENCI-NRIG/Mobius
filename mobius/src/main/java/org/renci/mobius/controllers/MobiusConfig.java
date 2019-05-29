@@ -89,7 +89,7 @@ public class MobiusConfig {
                     properties.getProperty(MobiusConfig.jetStreamUserSshKey);
         }
     }
-    
+
     public String getJetStreamDefaultImageName() { return properties.getProperty(jetStreamDefaultImageName); }
 
     public String getJetStreamFloatingIpPool() { return properties.getProperty(jetStreamFloatingIpPool); }
