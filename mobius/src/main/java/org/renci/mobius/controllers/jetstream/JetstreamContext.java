@@ -1,5 +1,6 @@
-package org.renci.mobius.controllers.chameleon;
+package org.renci.mobius.controllers.jetstream;
 
+import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.NetworkController;
@@ -9,27 +10,26 @@ import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
-
-import java.util.*;
-
-import org.apache.log4j.Logger;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
+import java.util.*;
+
 /*
- * @brief class represents context for all resources on a specific region on chameleon. It maintains
- *        StackContext per request received.
+ * @brief class represents context for all resources on a specific region on jetstream. It maintains
+ *        ReqContext per request received.
  *
  * @author kthare10
  */
-public class ChameleonContext extends CloudContext {
-    private static final Logger LOGGER = Logger.getLogger( ChameleonContext.class.getName() );
+public class JetstreamContext extends CloudContext  {
+    private static final Logger LOGGER = Logger.getLogger( JetstreamContext.class.getName() );
     private static final Long maxDiffInSeconds = 604800L;
 
-    private HashMap<String, StackContext> stackContextHashMap;
+    private HashMap<String, ReqContext> stackContextHashMap;
+    private String region;
+    private String authUrl;
     private Map<String, String> workflowNetwork = null;
-    private Map<String, String> metaData = null;
-    private String region = null;
+
 
     /*
      * @brief constructor
@@ -41,62 +41,62 @@ public class ChameleonContext extends CloudContext {
      * @throws Exception in case region could not be determined from site
      *
      */
-    public ChameleonContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
+    public JetstreamContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
         super(t, s, workflowId);
         stackContextHashMap = new HashMap<>();
         String[] arrOfStr = s.split(":");
         if (arrOfStr.length < 2 || arrOfStr.length > 2) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
         }
-        region = arrOfStr[1];
-
-        if(MobiusConfig.getInstance().getCometHost() != null) {
-            metaData = new HashMap<>();
-            metaData.put("cometpubkeysgroupwrite", "all");
-            metaData.put("cometpubkeysgroupread", "all");
-            metaData.put("comethostsgroupread", "all");
-            metaData.put("comethostsgroupwrite", "all");
-            metaData.put("comethost", MobiusConfig.getInstance().getCometHost());
-            metaData.put("slicecometwritetoken", workflowId + "write");
-            metaData.put("slicecometreadtoken", workflowId + "read");
-            metaData.put("slice_id", workflowId);
-            metaData.put("reservation_id", "");
+        if(arrOfStr[1].compareToIgnoreCase("iu") == 0) {
+            authUrl = MobiusConfig.getInstance().getJetStreamIuAuthUrl();
         }
+        else if(arrOfStr[1].compareToIgnoreCase("tacc") == 0) {
+            authUrl = MobiusConfig.getInstance().getJetStreamTaccAuthUrl();
+        }
+        else {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
+        }
+
+        region = "RegionOne";
     }
 
     /*
-     * @brief setup private network for chameleon region; all instances are connected to each other via this
+     * @brief setup private network for jetstream region; all instances are connected to each other via this
      *        network;
      */
-    private String setupNetwork(ComputeRequest request) throws Exception {
+    private Pair<String, String> setupNetwork(ComputeRequest request) throws Exception {
 
         NetworkController networkController = null;
-        String networkId = null;
+        String networkId = null, sgName = null;
         try {
 
-            if (workflowNetwork != null && workflowNetwork.containsKey(NetworkController.NetworkId)) {
-                return workflowNetwork.get(NetworkController.NetworkId);
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
+
+            networkController = new NetworkController(authUrl, user, password, userDomain, project);
+
+            if (workflowNetwork != null &&
+                    workflowNetwork.containsKey(NetworkController.NetworkId) &&
+                    workflowNetwork.containsKey(NetworkController.SecurityGroupId)) {
+                return Pair.of(workflowNetwork.get(NetworkController.NetworkId),
+                        networkController.getSecurityGroupName(region, workflowNetwork.get(NetworkController.SecurityGroupId)));
             }
 
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-
-            networkController = new NetworkController(authurl, user, password, userDomain, project);
-
-            // If network type is default; use chameleon default network i.e. sharednet1
+            // If network type is default; throw exception
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "Network Type is required and cannot be default for jetstream");
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
             // Workflow network for region does not exist create workflow private network
-            workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
-                    externalNetworkId, false, request.getNetworkCidr(), workflowId, false);
+            workflowNetwork = networkController.createNetwork(region, null,
+                    externalNetworkId, false, request.getNetworkCidr(), workflowId, true);
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
+            sgName = networkController.getSecurityGroupName(region, workflowNetwork.get(NetworkController.SecurityGroupId));
         }
         catch (Exception e){
             LOGGER.error("Exception occured while setting up network ");
@@ -110,7 +110,62 @@ public class ChameleonContext extends CloudContext {
             }
             LOGGER.debug("status: OUT");
         }
-        return networkId;
+        return Pair.of(networkId, sgName);
+    }
+    /*
+     * @brief add cloud specific info to JSON Object representing JetstreamContext;
+     *        JSON Object is saved to database
+     *
+     * @param object - json object representing JetstreamContext
+     */
+    @Override
+    public JSONObject addCloudSpecificDataToJson(JSONObject object) {
+        if(workflowNetwork != null) {
+            String networkId = workflowNetwork.get(NetworkController.NetworkId);
+            String subnetId = workflowNetwork.get(NetworkController.SubnetId);
+            String routerId = workflowNetwork.get(NetworkController.RouterId);
+            String securityGroupId = workflowNetwork.get(NetworkController.SecurityGroupId);
+
+            if(networkId != null) {
+                object.put(NetworkController.NetworkId, networkId);
+            }
+            if(subnetId != null) {
+                object.put(NetworkController.SubnetId, subnetId);
+            }
+            if(routerId != null) {
+                object.put(NetworkController.RouterId, routerId);
+            }
+            if(securityGroupId != null) {
+                object.put(NetworkController.SecurityGroupId, securityGroupId);
+            }
+        }
+        return object;
+    }
+
+    /*
+     * @brief function to load cloud specific data from JSON Object representing JetstreamContext
+     *
+     * @param object - json object representing JetstreamContext
+     */
+    @Override
+    public void loadCloudSpecificDataFromJson(JSONObject object) {
+        String networkId = (String) object.get(NetworkController.NetworkId);
+        String subnetId = (String) object.get(NetworkController.SubnetId);
+        String routerId = (String) object.get(NetworkController.RouterId);
+        String securityGroupId = (String) object.get(NetworkController.SecurityGroupId);
+        if(networkId != null) {
+            workflowNetwork = new HashMap<>();
+            workflowNetwork.put(NetworkController.NetworkId, networkId);
+        }
+        if(subnetId != null) {
+            workflowNetwork.put(NetworkController.SubnetId, subnetId);
+        }
+        if(routerId != null) {
+            workflowNetwork.put(NetworkController.RouterId, routerId);
+        }
+        if(securityGroupId != null) {
+            workflowNetwork.put(NetworkController.SecurityGroupId, securityGroupId);
+        }
     }
 
     /*
@@ -125,19 +180,27 @@ public class ChameleonContext extends CloudContext {
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("validateComputeRequest: IN");
 
-        if(request.getCpus() == 0 && request.getGpus() == 0) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "No cpus and gpus are requested");
+        if(request.getCpus() == 0 ) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "No cpus are requested");
+        }
+
+        if(request.getGpus() != 0) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "Gpus not supported");
         }
 
         if(request.getIpAddress() != null) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "IP address allocation not allowed");
         }
 
+        if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST,
+                        "Network type cannot be default for jetstream");
+        }
+
         if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.PRIVATE) {
-            if(request.getPhysicalNetwork() == null || request.getExternalNetwork() == null ||
-                    request.getNetworkCidr() == null) {
+            if(request.getExternalNetwork() == null || request.getNetworkCidr() == null) {
                 throw new MobiusException(HttpStatus.BAD_REQUEST,
-                        "Required externalNetwork, physicalNetwork or networkCidr not specified for private network");
+                        "Required externalNetwork or networkCidr not specified for private network");
             }
         }
 
@@ -175,8 +238,8 @@ public class ChameleonContext extends CloudContext {
             JSONArray slices = null;
             if (stackContextHashMap != null && stackContextHashMap.size() != 0) {
                 slices = new JSONArray();
-                StackContext context = null;
-                for (HashMap.Entry<String, StackContext> entry : stackContextHashMap.entrySet()) {
+                ReqContext context = null;
+                for (HashMap.Entry<String, ReqContext> entry : stackContextHashMap.entrySet()) {
                     context = entry.getValue();
                     JSONObject slice = context.toJson();
                     slices.add(slice);
@@ -200,60 +263,13 @@ public class ChameleonContext extends CloudContext {
                     JSONObject slice = (JSONObject) object;
                     String sliceName = (String) slice.get("name");
                     LOGGER.debug("fromJson(): sliceName=" + sliceName);
-                    StackContext sliceContext = new StackContext(sliceName, workflowId, region);
+                    ReqContext sliceContext = new ReqContext(sliceName, workflowId, region, authUrl);
                     sliceContext.fromJson(slice);
                     stackContextHashMap.put(sliceName, sliceContext);
                 }
             } else {
                 LOGGER.error("fromJson(): Null array passed");
             }
-        }
-    }
-
-    /*
-     * @brief add cloud specific info to JSON Object representing ChameleonContext;
-     *        JSON Object is saved to database
-     *
-     * @param object - json object representing ChameleonContext
-     */
-    @Override
-    public JSONObject addCloudSpecificDataToJson(JSONObject object) {
-        if(workflowNetwork != null) {
-            String networkId = workflowNetwork.get(NetworkController.NetworkId);
-            String subnetId = workflowNetwork.get(NetworkController.SubnetId);
-            String routerId = workflowNetwork.get(NetworkController.RouterId);
-            if(networkId != null) {
-                object.put(NetworkController.NetworkId, networkId);
-            }
-            if(subnetId != null) {
-                object.put(NetworkController.SubnetId, subnetId);
-            }
-            if(routerId != null) {
-                object.put(NetworkController.RouterId, routerId);
-            }
-        }
-        return object;
-    }
-
-    /*
-     * @brief function to load cloud specific data from JSON Object representing Chameleon Context
-     *
-     * @param object - json object representing ChameleonContext
-     */
-    @Override
-    public void loadCloudSpecificDataFromJson(JSONObject object) {
-        String networkId = (String) object.get(NetworkController.NetworkId);
-        String subnetId = (String) object.get(NetworkController.SubnetId);
-        String routerId = (String) object.get(NetworkController.RouterId);
-        if(networkId != null) {
-            workflowNetwork = new HashMap<>();
-            workflowNetwork.put(NetworkController.NetworkId, networkId);
-        }
-        if(subnetId != null) {
-            workflowNetwork.put(NetworkController.SubnetId, subnetId);
-        }
-        if(routerId != null) {
-            workflowNetwork.put(NetworkController.RouterId, routerId);
         }
     }
 
@@ -273,7 +289,7 @@ public class ChameleonContext extends CloudContext {
         synchronized (this) {
             validateComputeRequest(request, isFutureRequest);
 
-            Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
+            Map<String, Integer> flavorList = JetstreamFlavorAlgo.determineFlavors(request.getCpus(),
                     request.getRamPerCpus(), request.getDiskPerCpus());
 
             if (flavorList == null) {
@@ -281,14 +297,14 @@ public class ChameleonContext extends CloudContext {
             }
 
             String sliceName = null;
-            StackContext context = new StackContext(sliceName, workflowId, region);
+            ReqContext context = new ReqContext(sliceName, workflowId, region, authUrl);
 
             try {
-                String networkId = setupNetwork(request);
-                // For chameleon; slice per request mechanism is followed
+                Pair<String, String> nwIdSgName = setupNetwork(request);
+                // For jetstream; slice per request mechanism is followed
                 nameIndex = context.provisionNode( flavorList, nameIndex, request.getImageName(),
                         request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
-                        metaData, networkId);
+                        null, nwIdSgName.getFirst(), nwIdSgName.getSecond());
                 LOGGER.debug("Created new context=" + sliceName);
 
                 sliceName = context.getSliceName();
@@ -321,7 +337,8 @@ public class ChameleonContext extends CloudContext {
 
             switch (request.getAction()) {
                 case ADD: {
-                    Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getSize());
+                    /*
+                    Map<String, Integer> flavorList = JetstreamFlavorAlgo.determineFlavors(request.getSize());
 
                     if (flavorList == null) {
                         throw new MobiusException(HttpStatus.BAD_REQUEST,
@@ -329,7 +346,7 @@ public class ChameleonContext extends CloudContext {
                     }
 
                     String sliceName = null;
-                    StackContext context = new StackContext(sliceName, workflowId, region);
+                    ReqContext context = new ReqContext(sliceName, workflowId, region);
 
                     try {
 
@@ -350,7 +367,7 @@ public class ChameleonContext extends CloudContext {
 
                         String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
                         nameIndex = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
-                                prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId);
+                                prefix, ReqContext.postBootScriptRequiredForStorage, metaData, networkId);
                         LOGGER.debug("Created new context=" + sliceName);
 
                         sliceName = context.getSliceName();
@@ -364,11 +381,12 @@ public class ChameleonContext extends CloudContext {
                         LOGGER.debug("processStorage: OUT");
                     }
                     break;
+                    */
                 }
                 case DELETE:
                 {
                     // Find all contexts which have storage name containing target name
-                    Set<StackContext> stackContextSet = new HashSet<>();
+                    Set<ReqContext> stackContextSet = new HashSet<>();
                     String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
                     LOGGER.debug("hostNameSet: " + hostNameSet.size());
                     for(String h : hostNameSet) {
@@ -386,7 +404,7 @@ public class ChameleonContext extends CloudContext {
                     }
                     LOGGER.debug("Storage contexts to be deleted: " + stackContextSet.size());
                     // Delete the storage and release all associated resources
-                    for(StackContext stackContext: stackContextSet) {
+                    for(ReqContext stackContext: stackContextSet) {
                         stackContext.stop();
                         stackContextHashMap.remove(stackContext.getSliceName());
                     }
@@ -395,7 +413,7 @@ public class ChameleonContext extends CloudContext {
                 case RENEW:
                 {
                     // Find all contexts which have storage name containing target name
-                    Set<StackContext> stackContextSet = new HashSet<>();
+                    Set<ReqContext> stackContextSet = new HashSet<>();
                     String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
                     for(String h : hostNameSet) {
                         LOGGER.debug("Storage contexts to be renewed: " + h);
@@ -408,7 +426,7 @@ public class ChameleonContext extends CloudContext {
                     }
                     LOGGER.debug("Storage contexts to be renewed: " + stackContextSet.size());
                     // Delete the storage and release all associated resources
-                    for(StackContext stackContext: stackContextSet) {
+                    for(ReqContext stackContext: stackContextSet) {
                         stackContext.renew(request.getLeaseEnd());
                     }
                     break;
@@ -431,15 +449,23 @@ public class ChameleonContext extends CloudContext {
     public JSONObject doPeriodic() {
         synchronized (this) {
             LOGGER.debug("doPeriodic: IN");
-            StackContext context = null;
+            ReqContext context = null;
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
             hostNameToSliceNameHashMap.clear();
             hostNameSet.clear();
-            Iterator<HashMap.Entry<String, StackContext>> iterator = stackContextHashMap.entrySet().iterator();
+            Iterator<HashMap.Entry<String, ReqContext>> iterator = stackContextHashMap.entrySet().iterator();
             while (iterator.hasNext()) {
-                HashMap.Entry<String, StackContext> entry = iterator.next();
+                HashMap.Entry<String, ReqContext> entry = iterator.next();
                 context = entry.getValue();
+
+                if(context.hasExpired()) {
+                    context.stop();
+                    handleExpiredRequest(context.getSliceName());
+                    iterator.remove();
+                    continue;
+                }
+
                 Set<String> hostNames = new HashSet<>();
                 JSONObject result = null;
                 result = context.doPeriodic(hostNames);
@@ -481,8 +507,8 @@ public class ChameleonContext extends CloudContext {
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
 
-            StackContext context = null;
-            for (HashMap.Entry<String, StackContext> entry : stackContextHashMap.entrySet()) {
+            ReqContext context = null;
+            for (HashMap.Entry<String, ReqContext> entry : stackContextHashMap.entrySet()) {
                 context = entry.getValue();
                 JSONObject object = context.status(hostNameSet);
                 if (!object.isEmpty()) {
@@ -515,20 +541,20 @@ public class ChameleonContext extends CloudContext {
     public void stop() {
         synchronized (this) {
             LOGGER.debug("stop: IN");
-            StackContext context = null;
-            for (HashMap.Entry<String, StackContext> entry : stackContextHashMap.entrySet()) {
+            ReqContext context = null;
+            for (HashMap.Entry<String, ReqContext> entry : stackContextHashMap.entrySet()) {
                 context = entry.getValue();
                 context.stop();
             }
             stackContextHashMap.clear();
-            if(workflowNetwork != null) {
-                String user = MobiusConfig.getInstance().getChameleonUser();
-                String password = MobiusConfig.getInstance().getChameleonUserPassword();
-                String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-                String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-                String project = MobiusConfig.getInstance().getChameleonProject();
 
-                NetworkController networkController = new NetworkController(authurl, user, password, userDomain, project);
+            if(workflowNetwork != null) {
+                String user = MobiusConfig.getInstance().getJetStreamUser();
+                String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+                String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+                String project = MobiusConfig.getInstance().getJetStreamProject();
+
+                NetworkController networkController = new NetworkController(authUrl, user, password, userDomain, project);
                 networkController.deleteNetwork(region, workflowNetwork, 300);
             }
             LOGGER.debug("stop: OUT");
@@ -550,5 +576,24 @@ public class ChameleonContext extends CloudContext {
     @Override
     public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
+    }
+
+    /*
+     * @brief function to handle Expired Request
+     *
+     * @param sliceName - slice name
+     */
+    protected void handleExpiredRequest(String sliceName) {
+        LOGGER.debug("handleExpiredRequest: IN");
+        if(sliceName != null && hostNameToSliceNameHashMap.containsValue(sliceName)) {
+            Iterator<HashMap.Entry<String, String>> iterator = hostNameToSliceNameHashMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                HashMap.Entry<String, String> entry = iterator.next();
+                if(entry.getValue().equalsIgnoreCase(sliceName)) {
+                    iterator.remove();
+                }
+            }
+        }
+        LOGGER.debug("handleExpiredRequest: OUT");
     }
 }

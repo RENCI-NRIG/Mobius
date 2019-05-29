@@ -158,7 +158,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getLocalizedMessage());
 
             e.printStackTrace();
-            throw new MobiusException("failed to get token");
+            throw new MobiusException("failed to get token e=" + e.getMessage());
 
         }
         return null;
@@ -222,7 +222,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to get leases");
+            throw new MobiusException("failed to get leases e=" + e.getMessage());
         }
         return retVal;
     }
@@ -267,7 +267,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to delete lease");
+            throw new MobiusException("failed to delete lease e=" + e.getMessage());
         }
     }
 
@@ -413,7 +413,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to create leases");
+            throw new MobiusException("failed to create leases e=" + e.getMessage());
         }
         return Pair.of(leaseId, reservationIds);
     }
@@ -458,7 +458,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to delete lease");
+            throw new MobiusException("failed to delete lease e=" + e.getMessage());
         }
     }
 
@@ -538,7 +538,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to update lease");
+            throw new MobiusException("failed to update lease e=" + e.getMessage());
         }
     }
 

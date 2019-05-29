@@ -1,5 +1,4 @@
-package org.renci.mobius.controllers.chameleon;
-
+package org.renci.mobius.controllers.jetstream;
 
 import org.apache.log4j.Logger;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
@@ -10,18 +9,15 @@ import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
-import org.springframework.data.util.Pair;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /*
- * @brief class representing resources associated with a reservation; it represents all resources associated with
- *        a single mobius request
+ * @brief class representing resources associated with a single mobius request
  * @author kthare10
  */
-public class StackContext {
-    private static final Logger LOGGER = Logger.getLogger( StackContext.class.getName() );
+public class ReqContext {
+    private static final Logger LOGGER = Logger.getLogger( ReqContext.class.getName() );
 
     private String sliceName;
     private String workflowId;
@@ -29,94 +25,9 @@ public class StackContext {
     private List<String> instanceIdList;
     private String leaseId;
     private String region;
+    private String authUrl;
     private boolean notificationSent;
-
-    private final static String postBootScriptRequiredForComet = "#!/bin/bash\n" +
-            "echo 'begin installing neuca'\n" +
-            "pip install -U boto\n" +
-            "pip install python-daemon==2.1.2\n" +
-            "git clone  https://github.com/RENCI-NRIG/neuca-guest-tools /root/neuca-guest-tools\n" +
-            "cd /root/neuca-guest-tools/neuca-py/\n" +
-            "python setup.py  install\n" +
-            "python /usr/bin/neucad start -c\n" +
-            "cd /root\n" +
-            "echo 'neuca install complete'\n";
-
-    public final static String postBootScriptRequiredForStorage = "#!/bin/bash\n" +
-            "WORKING_DIR=/root\n" +
-            "{\n" +
-            "echo 'begin installing neuca'\n" +
-            "pip install -U boto\n" +
-            "pip install python-daemon==2.1.2\n" +
-            "git clone  https://github.com/RENCI-NRIG/neuca-guest-tools /root/neuca-guest-tools\n" +
-            "cd /root/neuca-guest-tools/neuca-py/\n" +
-            "python setup.py  install\n" +
-            "python /usr/bin/neucad start -c\n" +
-            "cd /root\n" +
-            "echo 'neuca install complete'\n" +
-            "#install some tools \n" +
-            "echo nameserver 8.8.8.8 >> /etc/resolv.conf\n" +
-            "yum install -y vim mlocate xfsprogs\n" +
-            "\n" +
-            "#Clean up node\n" +
-            "ROOT_DISK=`mount -l | grep img-rootfs | awk '{ print $1 }'`\n" +
-            "for i in `ls /dev/md*`; do\n" +
-            "  #need to mdadm --stop /dev/md*\n" +
-            "  echo removing $i\n" +
-            "  dd if=/dev/zero of=$i bs=512 count=1 conv=notrunc \n" +
-            "  wipefs -a $i\n" +
-            "  mdadm --stop $i\n" +
-            "  mdadm --remove $i\n" +
-            "done\n" +
-            "\n" +
-            "for i in `ls /dev/sd*`; do\n" +
-            "    echo cleaning $i\n" +
-            "    [[ ! -b \"$i\" ]] && echo $i is not a block device... removing && rm -rf $i && continue\n" +
-            "    [[ ! $ROOT_DISK =~ $i ]] && echo Destroying $i && dd if=/dev/zero of=$i bs=512 count=1 conv=notrunc && sleep 10 && wipefs -a $i\n" +
-            "done\n" +
-            "\n" +
-            " \n" +
-            "#Find all extra disks\n" +
-            "count=0\n" +
-            "devs=' '\n" +
-            "for i in `ls /dev/sd*`; do\n" +
-            "    #echo $i\n" +
-            "    [[ ! $ROOT_DISK =~ $i ]] && echo Adding $i && (( ++count )) && devs=${devs}' '${i}\n" +
-            "done\n" +
-            "\n" +
-            "echo ROOT_DISK $ROOT_DISK\n" +
-            "echo count: $count\n" +
-            "echo devs:  $devs\n" +
-            "\n" +
-            "#Make software RAID\n" +
-            "yes | mdadm --create --verbose /dev/md0 --level=0 --raid-devices=$count $devs\n" +
-            "wipefs -a /dev/md0\n" +
-            "\n" +
-            "echo Create FS\n" +
-            "mkfs.xfs -i size=512 /dev/md0\n" +
-            "mkdir -p /bricks/brick1\n" +
-            "\n" +
-            "echo /dev/md0 /bricks/brick1 xfs defaults 1 2 >> /etc/fstab\n" +
-            "mount -a\n" +
-            "if [[ $? != 0 ]]; then echo mkfs failed. bailing out; exit 1; fi\n" +
-            "\n" +
-            "mkdir /bricks/brick1/gv0\n" +
-            "\n" +
-            "echo Install GlusterFS\n" +
-            "yum install -y centos-release-gluster\n" +
-            "yum remove -y userspace-rcu\n" +
-            "yum install -y glusterfs-server\n" +
-            "\n" +
-            "\n" +
-            "\n" +
-            "echo Start glusterfs\n" +
-            "systemctl enable glusterd\n" +
-            "#ln -s '/usr/lib/systemd/system/glusterd.service' '/etc/systemd/system/multi-user.target.wants/glusterd.service'\n" +
-            "systemctl start glusterd\n" +
-            "systemctl status glusterd\n" +
-            "} > ${WORKING_DIR}/boot.log 2>&1";
-    private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-    private final static TimeZone utc = TimeZone.getTimeZone("UTC");
+    private Date leaseEnd;
 
     /*
      * @brief constructor
@@ -126,14 +37,16 @@ public class StackContext {
      * @param region - chameleon region on which resources are allocated
      *
      */
-    public StackContext(String sliceName, String workflowId, String region) {
+    public ReqContext(String sliceName, String workflowId, String region, String authUrl) {
         this.sliceName = sliceName;
         this.workflowId = workflowId;
         activeOrFailedInstances = 0;
         instanceIdList = new LinkedList<>();
         leaseId = null;
         this.region = region;
+        this.authUrl = authUrl;
         notificationSent = false;
+        leaseEnd = null;
     }
 
     /*
@@ -159,6 +72,22 @@ public class StackContext {
     public boolean canTriggerNotification() {
         if(!notificationSent && (activeOrFailedInstances > 0 || activeOrFailedInstances == instanceIdList.size())) {
             return true;
+        }
+        return false;
+    }
+
+    /*
+     * @brief determine if lease has expired
+     *
+     * @return true if lease has expired; false otherwise
+     *
+     */
+    public boolean hasExpired() {
+        if(leaseEnd != null) {
+            Date now = new Date();
+            if( now.compareTo(leaseEnd) >= 0 ) {
+                return true;
+            }
         }
         return false;
     }
@@ -219,20 +148,13 @@ public class StackContext {
         try {
             LOGGER.debug("Successfully deleted slice " + sliceName);
 
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
 
             // Instantiate Jclouds based Openstack Controller object
-            ComputeController computeController = new ComputeController(authurl, user, password, userDomain, project);
-
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            OsReservationApi api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
-
+            ComputeController computeController = new ComputeController(authUrl, user, password, userDomain, project);
             for(String instanceId : instanceIdList) {
                 try {
                     computeController.destroyInstance(region, instanceId);
@@ -248,8 +170,6 @@ public class StackContext {
             catch (Exception e) {
                 LOGGER.debug("Ignoring exception during destroy e=" + e);
             }
-
-            api.deleteLease(region, leaseId);
         }
         catch (Exception e){
             LOGGER.debug("Exception occured while deleting slice " + sliceName);
@@ -278,72 +198,40 @@ public class StackContext {
      */
     public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
                              String leaseEnd, String hostNamePrefix, String postBootScript,
-                             Map<String, String> metaData, String networkId) throws Exception {
+                             Map<String, String> metaData, String networkId, String sgName) throws Exception {
 
         LOGGER.debug("provisionNode: IN");
 
         ComputeController computeController = null;
-        OsReservationApi api = null;
         try {
 
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authurl, user, password, userDomain, project);
-
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
+            computeController = new ComputeController(authUrl, user, password, userDomain, project);
 
             // First compute request
             if (sliceName == null) {
-                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Chameleon, user);
+                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Jetstream, user);
             }
 
             // Extract image name
             if(image == null) {
-                image = MobiusConfig.getInstance().getDefaultChameleonImageName();
+                image = MobiusConfig.getInstance().getJetStreamDefaultImageName();
             }
 
-            sdf.setTimeZone(utc);
-            Date endTime = new Date();
+            this.leaseEnd = new Date();
             if(leaseEnd != null) {
-                endTime = new Date(Long.parseLong(leaseEnd) * 1000);
+                this.leaseEnd = new Date(Long.parseLong(leaseEnd) * 1000);
             }
             else {
-                endTime.setTime(endTime.getTime() + 86400000);
+                this.leaseEnd.setTime(this.leaseEnd.getTime() + 86400000);
             }
 
-            Date now = new Date();
-            now.setTime(now.getTime() + 60000);
-
-            String reservationRequest = api.buildLeaseRequest(sliceName, sdf.format(now),
-                    sdf.format(endTime), flavorList);
-
-            if(reservationRequest == null) {
-                throw new MobiusException("Failed to construct reservation request");
-            }
-
-            Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName,
-                    reservationRequest, 300);
-
-            if(result == null || result.getFirst() == null || result.getSecond() == null) {
-                throw new MobiusException("Failed to request lease");
-            }
-
-            leaseId = result.getFirst();
-            Map<String, Integer> reservationIds = result.getSecond();
-
-            LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
-            LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-
-            for(Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
+            for(Map.Entry<String, Integer> entry : flavorList.entrySet()) {
                 for (int i = 0; i < entry.getValue(); ++i) {
                     String name = workflowId + "-";
                     if (hostNamePrefix != null) {
@@ -356,27 +244,17 @@ public class StackContext {
                         name = name + CloudContext.NodeName + nameIndex;
                     }
                     name = name.toLowerCase();
-                    LOGGER.debug("adding node=" + name);
-
-                    Map<String, String> meta = null;
-                    if (metaData != null) {
-                        metaData.put("reservation_id", name);
-                        meta = metaData;
-                    }
-
-                    if (postBootScript == null) {
-                        postBootScript = postBootScriptRequiredForComet;
-                    }
+                    LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
 
                     String instanceId = computeController.createInstance(region,
-                            MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                            MobiusConfig.getInstance().getJetStreamUserSshKey(),
                             image,
-                            MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
-                            networkId,
                             entry.getKey(),
+                            networkId,
+                            null,
                             sliceName,
                             name,
-                            postBootScript, meta, null);
+                            postBootScript, metaData, sgName);
 
                     if (instanceId == null) {
                         throw new MobiusException("Failed to create instance");
@@ -445,15 +323,14 @@ public class StackContext {
         ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String floatingIpPool = MobiusConfig.getInstance().getChameleonFloatingIpPool();
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
+            String floatingIpPool = MobiusConfig.getInstance().getJetStreamFloatingIpPool();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authurl, user, password, userDomain, project);
+            computeController = new ComputeController(authUrl, user, password, userDomain, project);
             returnValue.put(CloudContext.JsonKeySlice, sliceName);
             JSONArray array = new JSONArray();
 
@@ -537,18 +414,12 @@ public class StackContext {
 
         try {
 
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
 
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            OsReservationApi api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
 
-            sdf.setTimeZone(utc);
             Date endTime = new Date();
             if(leaseEnd != null) {
                 endTime = new Date(Long.parseLong(leaseEnd) * 1000);
@@ -557,17 +428,16 @@ public class StackContext {
                 endTime.setTime(endTime.getTime() + 86400000);
             }
 
-            api.updateLease(region, leaseId, sdf.format(endTime));
-        }
+        }/*
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw e;
-        }
+        }*/
         catch (Exception e) {
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to server compute request e=" + e.getMessage());
+            throw new MobiusException("Failed to serve renew request e=" + e.getMessage());
         }
         finally {
             LOGGER.debug("renew: OUT");

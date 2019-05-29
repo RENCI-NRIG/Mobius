@@ -21,6 +21,7 @@ abstract public class CloudContext {
     public enum CloudType {
         Chameleon,
         Exogeni,
+        Jetstream,
         OSG,
         Unknown
     }

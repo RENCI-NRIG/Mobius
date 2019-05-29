@@ -1,0 +1,7 @@
+ {
+      "target":"submit1",
+      "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/UNT/Cisco/6509/TenGigabitEthernet/1/1/ethernet",
+      "tag":"709",
+      "stitchIP": "10.7.6.48",
+      "bandwidth":"500000000"
+ }

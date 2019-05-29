@@ -12,6 +12,7 @@ import org.jclouds.openstack.neutron.v2.NeutronApiMetadata;
 import org.jclouds.openstack.neutron.v2.domain.*;
 import org.jclouds.openstack.neutron.v2.extensions.RouterApi;
 import org.jclouds.openstack.neutron.v2.features.NetworkApi;
+import org.jclouds.openstack.neutron.v2.features.SecurityGroupApi;
 import org.jclouds.openstack.neutron.v2.features.SubnetApi;
 
 import java.io.Closeable;
@@ -29,6 +30,7 @@ public class NetworkController implements Closeable {
     public final static String NetworkId = "networkId";
     public final static String SubnetId = "subnetId";
     public final static String RouterId = "routerId";
+    public final static String SecurityGroupId = "securityGroupId";
 
     private String authUrl;
     private String user;
@@ -79,6 +81,7 @@ public class NetworkController implements Closeable {
      * @param shared - true if network is shared, false otherwise
      * @param cidr - network cidr
      * @param name - name
+     * @param createSecurityGroup - createSecurityGroup
      *
      * @return map containing networkId, routerId and subnetId
      *
@@ -86,25 +89,37 @@ public class NetworkController implements Closeable {
      */
     public Map<String, String> createNetwork(String region, String physicalNetworkName,
                                              String externalNetworkId, boolean shared,
-                                             String cidr, String name) throws Exception{
+                                             String cidr, String name, boolean createSecurityGroup) throws Exception{
         NetworkApi networkApi = neutronApi.getNetworkApi(region);
         Network net = null;
         Map<String, String> retVal = null;
         try {
             Network.CreateBuilder createBuilder = Network.createBuilder(name)
-                    .networkType(NetworkType.VLAN)
-                    .physicalNetworkName(physicalNetworkName)
                     .shared(shared);
+
+            if(physicalNetworkName != null) {
+                createBuilder.physicalNetworkName(physicalNetworkName)
+                        .networkType(NetworkType.VLAN);
+            }
             net = networkApi.create(createBuilder.build());
             String subnetName = name + "subnet";
             Subnet subnet = createSubnet(region, net.getId(), true, 4, cidr, subnetName);
             String routerName = name + "router";
             Router router = createRouter(region, externalNetworkId, routerName);
             attachSubnet(region, router.getId(), subnet.getId());
+
+            SecurityGroup securityGroup = null;
+            if(createSecurityGroup) {
+                String securityGroupName = name + "sg";
+                securityGroup = createSecurityGroup(region, securityGroupName);
+            }
             retVal = new HashMap<>();
             retVal.put(NetworkId, net.getId());
             retVal.put(SubnetId, subnet.getId());
             retVal.put(RouterId, router.getId());
+            if(securityGroup != null) {
+                retVal.put(SecurityGroupId, securityGroup.getId());
+            }
 
         } catch (Exception e){
             if(net != null) {
@@ -308,6 +323,10 @@ public class NetworkController implements Closeable {
                         NetworkApi networkApi = neutronApi.getNetworkApi(region);
                         networkApi.delete(ids.get(NetworkId));
                     }
+                    if (ids.containsKey(SecurityGroupId)) {
+                        System.out.println("Deleting security group: " + ids.get(SecurityGroupId));
+                        deleteSecurityGroup(region, ids.get(SecurityGroupId));
+                    }
                 } catch (Exception e) {
                     System.out.println("Exception occured while deleting network e=" + e);
                     TimeUnit.SECONDS.sleep(1);
@@ -342,6 +361,108 @@ public class NetworkController implements Closeable {
             return network.getId();
         }
         return null;
+    }
+
+    /*
+     * @brief determine security group name given id
+     *
+     * @param region - region
+     * @param securityGroupId - securityGroupId
+     *
+     * @return networkId
+     */
+    public String getSecurityGroupName(String region, String securityGroupId) {
+        SecurityGroupApi sgApi = neutronApi.getSecurityGroupApi(region);;
+
+        SecurityGroup securityGroup = sgApi.getSecurityGroup(securityGroupId);
+
+        if(securityGroup != null) {
+            return securityGroup.getName();
+        }
+        return null;
+    }
+
+    /*
+     * @brief create security group
+     *
+     * @param region - region
+     * @param name - name
+     *
+     * @return SecurityGroup
+     * @throws Exception in case of error
+     */
+    private SecurityGroup createSecurityGroup(String region, String name) throws Exception {
+        SecurityGroupApi sgApi = null;
+        SecurityGroup securityGroup = null;
+
+        try {
+            sgApi = neutronApi.getSecurityGroupApi(region);
+
+            securityGroup = sgApi.create(SecurityGroup.createBuilder().name(name).description("Mobius security group")
+                            .build());
+            sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
+                            .ethertype(RuleEthertype.IPV6)
+                            .protocol(RuleProtocol.TCP)
+                            .remoteIpPrefix("::/0")
+                            .build());
+
+            sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
+                            .ethertype(RuleEthertype.IPV6)
+                            .remoteIpPrefix("::/0")
+                            .protocol(RuleProtocol.UDP)
+                            .build());
+
+            sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
+                            .ethertype(RuleEthertype.IPV4)
+                            .protocol(RuleProtocol.ICMP)
+                            .remoteIpPrefix("0.0.0.0/0")
+                            .build());
+
+            sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
+                            .ethertype(RuleEthertype.IPV4)
+                            .protocol(RuleProtocol.TCP)
+                            .portRangeMax(22)
+                            .portRangeMin(22)
+                            .remoteIpPrefix("0.0.0.0/0")
+                            .build());
+
+        } catch (Exception e){
+            if(securityGroup != null) {
+                System.out.println("Exception occured while creating security group " + name + " e=" + e);
+                deleteSecurityGroup(region, securityGroup.getId());
+            }
+            throw e;
+        }
+        return securityGroup;
+    }
+
+    /*
+     * @brief delete security group
+     *
+     * @param region - region
+     * @param securityGroupId - securityGroupId
+     *
+     */
+    private void deleteSecurityGroup(String region, String securityGroupId) {
+        SecurityGroupApi sgApi;
+        SecurityGroup securityGroup = null;
+
+        try {
+            sgApi = neutronApi.getSecurityGroupApi(region);
+            securityGroup = sgApi.getSecurityGroup(securityGroupId);
+            for(Rule rule : securityGroup.getRules()) {
+                if (rule != null) {
+                    sgApi.deleteRule(rule.getId());
+                }
+            }
+
+            if (securityGroup != null) {
+                sgApi.deleteSecurityGroup(securityGroup.getId());
+            }
+        }
+        catch (Exception e) {
+            System.out.println("Exception occured while deleting security group e=" + e);
+        }
     }
 
     /*

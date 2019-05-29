@@ -111,6 +111,24 @@ public class ComputeController implements Closeable {
     }
 
     /*
+     * @brief determine flavor id for an flavor by fetching list of all flavors (needed as get on flavor by name doesn't work with jetstream)
+     *
+     * @param region - region
+     * @param flavorName - flavor name
+     *
+     * @return flavor id
+     */
+    private String getFlavorIdFromList(String region, String flavorName) {
+        for(Flavor flavor : novaApi.getFlavorApi(region).listInDetail().concat()) {
+            if (flavor != null && flavorName.compareToIgnoreCase(flavor.getName()) == 0) {
+                System.out.println(flavor.toString());
+                return flavor.getId();
+            }
+        }
+        return null;
+    }
+
+    /*
      * @brief get instance provided its name
      *
      * @param region - region
@@ -177,7 +195,7 @@ public class ComputeController implements Closeable {
         }
         catch (FileNotFoundException e) {
             System.out.println("Key file not found");
-            throw new OpenstackException(400, "Key file not found");
+            throw new OpenstackException(400, "Key file not found e=" + e.getMessage());
         }
     }
 
@@ -383,25 +401,40 @@ public class ComputeController implements Closeable {
     public String createInstance(String region, String sshKeyFile, String imageName,
                                  String flavorName, String networkId,
                                  String reservation, String keypairName, String name,
-                                 String userData, Map<String, String> metaData) throws Exception{
+                                 String userData, Map<String, String> metaData, String securityGroup) throws Exception{
         try {
             String imageId = getImageId(region, imageName);
 
             String flavorId = getFlavorId(region, flavorName);
 
-            if (imageId == null || flavorId == null || networkId == null || reservation == null) {
-                System.out.println("BAD_REQUEST: invalid flavor or image or network or reservation");
-                return null;
+            // Check if it exists in list of flavors; only needed for jetstream as getFlavorId doesn't work for jetstream
+            if(flavorId == null) {
+                flavorId = getFlavorIdFromList(region, flavorName);
+            }
+
+            if (imageId == null || flavorId == null || networkId == null) {
+                System.out.println("imageId = " + imageId + " flavorId = " + flavorId + " networkId = " + networkId);
+                throw new OpenstackException("invalid flavor or image or network");
             }
 
             String keypair = createKeyPairIfNotExists(region, sshKeyFile, keypairName);
-            SchedulerHints hints = SchedulerHints.builder().reservation(reservation).build();
+            SchedulerHints hints = null;
+            if(reservation != null) {
+                hints = SchedulerHints.builder().reservation(reservation).build();
+            }
             CreateServerOptions allInOneOptions = null;
 
             allInOneOptions = CreateServerOptions.Builder
                     .keyPairName(keypair)
-                    .networks(networkId)
-                    .schedulerHints(hints);
+                    .networks(networkId);
+
+            if(securityGroup != null) {
+                allInOneOptions.securityGroupNames(securityGroup);
+            }
+
+            if(hints != null) {
+                allInOneOptions.schedulerHints(hints);
+            }
             if(userData != null) {
                 System.out.println("Begin userdata=========");
                 System.out.println(userData);
@@ -435,7 +468,7 @@ public class ComputeController implements Closeable {
         catch (Exception e) {
             System.out.println("Exception e=" + e);
             e.printStackTrace();
-            throw new OpenstackException(500, "Internal server error");
+            throw new OpenstackException(500, "Internal server error e=" + e.getMessage());
         }
     }
 
@@ -474,9 +507,8 @@ public class ComputeController implements Closeable {
      * @param serverId - serverId
      *
      *
-     * @throws exception in case of error
      */
-    public void destroyInstance(String region, String serverId) throws Exception {
+    public void destroyInstance(String region, String serverId)  {
         ServerApi serverApi = novaApi.getServerApi(region);
         Server server = getInstanceFromInstanceId(region, serverId);
 
