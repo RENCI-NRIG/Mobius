@@ -5,15 +5,28 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closeables;
 import com.google.inject.Module;
 import org.jclouds.ContextBuilder;
+import org.jclouds.compute.ComputeService;
+import org.jclouds.compute.ComputeServiceContext;
+import org.jclouds.compute.domain.ExecResponse;
+import org.jclouds.compute.options.RunScriptOptions;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.jclouds.openstack.cinder.v1.CinderApi;
+import org.jclouds.openstack.cinder.v1.CinderApiMetadata;
+import org.jclouds.openstack.cinder.v1.domain.Volume;
+import org.jclouds.openstack.cinder.v1.features.VolumeApi;
+import org.jclouds.openstack.cinder.v1.options.CreateVolumeOptions;
+import org.jclouds.openstack.cinder.v1.predicates.VolumePredicates;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.NovaApiMetadata;
 import org.jclouds.openstack.nova.v2_0.domain.*;
+import org.jclouds.openstack.nova.v2_0.extensions.VolumeAttachmentApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
 import org.jclouds.openstack.nova.v2_0.extensions.KeyPairApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
+import org.jclouds.scriptbuilder.ScriptBuilder;
+import org.jclouds.scriptbuilder.domain.OsFamily;
 
 
 import java.io.*;
@@ -24,7 +37,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
+import static org.jclouds.scriptbuilder.domain.Statements.exec;
 
 /*
  * @brief class represents api to provision compute resources on openstack via NOVA API
@@ -39,6 +55,8 @@ public class ComputeController implements Closeable {
     private String domain;
     private String project;
     private final NovaApi novaApi;
+    private final CinderApi cinderApi;
+    private final ComputeService computeService;
     private final Set<String> regions;
     /*
      * @brief constructor
@@ -73,6 +91,22 @@ public class ComputeController implements Closeable {
                 .buildApi(NovaApi.class);
 
         regions = novaApi.getConfiguredRegions();
+
+        cinderApi = ContextBuilder.newBuilder(new CinderApiMetadata())
+                .endpoint(authUrl)
+                .credentials(identity, password)
+                .overrides(overrides)
+                .modules(modules)
+                .buildApi(CinderApi.class);
+
+
+        ComputeServiceContext context = ContextBuilder.newBuilder("openstack-cinder")
+                .credentials(identity, password)
+                .modules(modules)
+                .overrides(overrides)
+                .buildView(ComputeServiceContext.class);
+
+        computeService = context.getComputeService();
     }
 
     /*
@@ -539,12 +573,141 @@ public class ComputeController implements Closeable {
     }
 
     /*
+     * @brief create a volume
+     *
+     * @param region - region
+     * @param name - volume name
+     * @param size - volume size in GB
+     *
+     * @return volume
+     * @throws Exception in case of failure
+     */
+    public org.jclouds.openstack.cinder.v1.domain.Volume createVolume(String region, String name, Integer size) throws Exception {
+        CreateVolumeOptions options = CreateVolumeOptions.Builder
+                .name(name);
+
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+
+        // 100 GB is the minimum volume size on the Rackspace Cloud
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = volumeApi.create(size, options);
+
+        // Wait for the volume to become Available before moving on
+        // If you want to know what's happening during the polling, enable logging. See
+        // /jclouds-example/rackspace/src/main/java/org/jclouds/examples/rackspace/Logging.java
+        if (!VolumePredicates.awaitAvailable(volumeApi).apply(volume)) {
+            throw new TimeoutException("Timeout on volume: " + volume);
+        }
+
+        System.out.format("Volume created successfully  %s%n", volume);
+
+        return volume;
+    }
+
+    /*
+     * @brief get a volume
+     *
+     * @param region - region
+     * @param name - volume name
+     *
+     * @return volume
+     */
+    private org.jclouds.openstack.cinder.v1.domain.Volume getVolume(String region, String name) {
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = null;
+        for (org.jclouds.openstack.cinder.v1.domain.Volume thisVolume : volumeApi.list()) {
+            if (volume.getName().equals(name)) {
+                volume = thisVolume;
+            }
+        }
+        return volume;
+    }
+
+    /*
+     * @brief delete a volume
+     *
+     * @param region - region
+     * @param name - volume name
+     *
+     * @return none
+     */
+    public void deleteVolume(String region, String name)  {
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = getVolume(region, name);
+        if(volume != null) {
+            volumeApi.delete(volume.getId());
+        }
+        else {
+            System.out.println("Volume " + name + " could not be deleted as it does not exist!");
+        }
+    }
+    /*
+     * @brief attach volume instance
+     *
+     * @param region - region
+     * @param serverId - serverId
+     * @param volume - volume
+     * @param deviceName - deviceName
+     *
+     * @throws Exception in case of failure
+     */
+    private void attachVolume(String region, String serverId, Volume volume, String deviceName) throws Exception {
+        VolumeAttachmentApi volumeAttachmentApi = novaApi.getVolumeAttachmentApi(region).get();
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+
+        if( volumeAttachmentApi != null ) {
+            VolumeAttachment volumeAttachment = volumeAttachmentApi.attachVolumeToServerAsDevice(volume.getId(), serverId, deviceName);
+
+            // Wait for the volume to become Attached (aka In Use) before moving on
+            if (!VolumePredicates.awaitInUse(volumeApi).apply(volume)) {
+                throw new TimeoutException("Timeout on volume: " + volume);
+            }
+
+            System.out.format("Volume attached successfully  %s%n", volumeAttachment);
+        }
+        else {
+            throw new OpenstackException("VolumeAttachment Api not available");
+        }
+    }
+
+    /*
+     * @brief attach volume instance
+     *
+     * @param serverId - serverId
+     * @param deviceName - deviceName
+     *
+     * @throws Exception in case of failure
+     */
+    private void mountVolume(String serverId, String deviceName, String target, String password) throws Exception {
+
+        System.out.format("Mount Volume and Create Filesystem%n");
+
+        String script = new ScriptBuilder()
+                .addStatement(exec("mkfs -t ext4 " + deviceName))
+                .addStatement(exec("mount " + deviceName + " " + target))
+                .render(OsFamily.UNIX);
+
+        RunScriptOptions options = RunScriptOptions.Builder
+                .blockOnComplete(true)
+                .overrideLoginPassword(password);
+
+        ExecResponse response = computeService.runScriptOnNode(serverId, script, options);
+
+        if (response.getExitStatus() == 0) {
+            System.out.format("  Exit Status: %s%n", response.getExitStatus());
+        }
+        else {
+            System.out.format("  Error: %s%n", response.getOutput());
+        }
+
+    }
+    /*
      * @brief close the controller
      *
      */
     public void close() {
         try {
             Closeables.close(novaApi, true);
+            Closeables.close(cinderApi, true);
         }
         catch (Exception e) {
             System.out.println("Exception occured while closing e=" + e);
