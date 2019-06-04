@@ -15,7 +15,7 @@
      - [Get status of a workflow](#getworkflow)
      - [Delete a workflow](#deleteworkflow)
    - [Condor Client Examples](#condor_client_examples)
-     - [Create a condor cluster](#condor)
+     - [Create a condor cluster](#create)
      - [Get status of condor cluster](#get)
      - [Delete condor cluster](#delete)
  
@@ -169,7 +169,7 @@ python3 mobius_client.py -o delete -w abcd-1234
 ```
 
 ### <a name="condor_client_examples"></a>Condor Client Examples
-#### <a name="condor"></a>Create a condor cluster
+#### <a name="create"></a>Create a condor cluster
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
