@@ -48,10 +48,52 @@ public class MobiusConfig {
     public static final String chameleonDefaultNetwork = "mobius.chameleon.default.network";
     public static final String chameleonDefaultImageName = "mobius.chameleon.defaultImageName";
     public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
-    public static final String chameleonDefaultReservationId = "mobius.chameleon.defaultReservationId";
     public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
+    public static final String chameleonLeaseRetry = "mobius.chameleon.leaseRetry";
 
     public static final String cometHost = "mobius.comet.host";
+
+    public static final String jetStreamIuAuthUrl = "mobius.jetstream.iu.authUrl";
+    public static final String jetStreamTaccAuthUrl = "mobius.jetstream.tacc.authUrl";
+    public static final String jetStreamUser = "mobius.jetstream.user";
+    public static final String jetStreamUserDomain = "mobius.jetstream.user.domain";
+    public static final String jetStreamUserPassword = "mobius.jetstream.user.password";
+    public static final String jetStreamProject = "mobius.jetstream.project";
+    public static final String jetStreamProjectDomain = "mobius.jetstream.project.domain";
+    public static final String jetStreamUserKeyPath = "mobius.jetstream.KeyPath";
+    public static final String jetStreamUserSshKey = "mobius.jetstream.sshKeyFile";
+    public static final String jetStreamDefaultImageName = "mobius.jetstream.defaultImageName";
+    public static final String jetStreamFloatingIpPool = "mobius.jetstream.floatingIpPool";
+
+    public String getJetStreamIuAuthUrl() { return properties.getProperty(jetStreamIuAuthUrl); }
+
+    public String getJetStreamTaccAuthUrl() { return properties.getProperty(jetStreamTaccAuthUrl); }
+
+    public String getJetStreamUser() { return properties.getProperty(jetStreamUser); }
+
+    public String getJetStreamUserDomain() { return properties.getProperty(jetStreamUserDomain); }
+
+    public String getJetStreamUserPassword() { return properties.getProperty(jetStreamUserPassword); }
+
+    public String getJetStreamProject() { return properties.getProperty(jetStreamProject); }
+
+    public String getJetStreamProjectDomain() { return properties.getProperty(jetStreamProjectDomain); }
+
+    public String getJetStreamUserSshKey() {
+        String mobiusHome = getMobiusHome();
+        if(mobiusHome == null) {
+            return properties.getProperty(MobiusConfig.jetStreamUserKeyPath) + "/" +
+                    properties.getProperty(MobiusConfig.jetStreamUserSshKey);
+        }
+        else {
+            return mobiusHome + "/ssh/" +
+                    properties.getProperty(MobiusConfig.jetStreamUserSshKey);
+        }
+    }
+
+    public String getJetStreamDefaultImageName() { return properties.getProperty(jetStreamDefaultImageName); }
+
+    public String getJetStreamFloatingIpPool() { return properties.getProperty(jetStreamFloatingIpPool); }
 
     public String getCometHost() { return properties.getProperty(cometHost); }
 
@@ -75,8 +117,6 @@ public class MobiusConfig {
 
     public String getChameleonDefaultFlavorName() { return properties.getProperty(MobiusConfig.chameleonDefaultFlavorName); }
 
-    public String getChameleonDefaultReservationId() { return properties.getProperty(MobiusConfig.chameleonDefaultReservationId); }
-
     public String getDefaultChameleonUserSshKey() {
         String mobiusHome = getMobiusHome();
         if(mobiusHome == null) {
@@ -88,6 +128,8 @@ public class MobiusConfig {
                     properties.getProperty(MobiusConfig.chameleonUserSshKey);
         }
     }
+
+    public Integer getChameleonLeaseRetry() { return Integer.valueOf(properties.getProperty(MobiusConfig.chameleonLeaseRetry)); }
 
     public String getAmqpExchangeName() { return properties.getProperty(amqpExchangeName); }
 

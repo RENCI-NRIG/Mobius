@@ -2,6 +2,7 @@ package org.renci.mobius.controllers;
 
 import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
+import org.renci.mobius.controllers.jetstream.JetstreamContext;
 import org.springframework.http.HttpStatus;
 
 /*
@@ -46,6 +47,9 @@ public class CloudContextFactory {
         }
         else if(site.contains(CloudContext.CloudType.Exogeni.toString()) == true) {
             return new ExogeniContext(CloudContext.CloudType.Exogeni, site, workflowId);
+        }
+        else if(site.contains(CloudContext.CloudType.Jetstream.toString()) == true) {
+            return new JetstreamContext(CloudContext.CloudType.Jetstream, site, workflowId);
         }
         throw new MobiusException(HttpStatus.BAD_REQUEST, "Unsupported cloud type=" + site);
     }

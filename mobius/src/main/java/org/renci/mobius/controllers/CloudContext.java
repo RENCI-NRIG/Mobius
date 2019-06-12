@@ -21,12 +21,14 @@ abstract public class CloudContext {
     public enum CloudType {
         Chameleon,
         Exogeni,
+        Jetstream,
         OSG,
         Unknown
     }
     public static final String NetworkName = "cmnw";
     public static final String StorageNetworkName = "stnw";
     public static final String StorageNameSuffix = "storage";
+    public static final String StorageDeviceName = "/dev/xvdd";
     public static final String NodeName = "Node";
     public static final String StitchPortName = "SP";
     public static final Integer AllowedDeltaTimeInMsFromCurrentTime = 300000; // 300 seconds i.e. 5 minutes
@@ -39,6 +41,8 @@ abstract public class CloudContext {
     public static final String JsonKeyIP = "ip";
     public static final String JsonKeySite = "site";
     public static final String JsonKeySlices = "slices";
+    public static final String JsonKeyVlan = "vlan";
+
 
     /*
      * @brief Random string generator for read and write token

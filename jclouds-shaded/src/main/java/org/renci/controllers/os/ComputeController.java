@@ -5,26 +5,42 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closeables;
 import com.google.inject.Module;
 import org.jclouds.ContextBuilder;
+import org.jclouds.compute.ComputeService;
+import org.jclouds.compute.ComputeServiceContext;
+import org.jclouds.compute.domain.ExecResponse;
+import org.jclouds.compute.domain.NodeMetadata;
+import org.jclouds.compute.options.RunScriptOptions;
+import org.jclouds.domain.LoginCredentials;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.jclouds.openstack.cinder.v1.CinderApi;
+import org.jclouds.openstack.cinder.v1.CinderApiMetadata;
+import org.jclouds.openstack.cinder.v1.domain.Volume;
+import org.jclouds.openstack.cinder.v1.features.VolumeApi;
+import org.jclouds.openstack.cinder.v1.options.CreateVolumeOptions;
+import org.jclouds.openstack.cinder.v1.predicates.VolumePredicates;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.NovaApiMetadata;
 import org.jclouds.openstack.nova.v2_0.domain.*;
+import org.jclouds.openstack.nova.v2_0.domain.regionscoped.RegionAndId;
+import org.jclouds.openstack.nova.v2_0.extensions.VolumeAttachmentApi;
 import org.jclouds.openstack.nova.v2_0.features.ServerApi;
 import org.jclouds.openstack.nova.v2_0.extensions.FloatingIPApi;
 import org.jclouds.openstack.nova.v2_0.extensions.KeyPairApi;
 import org.jclouds.openstack.nova.v2_0.options.CreateServerOptions;
+import org.jclouds.scriptbuilder.ScriptBuilder;
+import org.jclouds.scriptbuilder.domain.OsFamily;
 
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+
+import static org.jclouds.scriptbuilder.domain.Statements.exec;
 
 /*
  * @brief class represents api to provision compute resources on openstack via NOVA API
@@ -39,6 +55,8 @@ public class ComputeController implements Closeable {
     private String domain;
     private String project;
     private final NovaApi novaApi;
+    private final CinderApi cinderApi;
+    private final ComputeService computeService;
     private final Set<String> regions;
     /*
      * @brief constructor
@@ -73,6 +91,22 @@ public class ComputeController implements Closeable {
                 .buildApi(NovaApi.class);
 
         regions = novaApi.getConfiguredRegions();
+
+        cinderApi = ContextBuilder.newBuilder(new CinderApiMetadata())
+                .endpoint(authUrl)
+                .credentials(identity, password)
+                .overrides(overrides)
+                .modules(modules)
+                .buildApi(CinderApi.class);
+
+
+        ComputeServiceContext context = ContextBuilder.newBuilder("openstack-nova")
+                .credentials(identity, password)
+                .modules(modules)
+                .overrides(overrides)
+                .buildView(ComputeServiceContext.class);
+
+        computeService = context.getComputeService();
     }
 
     /*
@@ -111,6 +145,24 @@ public class ComputeController implements Closeable {
     }
 
     /*
+     * @brief determine flavor id for an flavor by fetching list of all flavors (needed as get on flavor by name doesn't work with jetstream)
+     *
+     * @param region - region
+     * @param flavorName - flavor name
+     *
+     * @return flavor id
+     */
+    private String getFlavorIdFromList(String region, String flavorName) {
+        for(Flavor flavor : novaApi.getFlavorApi(region).listInDetail().concat()) {
+            if (flavor != null && flavorName.compareToIgnoreCase(flavor.getName()) == 0) {
+                System.out.println(flavor.toString());
+                return flavor.getId();
+            }
+        }
+        return null;
+    }
+
+    /*
      * @brief get instance provided its name
      *
      * @param region - region
@@ -118,7 +170,7 @@ public class ComputeController implements Closeable {
      *
      * @return instance
      */
-    private Server getInstanceFromInstanceIName(String region, String instanceName) {
+    public Server getInstanceFromInstanceName(String region, String instanceName) {
         Server instance = null;
         ServerApi serverApi = novaApi.getServerApi(region);
 
@@ -177,7 +229,7 @@ public class ComputeController implements Closeable {
         }
         catch (FileNotFoundException e) {
             System.out.println("Key file not found");
-            throw new OpenstackException(400, "Key file not found");
+            throw new OpenstackException(400, "Key file not found e=" + e.getMessage());
         }
     }
 
@@ -375,6 +427,8 @@ public class ComputeController implements Closeable {
      * @param name - name
      * @param userData - userData
      * @param metaData - metaData
+     * @param ip - ip
+     * @param securityGroup - securityGroup
      *
      * @return instance id
      *
@@ -383,25 +437,51 @@ public class ComputeController implements Closeable {
     public String createInstance(String region, String sshKeyFile, String imageName,
                                  String flavorName, String networkId,
                                  String reservation, String keypairName, String name,
-                                 String userData, Map<String, String> metaData) throws Exception{
+                                 String userData, Map<String, String> metaData,
+                                 String ip,
+                                 String securityGroup) throws Exception{
         try {
             String imageId = getImageId(region, imageName);
 
             String flavorId = getFlavorId(region, flavorName);
 
-            if (imageId == null || flavorId == null || networkId == null || reservation == null) {
-                System.out.println("BAD_REQUEST: invalid flavor or image or network or reservation");
-                return null;
+            // Check if it exists in list of flavors; only needed for jetstream as getFlavorId doesn't work for jetstream
+            if(flavorId == null) {
+                flavorId = getFlavorIdFromList(region, flavorName);
+            }
+
+            if (imageId == null || flavorId == null || networkId == null) {
+                System.out.println("imageId = " + imageId + " flavorId = " + flavorId + " networkId = " + networkId);
+                throw new OpenstackException("invalid flavor or image or network");
             }
 
             String keypair = createKeyPairIfNotExists(region, sshKeyFile, keypairName);
-            SchedulerHints hints = SchedulerHints.builder().reservation(reservation).build();
+            SchedulerHints hints = null;
+            if(reservation != null) {
+                hints = SchedulerHints.builder().reservation(reservation).build();
+            }
             CreateServerOptions allInOneOptions = null;
 
             allInOneOptions = CreateServerOptions.Builder
-                    .keyPairName(keypair)
-                    .networks(networkId)
-                    .schedulerHints(hints);
+                    .keyPairName(keypair);
+            if(ip == null) {
+                allInOneOptions.networks(networkId);
+            }
+            else {
+                System.out.println("Assigning IP Address " + ip);
+                Network network = Network.builder().networkUuid(networkId).fixedIp(ip).build();
+                List<Network> networks = new LinkedList<>();
+                networks.add(network);
+                allInOneOptions.novaNetworks(networks);
+            }
+
+            if(securityGroup != null) {
+                allInOneOptions.securityGroupNames(securityGroup);
+            }
+
+            if(hints != null) {
+                allInOneOptions.schedulerHints(hints);
+            }
             if(userData != null) {
                 System.out.println("Begin userdata=========");
                 System.out.println(userData);
@@ -416,7 +496,7 @@ public class ComputeController implements Closeable {
             }
 
             System.out.println("Checking for existing instance...");
-            Server instance = getInstanceFromInstanceIName(region, name);
+            Server instance = getInstanceFromInstanceName(region, name);
 
             ServerCreated newInstance = null;
             if (instance == null) {
@@ -435,7 +515,7 @@ public class ComputeController implements Closeable {
         catch (Exception e) {
             System.out.println("Exception e=" + e);
             e.printStackTrace();
-            throw new OpenstackException(500, "Internal server error");
+            throw new OpenstackException(500, "Internal server error e=" + e.getMessage());
         }
     }
 
@@ -474,9 +554,8 @@ public class ComputeController implements Closeable {
      * @param serverId - serverId
      *
      *
-     * @throws exception in case of error
      */
-    public void destroyInstance(String region, String serverId) throws Exception {
+    public void destroyInstance(String region, String serverId)  {
         ServerApi serverApi = novaApi.getServerApi(region);
         Server server = getInstanceFromInstanceId(region, serverId);
 
@@ -496,6 +575,13 @@ public class ComputeController implements Closeable {
             catch (Exception e) {
                 System.out.println("Ignoring exception during destroy e=" + e);
             }
+
+            try {
+                deleteVolumesFromServer(region, serverId);
+            }
+            catch (Exception e) {
+                System.out.println("Ignoring exception during destroy e=" + e);
+            }
         }
 
         if (serverApi.delete(serverId)) {
@@ -507,12 +593,265 @@ public class ComputeController implements Closeable {
     }
 
     /*
+     * @brief create a volume
+     *
+     * @param region - region
+     * @param name - volume name
+     * @param size - volume size in GB
+     *
+     * @return volume
+     * @throws Exception in case of failure
+     */
+    public org.jclouds.openstack.cinder.v1.domain.Volume createVolume(String region, String name, Integer size) throws Exception {
+        CreateVolumeOptions options = CreateVolumeOptions.Builder
+                .name(name);
+
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+
+        // 100 GB is the minimum volume size on the Rackspace Cloud
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = volumeApi.create(size, options);
+
+        // Wait for the volume to become Available before moving on
+        // If you want to know what's happening during the polling, enable logging. See
+        // /jclouds-example/rackspace/src/main/java/org/jclouds/examples/rackspace/Logging.java
+        if (!VolumePredicates.awaitAvailable(volumeApi).apply(volume)) {
+            throw new TimeoutException("Timeout on volume: " + volume);
+        }
+
+        System.out.format("Volume created successfully  %s%n", volume);
+
+        return volume;
+    }
+
+    /*
+     * @brief get a volume
+     *
+     * @param region - region
+     * @param name - volume name
+     *
+     * @return volume
+     */
+    private org.jclouds.openstack.cinder.v1.domain.Volume getVolume(String region, String name) {
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = null;
+        for (org.jclouds.openstack.cinder.v1.domain.Volume thisVolume : volumeApi.list()) {
+            if (thisVolume.getName().equals(name)) {
+                volume = thisVolume;
+            }
+        }
+        return volume;
+    }
+
+    /*
+     * @brief delete a volume
+     *
+     * @param region - region
+     * @param id - volume id
+     *
+     * @return none
+     */
+    public void deleteVolume(String region, String id)  {
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+        org.jclouds.openstack.cinder.v1.domain.Volume volume = volumeApi.get(id);
+        if(volume != null) {
+            volumeApi.delete(volume.getId());
+        }
+        else {
+            System.out.println("Volume " + id + " could not be deleted as it does not exist!");
+        }
+    }
+    /*
+     * @brief attach volume instance
+     *
+     * @param region - region
+     * @param serverId - serverId
+     * @param volume - volume
+     * @param deviceName - deviceName
+     *
+     * @throws Exception in case of failure
+     */
+    private void attachVolume(String region, String serverId, Volume volume, String deviceName) throws Exception {
+        VolumeAttachmentApi volumeAttachmentApi = novaApi.getVolumeAttachmentApi(region).get();
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+
+        if( volumeAttachmentApi != null ) {
+            VolumeAttachment volumeAttachment = volumeAttachmentApi.attachVolumeToServerAsDevice(volume.getId(), serverId, deviceName);
+
+            // Wait for the volume to become Attached (aka In Use) before moving on
+            if (!VolumePredicates.awaitInUse(volumeApi).apply(volume)) {
+                throw new TimeoutException("Timeout on volume: " + volume);
+            }
+
+            System.out.format("Volume attached successfully  %s%n", volumeAttachment);
+        }
+        else {
+            throw new OpenstackException("VolumeAttachment Api not available");
+        }
+    }
+
+    /*
+     * @brief attach volume instance
+     *
+     * @param serverId - serverId
+     * @param deviceName - deviceName
+     *
+     * @throws Exception in case of failure
+     */
+    private void mountVolume(String serverId, String deviceName, String mntPoint, String password) throws Exception {
+
+        System.out.format("Mount Volume and Create Filesystem%n");
+
+        NodeMetadata nodeMetadata = computeService.getNodeMetadata(serverId);
+        LoginCredentials loginCredentials = nodeMetadata.getCredentials();
+        if(loginCredentials.getOptionalPassword().isPresent()) {
+            password = loginCredentials.getOptionalPassword().get();
+            System.out.format("Using passowrd=" + password);
+        }
+
+        String script = new ScriptBuilder()
+                .addStatement(exec("mkfs -t ext4 " + deviceName))
+                .addStatement(exec("mount " + deviceName + " " + mntPoint))
+                .render(OsFamily.UNIX);
+
+        RunScriptOptions options = RunScriptOptions.Builder
+                .blockOnComplete(true)
+                .overrideLoginPassword(password);
+
+        ExecResponse response = computeService.runScriptOnNode(serverId, script, options);
+
+        if (response.getExitStatus() == 0) {
+            System.out.format("  Exit Status: %s%n", response.getExitStatus());
+        }
+        else {
+            System.out.format("  Error: %s%n", response.getOutput());
+        }
+    }
+
+    /**
+     * Make sure you've unmounted the volume first. Failure to do so could result in failure or data loss.
+     */
+    private void unmountVolume(String region, String serverId, String password, String mntPoint) {
+        System.out.format("Unmount Volume%n");
+
+        String script = new ScriptBuilder().addStatement(exec("umount " + mntPoint)).render(OsFamily.UNIX);
+
+        RunScriptOptions options = RunScriptOptions.Builder
+                .overrideLoginUser("root")
+                .overrideLoginPassword(password)
+                .blockOnComplete(true);
+
+        RegionAndId regionAndId = RegionAndId.fromRegionAndId(region, serverId);
+        ExecResponse response = computeService.runScriptOnNode(regionAndId.slashEncode(), script, options);
+
+        if (response.getExitStatus() == 0) {
+            System.out.format("  Exit Status: %s%n", response.getExitStatus());
+        }
+        else {
+            System.out.format("  Error: %s%n",response.getOutput());
+        }
+    }
+
+    private void detachVolume(String region, String volumeId, String serverId) throws Exception {
+        System.out.format("Detach Volume%n");
+
+        VolumeAttachmentApi volumeAttachmentApi = novaApi.getVolumeAttachmentApi(region).get();
+        VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+        if(volumeAttachmentApi != null) {
+            boolean result = volumeAttachmentApi.detachVolumeFromServer(volumeId, serverId);
+
+            // Wait for the volume to become Attached (aka In Use) before moving on
+            // If you want to know what's happening during the polling, enable
+            // logging. See /jclouds-example/rackspace/src/main/java/org/jclouds/examples/rackspace/Logging.java
+            if (!VolumePredicates.awaitAvailable(volumeApi).apply(Volume.forId(volumeId))) {
+                throw new TimeoutException("Timeout on volume: " + volumeId);
+            }
+
+            System.out.format("  %s%n", result);
+        }
+        else {
+            throw new OpenstackException("VolumeAttachment Api not available");
+        }
+    }
+
+    public String addVolumeToServer(String region, String serverId, String deviceName, String mntPoint, String name, Integer size, String password) throws Exception {
+
+        VolumeAttachmentApi volumeAttachmentApi = novaApi.getVolumeAttachmentApi(region).get();
+        if(volumeAttachmentApi != null) {
+
+            if( volumeAttachmentApi.listAttachmentsOnServer(serverId).size() > 0) {
+                throw new OpenstackException("storage already attached to the instance");
+            }
+            Volume volume = null;
+
+            try {
+                volume = createVolume(region, name, size);
+                attachVolume(region, serverId, volume, deviceName);
+                //mountVolume(serverId, deviceName, mntPoint, password);
+                return volume.getId();
+            } catch (Exception e) {
+                if (volume != null) {
+                    deleteVolumeFromServer(region, volume.getId(), password, mntPoint, serverId);
+                }
+                throw e;
+            }
+        }
+        else {
+            throw new OpenstackException("VolumeAttachment Api not available");
+        }
+    }
+
+    public void deleteVolumeFromServer(String region, String volumeId, String password, String mntPoint, String serverId) {
+        try {
+            if(serverId == null) {
+                VolumeApi volumeApi = cinderApi.getVolumeApi(region);
+                Volume volume = volumeApi.get(volumeId);
+                if(volume.getAttachments().size() != 0) {
+                    org.jclouds.openstack.cinder.v1.domain.VolumeAttachment volumeAttachment = volume.getAttachments().iterator().next();
+                    if (volumeAttachment != null) {
+                        serverId = volumeAttachment.getServerId();
+                    }
+                }
+            }
+            //unmountVolume(region, serverId, password, mntPoint);
+            detachVolume(region, volumeId, serverId);
+        }
+        catch (Exception e) {
+
+        }
+        finally {
+            if(volumeId != null){
+                deleteVolume(region, volumeId);
+            }
+        }
+    }
+
+    public void deleteVolumesFromServer(String region, String serverId) {
+        String volumeId = null;
+        try {
+            VolumeAttachmentApi volumeAttachmentApi = novaApi.getVolumeAttachmentApi(region).get();
+            for(VolumeAttachment volumeAttachment : volumeAttachmentApi.listAttachmentsOnServer(serverId)) {
+                volumeId = volumeAttachment.getVolumeId();
+                detachVolume(region, volumeAttachment.getVolumeId(), serverId);
+            }
+        }
+        catch (Exception e) {
+
+        }
+        finally {
+            if(volumeId != null){
+                deleteVolume(region, volumeId);
+            }
+        }
+    }
+
+    /*
      * @brief close the controller
      *
      */
     public void close() {
         try {
             Closeables.close(novaApi, true);
+            Closeables.close(cinderApi, true);
         }
         catch (Exception e) {
             System.out.println("Exception occured while closing e=" + e);

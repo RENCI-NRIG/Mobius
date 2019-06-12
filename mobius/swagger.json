@@ -485,6 +485,10 @@
           "type" : "string",
           "description" : "ip address to assign. should be specified only if coallocate is set to 'true'."
         },
+        "bandwidth" : {
+          "type" : "string",
+          "description" : "bandwidth for subnet interface."
+        },
         "networkType" : {
           "type" : "string",
           "description" : "Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.",
@@ -534,6 +538,10 @@
         "stitchBandwidth" : {
           "type" : "string",
           "description" : "Bandwidth for the StitchPort in bps"
+        },
+        "forceflavor" : {
+          "type" : "string",
+          "description" : "force mobius to use the flavor indicated instead of the one determined by its algorithm"
         }
       }
     },

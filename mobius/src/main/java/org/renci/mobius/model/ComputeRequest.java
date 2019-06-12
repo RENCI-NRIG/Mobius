@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-05-23T11:18:34.505-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-06-05T09:10:51.096-04:00[America/New_York]")
 
 public class ComputeRequest   {
   @JsonProperty("site")
@@ -155,6 +155,9 @@ public class ComputeRequest   {
 
   @JsonProperty("stitchBandwidth")
   private String stitchBandwidth = null;
+
+  @JsonProperty("forceflavor")
+  private String forceflavor = null;
 
   public ComputeRequest site(String site) {
     this.site = site;
@@ -668,6 +671,26 @@ public class ComputeRequest   {
     this.stitchBandwidth = stitchBandwidth;
   }
 
+  public ComputeRequest forceflavor(String forceflavor) {
+    this.forceflavor = forceflavor;
+    return this;
+  }
+
+  /**
+   * force mobius to use the flavor indicated instead of the one determined by its algorithm
+   * @return forceflavor
+  **/
+  @ApiModelProperty(value = "force mobius to use the flavor indicated instead of the one determined by its algorithm")
+
+
+  public String getForceflavor() {
+    return forceflavor;
+  }
+
+  public void setForceflavor(String forceflavor) {
+    this.forceflavor = forceflavor;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -702,12 +725,13 @@ public class ComputeRequest   {
         Objects.equals(this.stitchPortUrl, computeRequest.stitchPortUrl) &&
         Objects.equals(this.stitchTag, computeRequest.stitchTag) &&
         Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
-        Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth);
+        Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth) &&
+        Objects.equals(this.forceflavor, computeRequest.forceflavor);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor);
   }
 
   @Override
@@ -740,6 +764,7 @@ public class ComputeRequest   {
     sb.append("    stitchTag: ").append(toIndentedString(stitchTag)).append("\n");
     sb.append("    stitchIP: ").append(toIndentedString(stitchIP)).append("\n");
     sb.append("    stitchBandwidth: ").append(toIndentedString(stitchBandwidth)).append("\n");
+    sb.append("    forceflavor: ").append(toIndentedString(forceflavor)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -1,6 +1,9 @@
 package org.renci.mobius.controllers.chameleon;
 
 import org.apache.log4j.Logger;
+import org.renci.mobius.controllers.MobiusException;
+import org.springframework.http.HttpStatus;
+
 import java.util.*;
 
 /*
@@ -99,7 +102,8 @@ public class ChameleonFlavorAlgo {
      *
      */
 
-    public static Map<String, Integer> determineFlavors(Integer cpus, Integer gpus, Integer ramPerCpus, Integer diskPerCpus) {
+    public static Map<String, Integer> determineFlavors(Integer cpus, Integer gpus, Integer ramPerCpus,
+                                                        Integer diskPerCpus, String forceFlavor) throws Exception{
         Map<String, Integer> result = new HashMap<>();
         Integer requestedCpus = cpus;
         LOGGER.debug("determineFlavors: IN");
@@ -112,14 +116,29 @@ public class ChameleonFlavorAlgo {
                 count++;
             }
 
-            LOGGER.debug("computeflavors before shuffle: " + computeflavors);
-            Collections.shuffle(computeflavors);
-            LOGGER.debug("computeflavors after shuffle: " + computeflavors);
-            result.put(computeflavors.get(0).getName(), count);
+            if(forceFlavor != null) {
+                if ( forceFlavor.compareToIgnoreCase(Flavor.Haswell.name) == 0) {
+                    result.put(Flavor.Haswell.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.InfiniBand.name) == 0 ) {
+                    result.put(Flavor.InfiniBand.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.Skylake.name) == 0 ) {
+                    result.put(Flavor.Skylake.name, count);
+                }
+                else {
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid flavor specified in forceflavor");
+                }
+            }
+            else {
+                LOGGER.debug("computeflavors before shuffle: " + computeflavors);
+                Collections.shuffle(computeflavors);
+                LOGGER.debug("computeflavors after shuffle: " + computeflavors);
+                result.put(computeflavors.get(0).getName(), count);
 
-
-            if (result.isEmpty()) {
-                return null;
+                if (result.isEmpty()) {
+                    return null;
+                }
             }
         }
 

@@ -7,7 +7,9 @@
     "hostNamePrefix":"master",
     "imageName":"CC-CentOS7",
     "networkType":"private",
-    "physicalNetwork":"physnet1",
+    "physicalNetwork":"exogeni",
     "externalNetwork":"public",
-    "networkCidr":"192.168.100.0/24"
+    "networkCidr":"192.168.100.0/24",
+    "forceflavor":"compute_haswell",
+    "postBootScript":""
 }
