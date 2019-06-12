@@ -188,10 +188,6 @@ public class JetstreamContext extends CloudContext  {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Gpus not supported");
         }
 
-        if(request.getIpAddress() != null) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "IP address allocation not allowed");
-        }
-
         if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
             throw new MobiusException(HttpStatus.BAD_REQUEST,
                         "Network type cannot be default for jetstream");
@@ -304,7 +300,7 @@ public class JetstreamContext extends CloudContext  {
                 // For jetstream; slice per request mechanism is followed
                 nameIndex = context.provisionNode( flavorList, nameIndex, request.getImageName(),
                         request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
-                        null, nwIdSgName.getFirst(), nwIdSgName.getSecond());
+                        null, nwIdSgName.getFirst(), request.getIpAddress(), nwIdSgName.getSecond());
                 LOGGER.debug("Created new context=" + sliceName);
 
                 sliceName = context.getSliceName();
@@ -332,103 +328,36 @@ public class JetstreamContext extends CloudContext  {
     @Override
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
-            NetworkController networkController = null;
             validateStorageRequest(request, isFutureRequest);
+
+            String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap");
+            }
 
             switch (request.getAction()) {
                 case ADD: {
-                    /*
-                    Map<String, Integer> flavorList = JetstreamFlavorAlgo.determineFlavors(request.getSize());
-
-                    if (flavorList == null) {
-                        throw new MobiusException(HttpStatus.BAD_REQUEST,
-                                "None of the flavors can satisfy storage request");
-                    }
-
-                    String sliceName = null;
-                    ReqContext context = new ReqContext(sliceName, workflowId, region);
-
                     try {
-
-                        String networkId = null;
-                        if (workflowNetwork != null && workflowNetwork.containsKey(NetworkController.NetworkId)) {
-                            networkId = workflowNetwork.get(NetworkController.NetworkId);
-                        } else {
-
-                            String user = MobiusConfig.getInstance().getChameleonUser();
-                            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-                            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-                            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-                            String project = MobiusConfig.getInstance().getChameleonProject();
-
-                            networkController = new NetworkController(authurl, user, password, userDomain, project);
-                            networkId = networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
-                        }
-
-                        String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
-                        nameIndex = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
-                                prefix, ReqContext.postBootScriptRequiredForStorage, metaData, networkId);
-                        LOGGER.debug("Created new context=" + sliceName);
-
-                        sliceName = context.getSliceName();
-                        stackContextHashMap.put(sliceName, context);
-                        LOGGER.debug("Added " + sliceName);
-
+                        ReqContext context = stackContextHashMap.get(sliceName);
+                        nameIndex = context.addStorage(request, nameIndex);
                     } finally {
-                        if (networkController != null) {
-                            networkController.close();
-                        }
                         LOGGER.debug("processStorage: OUT");
                     }
                     break;
-                    */
                 }
                 case DELETE:
                 {
-                    // Find all contexts which have storage name containing target name
-                    Set<ReqContext> stackContextSet = new HashSet<>();
-                    String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
-                    LOGGER.debug("hostNameSet: " + hostNameSet.size());
-                    for(String h : hostNameSet) {
-                        if(h.contains(prefix)) {
-                            LOGGER.debug("Storage contexts to be deleted: " + h);
-                            LOGGER.debug("hostNameToSliceNameHashMap: " + hostNameToSliceNameHashMap.size());
-
-                            String sliceName = hostNameToSliceNameHashMap.get(h);
-                            if(sliceName != null) {
-                                LOGGER.debug("stackContextHashMap: " + stackContextHashMap.size());
-
-                                stackContextSet.add(stackContextHashMap.get(sliceName));
-                            }
-                        }
-                    }
-                    LOGGER.debug("Storage contexts to be deleted: " + stackContextSet.size());
-                    // Delete the storage and release all associated resources
-                    for(ReqContext stackContext: stackContextSet) {
-                        stackContext.stop();
-                        stackContextHashMap.remove(stackContext.getSliceName());
+                    try {
+                        ReqContext context = stackContextHashMap.get(sliceName);
+                        context.deleteStorage(request);
+                    } finally {
+                        LOGGER.debug("processStorage: OUT");
                     }
                     break;
                 }
                 case RENEW:
                 {
-                    // Find all contexts which have storage name containing target name
-                    Set<ReqContext> stackContextSet = new HashSet<>();
-                    String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
-                    for(String h : hostNameSet) {
-                        LOGGER.debug("Storage contexts to be renewed: " + h);
-                        if(h.contains(prefix)) {
-                            String sliceName = hostNameToSliceNameHashMap.get(h);
-                            if(sliceName != null) {
-                                stackContextSet.add(stackContextHashMap.get(sliceName));
-                            }
-                        }
-                    }
-                    LOGGER.debug("Storage contexts to be renewed: " + stackContextSet.size());
-                    // Delete the storage and release all associated resources
-                    for(ReqContext stackContext: stackContextSet) {
-                        stackContext.renew(request.getLeaseEnd());
-                    }
+                    
                     break;
                 }
             }

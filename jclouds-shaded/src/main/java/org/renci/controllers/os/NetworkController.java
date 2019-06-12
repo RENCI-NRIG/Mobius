@@ -76,6 +76,44 @@ public class NetworkController implements Closeable {
      * @brief provision a network on openstack
      *
      * @param region - region
+     * @param networkName - networkName
+     * @param shared - true if network is shared, false otherwise
+     * @param cidr - network cidr
+     *
+     * @return map containing networkId, routerId and subnetId
+     *
+     * @throws exception in case of error
+     */
+    public Map<String, String> updateNetwork(String region, String networkName,
+                                             String  externalNetworkId, String cidr) throws Exception{
+        String netId = null;
+        Map<String, String> retVal = null;
+        try {
+            netId = getNetworkId(region, networkName);
+
+            String subnetName = networkName + "subnet";
+            Subnet subnet = createSubnet(region, netId, true, 4, cidr, subnetName);
+            String routerName = networkName + "router";
+            Router router = createRouter(region, externalNetworkId, routerName);
+            attachSubnet(region, router.getId(), subnet.getId());
+
+
+            retVal = new HashMap<>();
+            retVal.put(NetworkId, netId);
+            retVal.put(SubnetId, subnet.getId());
+            retVal.put(RouterId, router.getId());
+
+        } catch (Exception e){
+            System.out.println("Exception occured while updating network " + networkName + " e=" + e);
+            throw e;
+        }
+        return retVal;
+    }
+
+    /*
+     * @brief provision a network on openstack
+     *
+     * @param region - region
      * @param physicalNetworkName - physicalNetworkName
      * @param externalNetworkId - externalNetworkId
      * @param shared - true if network is shared, false otherwise
@@ -359,6 +397,25 @@ public class NetworkController implements Closeable {
         }
         if(network != null) {
             return network.getId();
+        }
+        return null;
+    }
+
+    /*
+     * @brief determine network give network id
+     *
+     * @param region - region
+     * @param networkId - networkId
+     *
+     * @return Network
+     */
+    public Network getNetwork(String region, String networkId) {
+        org.jclouds.openstack.neutron.v2.domain.Network network = null;
+        NetworkApi networkApi = neutronApi.getNetworkApi(region);
+
+        network = networkApi.get(networkId);
+        if(network != null) {
+            return network;
         }
         return null;
     }

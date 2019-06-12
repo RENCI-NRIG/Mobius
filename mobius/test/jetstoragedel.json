@@ -1,6 +1,6 @@
 {
     "mountPoint":"/mnt/",
-    "target":"master0",
+    "target":"abcd-5678-master0",
     "size":"1",
     "action":"delete"
 }

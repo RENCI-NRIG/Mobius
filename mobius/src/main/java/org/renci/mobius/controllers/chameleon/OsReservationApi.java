@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.mobius.controllers.MobiusException;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -110,13 +109,13 @@ public class OsReservationApi {
                 Map<String, Object> tokenObject = (Map<String, Object>) result.getBody().get("token");
 
                 if (tokenObject == null) {
-                    throw new MobiusException("Failed to get token");
+                    throw new LeaseException("Failed to get token");
                 }
 
                 List<Map<String, Object>> catalog = (List<Map<String, Object>>) tokenObject.get("catalog");
 
                 if (catalog == null) {
-                    throw new MobiusException("Failed to get catalog");
+                    throw new LeaseException("Failed to get catalog");
                 }
 
                 Map<String, Object> reservationEndPoint = null;
@@ -130,7 +129,7 @@ public class OsReservationApi {
                 }
                 List<Map<String, Object>> endPoints = (List<Map<String, Object>>) reservationEndPoint.get("endpoints");
                 if (endPoints == null) {
-                    throw new MobiusException("Failed to get endPoints");
+                    throw new LeaseException("Failed to get endPoints");
                 }
                 for (Map<String, Object> endpoint : endPoints) {
                     String endPointRegion = (String) endpoint.get("region");
@@ -150,7 +149,7 @@ public class OsReservationApi {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while getting tokens e=" + e);
@@ -158,7 +157,7 @@ public class OsReservationApi {
             LOGGER.error("Message= " + e.getLocalizedMessage());
 
             e.printStackTrace();
-            throw new MobiusException("failed to get token e=" + e.getMessage());
+            throw new LeaseException("failed to get token e=" + e.getMessage());
 
         }
         return null;
@@ -215,14 +214,14 @@ public class OsReservationApi {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while getting leases e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to get leases e=" + e.getMessage());
+            throw new LeaseException("failed to get leases e=" + e.getMessage());
         }
         return retVal;
     }
@@ -253,21 +252,21 @@ public class OsReservationApi {
                 Map<String, Object> lease = (Map<String, Object>) result.getBody().get("lease");
                 return lease;
             } else {
-                throw new MobiusException("failed to delete lease");
+                throw new LeaseException("failed to delete lease");
             }
         }
         catch (HttpClientErrorException e) {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while retrieving lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to delete lease e=" + e.getMessage());
+            throw new LeaseException("failed to delete lease e=" + e.getMessage());
         }
     }
 
@@ -281,7 +280,7 @@ public class OsReservationApi {
      *
      * @return returns lease request body
      */
-    public String buildLeaseRequest(String name, String startTime, String endTime,
+    public String buildComputeLeaseRequest(String name, String startTime, String endTime,
                                              Map<String, Integer> nodeTypeCountMap) {
         if(name == null || startTime == null || endTime == null ||
                 nodeTypeCountMap == null || nodeTypeCountMap.size() == 0) {
@@ -309,6 +308,39 @@ public class OsReservationApi {
     }
 
     /*
+     * @brief Construct Lease Request body
+     *
+     * @param name - name for the lease
+     * @param networkName - network name
+     * @param physicalNetwork - physical network
+     * @param startTime - lease start time
+     * @param endTime - lease end time
+     *
+     * @return returns lease request body
+     */
+    public String buildNetworkLeaseRequest(String name, String networkName, String physicalNetwork,
+                                           String startTime, String endTime) {
+        if(name == null || startTime == null || endTime == null || networkName == null || physicalNetwork == null) {
+            return null;
+        }
+        JSONObject request = new JSONObject();
+        request.put("name", name);
+        request.put("start_date", startTime);
+        request.put("end_date", endTime);
+        JSONArray events = new JSONArray();
+        request.put("events", events);
+        JSONArray reservations  = new JSONArray();
+        JSONObject r = new JSONObject();
+        r.put("resource_type", "network");
+        r.put("network_name", networkName);
+        r.put("resource_properties", "[\"==\",\"$physical_network\",\"" + physicalNetwork + "\"]");
+        r.put("network_properties", "");
+        reservations.add(r);
+        request.put("reservations", reservations);
+        return request.toString();
+    }
+
+    /*
      * @brief function to provision a reservation and wait for it to become active; incase reservation
      *        does not become active; it is deleted and a failure is returned
      *
@@ -317,7 +349,7 @@ public class OsReservationApi {
      * @param request - reservation request
      * @param timeoutInSeconds - timeout in seconds for which to wait for reservation to become active
      *
-     * @return return a pair of leaseId and map of <reservation id, node count>
+     * @return return a pair of leaseId and map of <reservation id, node count for compute/vlan tag in case of network>
      *
      * @throws execption in case of failure
      *
@@ -326,7 +358,7 @@ public class OsReservationApi {
                                                    int timeoutInSeconds) throws Exception {
 
         if(region == null || name == null || request == null) {
-            throw new MobiusException("Failed to construct lease request; invalid input params");
+            throw new LeaseException("Failed to construct lease request; invalid input params");
         }
         Map<String, Integer> reservationIds = new HashMap<>();
         String leaseId = null;
@@ -361,18 +393,25 @@ public class OsReservationApi {
                             if (reservations != null) {
                                 for(Map<String, Object> r : reservations) {
                                     LOGGER.debug("Reservation=" + r);
-                                    reservationIds.put((String) r.get("id"), (Integer)r.get("max"));
+                                    if(r.containsKey("max")) {
+                                        reservationIds.put((String) r.get("id"), (Integer) r.get("max"));
+                                    }
+                                    else {
+                                        // TODO vlan tag for network reservations
+                                        reservationIds.put((String) r.get("id"), 1234);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                Integer timeout = timeoutInSeconds;
                 String status = "Failed";
                 int reservationCount = reservationIds.size();
                 LOGGER.debug("Reservation count: " + reservationCount);
                 while(reservationCount != 0 && timeoutInSeconds != 0) {
                     Map<String, Object> lease = getLease(leaseId, token);
-                    int activeCount = 0;
+                    int activeCount = 0, errorCount = 0;
                     if (lease != null) {
                         List<Map<String, Object>> reservations = (List<Map<String, Object>>) lease.get("reservations");
                         if (reservations != null) {
@@ -384,6 +423,7 @@ public class OsReservationApi {
                                 }
                                 else if(status.compareToIgnoreCase("error") == 0) {
                                     LOGGER.debug("Lease in error state");
+                                    errorCount++;
                                     break;
                                 }
                             }
@@ -391,14 +431,16 @@ public class OsReservationApi {
                     }
                     reservationCount -= activeCount;
                     LOGGER.debug("Reservation count: " + reservationCount);
+                    if(errorCount != 0) {
+                        break;
+                    }
                     Thread.sleep(1000);
                     --timeoutInSeconds;
                 }
                 if(reservationCount != 0) {
-                    LOGGER.debug("Lease did not transition to Active status in " + timeoutInSeconds + " seconds!");
+                    LOGGER.debug("Lease did not transition to Active status in " + timeout + " seconds!");
                     deleteLease(region, leaseId);
-                    throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Lease did not transition to Active status in " + timeoutInSeconds + " seconds!");
+                    throw new LeaseException("Lease did not transition to Active status in " + timeoutInSeconds + " seconds!");
                 }
             }
         }
@@ -406,14 +448,14 @@ public class OsReservationApi {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while create lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to create leases e=" + e.getMessage());
+            throw new LeaseException("failed to create leases e=" + e.getMessage());
         }
         return Pair.of(leaseId, reservationIds);
     }
@@ -444,21 +486,21 @@ public class OsReservationApi {
             if (result.getStatusCode() == HttpStatus.OK || result.getStatusCode() == HttpStatus.NO_CONTENT) {
                 LOGGER.debug("Successfully deleted lease");
             } else {
-                throw new MobiusException("failed to delete lease");
+                throw new LeaseException("failed to delete lease");
             }
         }
         catch (HttpClientErrorException e) {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while delete lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to delete lease e=" + e.getMessage());
+            throw new LeaseException("failed to delete lease e=" + e.getMessage());
         }
     }
 
@@ -475,7 +517,7 @@ public class OsReservationApi {
     public void updateLease(String region, String id, String leaseEndTime) throws Exception {
         try {
             if(region == null || id == null || leaseEndTime == null) {
-                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "region, lease id or endtime null");
+                throw new LeaseException("region, lease id or endtime null");
             }
             String token = auth(region);
             if(token != null) {
@@ -531,14 +573,14 @@ public class OsReservationApi {
             LOGGER.error("HTTP exception occurred e=" + e);
             LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
             e.printStackTrace();
-            throw new MobiusException(e.getResponseBodyAsString());
+            throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while update lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
-            throw new MobiusException("failed to update lease e=" + e.getMessage());
+            throw new LeaseException("failed to update lease e=" + e.getMessage());
         }
     }
 

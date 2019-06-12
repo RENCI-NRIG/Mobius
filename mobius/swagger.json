@@ -538,6 +538,10 @@
         "stitchBandwidth" : {
           "type" : "string",
           "description" : "Bandwidth for the StitchPort in bps"
+        },
+        "forceflavor" : {
+          "type" : "string",
+          "description" : "force mobius to use the flavor indicated instead of the one determined by its algorithm"
         }
       }
     },

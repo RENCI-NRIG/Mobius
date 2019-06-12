@@ -272,13 +272,14 @@ public class StackContext {
      * @param postBootScript - post boot script
      * @param metaData - meta data
      * @param networkId - network id to which instance is connected
+     * @param ip - ip
      *
-     *
-     *
+     * @return name index
+     * @throws Exception in case of error
      */
     public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
                              String leaseEnd, String hostNamePrefix, String postBootScript,
-                             Map<String, String> metaData, String networkId) throws Exception {
+                             Map<String, String> metaData, String networkId, String ip) throws Exception {
 
         LOGGER.debug("provisionNode: IN");
 
@@ -322,7 +323,7 @@ public class StackContext {
             Date now = new Date();
             now.setTime(now.getTime() + 60000);
 
-            String reservationRequest = api.buildLeaseRequest(sliceName, sdf.format(now),
+            String reservationRequest = api.buildComputeLeaseRequest(sliceName, sdf.format(now),
                     sdf.format(endTime), flavorList);
 
             if(reservationRequest == null) {
@@ -376,7 +377,7 @@ public class StackContext {
                             entry.getKey(),
                             sliceName,
                             name,
-                            postBootScript, meta, null);
+                            postBootScript, meta, ip, null);
 
                     if (instanceId == null) {
                         throw new MobiusException("Failed to create instance");

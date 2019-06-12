@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers.jetstream;
 
+import io.swagger.models.auth.In;
 import org.apache.log4j.Logger;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
@@ -9,6 +10,7 @@ import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
+import org.renci.mobius.model.StorageRequest;
 
 import java.util.*;
 
@@ -192,13 +194,16 @@ public class ReqContext {
      * @param postBootScript - post boot script
      * @param metaData - meta data
      * @param networkId - network id to which instance is connected
+     * @param ip - ip
+     * @param sgName - sgName
      *
-     *
+     * @return name index
+     * @throws Exception in case of error
      *
      */
     public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
                              String leaseEnd, String hostNamePrefix, String postBootScript,
-                             Map<String, String> metaData, String networkId, String sgName) throws Exception {
+                             Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
 
         LOGGER.debug("provisionNode: IN");
 
@@ -254,7 +259,7 @@ public class ReqContext {
                             null,
                             sliceName,
                             name,
-                            postBootScript, metaData, sgName);
+                            postBootScript, metaData, ip, sgName);
 
                     if (instanceId == null) {
                         throw new MobiusException("Failed to create instance");
@@ -409,9 +414,12 @@ public class ReqContext {
         LOGGER.debug("doPeriodic: OUT");
         return object;
     }
-    public void renew(String leaseEnd) throws Exception{
-        LOGGER.debug("renew: IN");
 
+    public int addStorage(StorageRequest request, int nameIndex) throws Exception {
+
+        LOGGER.debug("addStorage: IN");
+
+        ComputeController computeController = null;
         try {
 
             String user = MobiusConfig.getInstance().getJetStreamUser();
@@ -419,29 +427,71 @@ public class ReqContext {
             String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
             String project = MobiusConfig.getInstance().getJetStreamProject();
 
+            // Instantiate Jclouds based Openstack Controller object
+            computeController = new ComputeController(authUrl, user, password, userDomain, project);
 
-            Date endTime = new Date();
-            if(leaseEnd != null) {
-                endTime = new Date(Long.parseLong(leaseEnd) * 1000);
-            }
-            else {
-                endTime.setTime(endTime.getTime() + 86400000);
+            String name = workflowId + "-" + CloudContext.StorageNameSuffix + nameIndex;
+            name = name.toLowerCase();
+
+            Server server = computeController.getInstanceFromInstanceName(region, request.getTarget());
+
+            String volumeId = computeController.addVolumeToServer(region, server.getId(), CloudContext.StorageDeviceName, request.getMountPoint(), name, request.getSize(), password);
+
+            if (volumeId == null) {
+                throw new MobiusException("Failed to add volume");
             }
 
-        }/*
+            ++nameIndex;
+            return nameIndex;
+        }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw e;
-        }*/
+        }
         catch (Exception e) {
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to serve renew request e=" + e.getMessage());
+            throw new MobiusException("Failed to add storage e=" + e.getMessage());
         }
         finally {
-            LOGGER.debug("renew: OUT");
+            if(computeController != null) {
+                computeController.close();
+            }
+            // TODO clean any allocated CPUs, keys, leases
+            LOGGER.debug("addStorage: OUT");
         }
+    }
+    public void deleteStorage(StorageRequest request) throws Exception {
 
+        LOGGER.debug("deleteStorage: IN");
+
+        ComputeController computeController = null;
+        try {
+
+            String user = MobiusConfig.getInstance().getJetStreamUser();
+            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
+            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
+            String project = MobiusConfig.getInstance().getJetStreamProject();
+
+            // Instantiate Jclouds based Openstack Controller object
+            computeController = new ComputeController(authUrl, user, password, userDomain, project);
+
+            Server server = computeController.getInstanceFromInstanceName(region, request.getTarget());
+
+            computeController.deleteVolumesFromServer(region, server.getId());
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server compute request e=" + e.getMessage());
+        }
+        finally {
+            if(computeController != null) {
+                computeController.close();
+            }
+            // TODO clean any allocated CPUs, keys, leases
+            LOGGER.debug("deleteStorage: OUT");
+        }
     }
 }

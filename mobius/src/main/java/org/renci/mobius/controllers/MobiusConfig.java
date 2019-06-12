@@ -49,6 +49,7 @@ public class MobiusConfig {
     public static final String chameleonDefaultImageName = "mobius.chameleon.defaultImageName";
     public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
     public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
+    public static final String chameleonLeaseRetry = "mobius.chameleon.leaseRetry";
 
     public static final String cometHost = "mobius.comet.host";
 
@@ -127,6 +128,8 @@ public class MobiusConfig {
                     properties.getProperty(MobiusConfig.chameleonUserSshKey);
         }
     }
+
+    public Integer getChameleonLeaseRetry() { return Integer.valueOf(properties.getProperty(MobiusConfig.chameleonLeaseRetry)); }
 
     public String getAmqpExchangeName() { return properties.getProperty(amqpExchangeName); }
 

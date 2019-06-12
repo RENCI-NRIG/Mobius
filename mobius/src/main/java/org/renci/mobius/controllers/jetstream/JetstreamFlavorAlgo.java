@@ -85,6 +85,7 @@ public class JetstreamFlavorAlgo {
             }
         }
         Stack<Flavor> flavorStack = new Stack<>();
+        boolean flag = false;
 
         LOGGER.debug("Size=" + flavorsSortedByNumberOfCpus.size());
         while (cpus != 0 && flavorsSortedByNumberOfCpus.size()!= 0 ) {
@@ -100,7 +101,9 @@ public class JetstreamFlavorAlgo {
                 if (count >= 1) {
                     result.put(flavor.getName(), count);
                     if (leftCpus == 0) {
-                        return result;
+                        flavorStack.push(flavor);
+                        flag = true;
+                        break;
                     } else {
                         cpus -= (count * flavor.getCpus());
                     }
@@ -115,7 +118,7 @@ public class JetstreamFlavorAlgo {
             }
         }
         LOGGER.debug("Size=" + flavorsSortedByNumberOfCpus.size());
-        if(result.size() == 0 || cpus != 0) {
+        if(!flag && (result.size() == 0 || cpus != 0)) {
             return null;
         }
 
