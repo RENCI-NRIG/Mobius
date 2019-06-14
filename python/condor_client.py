@@ -51,6 +51,12 @@ def can_ip_satisfy_range(ip, n):
 
 def get_cidr(ip):
     octets = ip.split('.')
+    octets[3] = '0/24'
+    print ("CIDR: " + '.'.join(octets))
+    return '.'.join(octets)
+
+def get_cidr_escape(ip):
+    octets = ip.split('.')
     octets[3] = '0\/24'
     print ("CIDR: " + '.'.join(octets))
     return '.'.join(octets)
@@ -244,30 +250,42 @@ def main():
         chstoragename = None
         exostoragename = None
         if response.json()["status"] == 200:
+            sip=None
+            # Determine Stitching IP for storage node to be used for configuring routes on chameleon
+            if args.exogenisite is not None and args.exodatadir is not None:
+                d = args.exodatadir + "/stitch.json"
+                if os.path.exists(d) :
+                    d_f = open(d, 'r')
+                    stitchdata = json.load(d_f)
+                    d_f.close()
+                    sip = stitchdata["stitchIP"]
             if args.chameleonsite is not None and args.chdatadir is not None:
                 status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart)
                 if status == False:
                     return
                 chstoragename = chstoragename + ".novalocal"
             if args.exogenisite is not None and args.exodatadir is not None:
-                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart)
+                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, sip)
                 if status == False :
                     return
             if args.chameleonsite is not None and args.chdatadir is not None:
                 exogeniSubnet = None
                 if args.exoipStart is not None:
                     exogeniSubnet = get_cidr(args.exoipStart)
-                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, chstoragename, exogeniSubnet, None)
+                forwardIP = None
+                if stitchdata is not None:
+                    forwardIP = stitchdata["stitchIP"]
+                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, chstoragename, exogeniSubnet, str(forwardIP))
                 if status == False:
                     return
                 print ("ipMap after chameleon: "  + str(ipMap))
             if args.exogenisite is not None and args.exodatadir is not None:
-                d = args.exodatadir + "/stitch.json"
-                if os.path.exists(d) and args.chipStart is not None:
-                    print ("Using " + d + " file for stitch data under exogeni " + args.chipStart)
-                    d_f = open(d, 'r')
-                    stitchdata = json.load(d_f)
-                    d_f.close()
+                #d = args.exodatadir + "/stitch.json"
+                #if os.path.exists(d) and args.chipStart is not None:
+                #    print ("Using " + d + " file for stitch data under exogeni " + args.chipStart)
+                #    d_f = open(d, 'r')
+                #    stitchdata = json.load(d_f)
+                #    d_f.close()
                     ### To be uncomented if needed
                     #if args.chipStart is not None :
                     #    i = 0
@@ -384,7 +402,7 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
         return response
 
-def provision_storage(args, datadir, site, ipMap, count, ipStart):
+def provision_storage(args, datadir, site, ipMap, count, ipStart, sip=None):
     stdata = None
     st = datadir + "/storage.json"
     if os.path.exists(st):
@@ -398,9 +416,11 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart):
         return True, count, None
 
     if stdata["postBootScript"] is not None :
-        cidr=get_cidr(ipStart)
+        cidr=get_cidr_escape(ipStart)
         s=stdata["postBootScript"]
         s=s.replace("CIDR",cidr)
+        if sip is not None:
+            s=s.replace("SIP", str(sip))
         stdata["postBootScript"] = s
 
     mb=MobiusInterface()
@@ -413,7 +433,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart):
         if response.json()["status"] != 200:
             print ("Deleting workflow")
             response=mb.delete_workflow(args.mobiushost, args.workflowId)
-            return False, count
+            return False, count, None
         count = count + 1
     return True, count, nodename
 
