@@ -180,7 +180,7 @@ python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogen
 ```
 ##### Exogeni: For controller where COMET is not enabled (EXOSOM)
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
-- Stitch.json is present in the directory would be used to stitch
+- Stitch.json if present in the directory would be used to stitch
 ```
 python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n 1
 ```
@@ -190,8 +190,9 @@ python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogen
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
 - Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n 1
+python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n 1
 ```
+NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
 #### <a name="get"></a>Get status of condor cluster
 ```
