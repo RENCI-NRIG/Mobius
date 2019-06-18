@@ -173,18 +173,18 @@ python3 mobius_client.py -o delete -w abcd-1234
 Create a condor cluster with 1 master, 1 submit and 1 worker node. 
 NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
 
-Chameleon:
+##### Chameleon:
 - Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
 ```
 python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n 1
 ```
-Exogeni: For controller where COMET is not enabled (EXOSOM)
+##### Exogeni: For controller where COMET is not enabled (EXOSOM)
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json is present in the directory would be used to stitch
 ```
 python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n 1
 ```
-Hybrid Model: 
+##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
 - Storage node stitched to UNT and Chameleon
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
