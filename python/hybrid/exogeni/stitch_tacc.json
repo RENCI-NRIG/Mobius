@@ -1,6 +1,6 @@
  {
       "target":"storage",
-      "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1",
+      "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/TACC/Cisco/6509/TenGigabitEthernet/1/1",
       "tag":"709",
       "bandwidth":"1000000000",
       "stitchIP":"192.168.10.10"
