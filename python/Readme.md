@@ -72,48 +72,63 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 
 ### <a name="usage2"></a>Usage
 ```
-usage: condor_client.py [-h] [-s SITE] [-n WORKERS] [-c COMETHOST] [-t CERT]
-                        [-k KEY] [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                        [-i IPSTART] [-l LEASEEND] [-d DATADIR]
+usage: condor_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
+                         [-n WORKERS] [-c COMETHOST] [-t CERT] [-k KEY]
+                         [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
+                         [-i1 EXOIPSTART] [-i2 CHIPSTART] [-l LEASEEND]
+                         [-d1 EXODATADIR] [-d2 CHDATADIR]
 
-Python client to create Condor cluster using mobius. Uses master.json,
-submit.json and worker.json for compute requests present in data directory
-specified. Currently only supports provisioning compute resources. Other
-resources can be provisioned via mobius_client. Creates COMET contexts for
-Chameleon resources and thus enables exchanging keys and hostnames within
-workflow
+ Python client to create Condor cluster using mobius. Uses master.json,
+ submit.json and worker.json for compute requests present in data directory
+ specified. Currently only supports provisioning compute resources. Other
+ resources can be provisioned via mobius_client. Creates COMET contexts for
+ Chameleon resources and thus enables exchanging keys and hostnames within
+ workflow
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -s SITE, --site SITE  Site at which resources must be provisioned; must be
-                        specified for create operation
-  -n WORKERS, --workers WORKERS
-                        Number of workers to be provisioned; must be specified
-                        for create operation
-  -c COMETHOST, --comethost COMETHOST
-                        Comet Host e.g. https://18.218.34.48:8111/; used only
-                        for provisioning resources on chameleon
-  -t CERT, --cert CERT  Comet Certificate; used only for provisioning
-                        resources on chameleon
-  -k KEY, --key KEY     Comet Certificate key; used only for provisioning
-                        resources on chameleon
-  -m MOBIUSHOST, --mobiushost MOBIUSHOST
-                        Mobius Host e.g. http://localhost:8080/mobius
-  -o OPERATION, --operation OPERATION
-                        Operation allowed values: create|get|delete
-  -w WORKFLOWID, --workflowId WORKFLOWID
-                        workflowId
-  -i IPSTART, --ipStart IPSTART
-                        Start IP Address of the range of IPs to be used for
-                        VMs; 1st IP is assigned to master and subsequent IPs
-                        are assigned to submit node and workers; can be
-                        specified for create operation
-  -l LEASEEND, --leaseEnd LEASEEND
-                        Lease End Time; can be specified for create operation
-  -d DATADIR, --datadir DATADIR
-                        Data directory where to look for master.json,
-                        submit.json and worker.json; must be specified for
-                        create operation
+ optional arguments:
+   -h, --help            show this help message and exit
+   -s1 EXOGENISITE, --exogenisite EXOGENISITE
+                         Exogeni Site at which resources must be provisioned;
+                         must be specified for create operation
+   -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
+                         Chameleon Site at which resources must be provisioned;
+                         must be specified for create operation
+   -n WORKERS, --workers WORKERS
+                         Number of workers to be provisioned; must be specified
+                         for create operation
+   -c COMETHOST, --comethost COMETHOST
+                         Comet Host e.g. https://18.218.34.48:8111/; used only
+                         for provisioning resources on chameleon
+   -t CERT, --cert CERT  Comet Certificate; used only for provisioning
+                         resources on chameleon
+   -k KEY, --key KEY     Comet Certificate key; used only for provisioning
+                         resources on chameleon
+   -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                         Mobius Host e.g. http://localhost:8080/mobius
+   -o OPERATION, --operation OPERATION
+                         Operation allowed values: create|get|delete
+   -w WORKFLOWID, --workflowId WORKFLOWID
+                         workflowId
+   -i1 EXOIPSTART, --exoipStart EXOIPSTART
+                         Exogeni Start IP Address of the range of IPs to be
+                         used for VMs; 1st IP is assigned to master and
+                         subsequent IPs are assigned to submit node and
+                         workers; can be specified for create operation
+   -i2 CHIPSTART, --chipStart CHIPSTART
+                         Chameleon Start IP Address of the range of IPs to be
+                         used for VMs; 1st IP is assigned to master and
+                         subsequent IPs are assigned to submit node and
+                         workers; can be specified for create operation
+   -l LEASEEND, --leaseEnd LEASEEND
+                         Lease End Time; can be specified for create operation
+   -d1 EXODATADIR, --exodatadir EXODATADIR
+                         Exogeni Data directory where to look for master.json,
+                         submit.json and worker.json; must be specified for
+                         create operation
+   -d2 CHDATADIR, --chdatadir CHDATADIR
+                         Chameleon Data directory where to look for
+                         master.json, submit.json and worker.json; must be
+                         specified for create operation                        
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
