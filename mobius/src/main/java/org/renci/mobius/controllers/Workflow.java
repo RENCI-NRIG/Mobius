@@ -4,6 +4,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.renci.mobius.entity.WorkflowEntity;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.notification.NotificationPublisher;
 import org.renci.mobius.model.ComputeRequest;
@@ -294,6 +295,64 @@ class Workflow {
         }
         finally {
             LOGGER.debug("processStorageRequest(): OUT");
+        }
+    }
+
+    /*
+     * @brief function to process network request
+     *
+     * @param request - network request
+     * @param isFutureRequest - true in case this is a future request; false otherwise
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequest(NetworkRequest request, boolean isFutureRequest) throws Exception{
+        LOGGER.debug("processNetworkRequest(): IN");
+        try {
+            if (siteToContextHashMap.size() == 0) {
+                LOGGER.debug("processNetworkRequest(): OUT");
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+            CloudContext sourceContext = null, targetContext = null;
+            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
+                sourceContext = e.getValue();
+                targetContext = e.getValue();
+                if (sourceContext == null && e.getValue().containsHost(request.getSource())) {
+                    sourceContext = e.getValue();
+                    LOGGER.debug("Context found to handle network request=" + sourceContext.getSite());
+                }
+                if (targetContext == null && e.getValue().containsHost(request.getDestination())) {
+                    targetContext = e.getValue();
+                    LOGGER.debug("Context found to handle network request=" + targetContext.getSite());
+                }
+                if(sourceContext != null && targetContext != null) {
+                    break;
+                }
+            }
+            if(sourceContext == null || targetContext == null) {
+                LOGGER.debug("processNetworkRequest(): OUT");
+                throw new MobiusException(HttpStatus.NOT_FOUND, " source or destination context not found");
+            }
+
+            // sudo ${BIN_DIR}/SafeSdxExogeniClient -c client-config/c0.conf -e 'stitch client-1 192.168.20.2 192.168.20.1/24'
+            JSONObject object =  new JSONObject();
+            // Exogeni User PEM
+            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
+            // Exogeni Controller URL
+            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+            // Exogeni Slice name
+            object.put("config.slicename", sourceContext.getSite());
+
+            LOGGER.debug("processNetworkRequest(): source = " + object.toString());
+
+            // Exogeni Slice name
+            object.put("config.slicename", targetContext.getSite());
+
+            LOGGER.debug("processNetworkRequest(): source = " + object.toString());
+        }
+        finally {
+            LOGGER.debug("processNetworkRequest(): OUT");
         }
     }
     /*

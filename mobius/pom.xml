@@ -264,5 +264,10 @@
             <artifactId>jclouds-shaded</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>safe</groupId>
+            <artifactId>exoplex.sdx-simple</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

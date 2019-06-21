@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.renci.mobius.service.WorkflowService;
@@ -332,7 +333,37 @@ public class MobiusController {
      *
      * @throws exception in case of error
      */
-    public void processNetworkRequest() throws Exception {
+    public void processNetworkRequest(String workflowId, NetworkRequest request) throws Exception {
+        LOGGER.debug("processNetworkRequest(): IN");
+        try {
+            if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+                throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
+            }
+            if (workflowId != null) {
+                Workflow workflow = null;
+                synchronized (this) {
+                    workflow = workflowHashMap.get(workflowId);
+                }
+                if (workflow != null) {
+                    workflow.lock();
+                    try {
+                        workflow.processNetworkRequest(request, false);
+                        dbWrite(workflow, DbOperation.Update);
+                    } finally {
+
+                        workflow.unlock();
+                    }
+                } else {
+                    throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
+                }
+            } else {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "WorkflowId is required");
+            }
+        }
+        finally {
+            LOGGER.debug("processNetworkRequest(): OUT");
+            PeriodicProcessingThread.releaseLock();
+        }
     }
 
     /*

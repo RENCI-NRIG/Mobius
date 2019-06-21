@@ -1,5 +1,8 @@
 package org.renci.mobius.api;
 
+import org.json.simple.JSONObject;
+import org.renci.mobius.controllers.MobiusController;
+import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.MobiusResponse;
 import org.renci.mobius.model.NetworkRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +44,31 @@ public class NetworkApiController implements NetworkApi {
 
     public ResponseEntity<MobiusResponse> networkPost(@ApiParam(value = "" ,required=true )  @Valid @RequestBody NetworkRequest body,@NotNull @ApiParam(value = "", required = true) @Valid @RequestParam(value = "workflowID", required = true) String workflowID) {
         String accept = request.getHeader("Accept");
-        return new ResponseEntity<MobiusResponse>(HttpStatus.NOT_IMPLEMENTED);
+        JSONObject output = new JSONObject();
+        MobiusResponse resp = new MobiusResponse();
+        resp.setVersion("0.1");
+        HttpStatus status = HttpStatus.OK;
+        try {
+            MobiusController.getInstance().processNetworkRequest(workflowID, body);
+            resp.setStatus(HttpStatus.OK.value());
+            resp.setMessage("Success");
+        }
+        catch (MobiusException e) {
+            log.error("Exception occurred e=" + e);
+            e.printStackTrace();
+            status = e.getStatus();
+            resp.setStatus(status.value());
+            resp.setMessage(e.getMessage());
+        }
+        catch (Exception e) {
+            log.error("Exception occurred e=" + e);
+            e.printStackTrace();
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            resp.setMessage(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        }
+
+        return new ResponseEntity<MobiusResponse>(resp, status);
     }
 
 }

@@ -273,8 +273,9 @@ def main():
                     d_f = open(d, 'r')
                     submitdata = json.load(d_f)
                     d_f.close()
-                    submitSticthIP = submitdata["stitchIP"]
-                    submitSubnet = get_cidr(submitSticthIP)
+                    ip= submitdata["stitchIP"]
+                    print("KOMAL debug: " + str(ip))
+                    submitSubnet = get_cidr(ip)
             if args.chameleonsite is not None and args.chdatadir is not None:
                 status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet)
                 if status == False:
@@ -437,7 +438,6 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
         s=s.replace("CIDR",cidr)
         if sip is not None:
             s=s.replace("SIP", str(sip))
-        s=s.replace("SUBMIT", str(submitSubnet))
         stdata["postBootScript"] = s
 
     mb=MobiusInterface()
@@ -487,7 +487,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
         oldnodename = "NODENAME"
         if ipStart is not None and storagename is not None:
             ipStart = get_next_ip(ipStart)
-        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, mdata, count, ipMap, oldnodename, site, storagename, subnet, forwardIP)
+        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP)
         print (nodename + " after create_compute")
         if response.json()["status"] != 200:
             print ("Deleting workflow")
@@ -540,7 +540,6 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
         print ("Setting leaseEnd to " + leaseEnd)
         mdata["leaseEnd"] = leaseEnd
     if mdata["postBootScript"] is not None:
-        print ("postBootScript: " + str(mdata["postBootScript"]))
         s=mdata["postBootScript"]
         s=s.replace("WORKFLOW", workflowId)
         s=s.replace(oldnodename, nodename)
@@ -559,6 +558,9 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
         if storagename is not  None:
             s=s.replace("STORAGENODE", storagename)
         mdata["postBootScript"]=s
+        print("==========================================================")
+        print ("postBootScript: " + str(mdata["postBootScript"]))
+        print("==========================================================")
     response=mb.create_compute(host, workflowId, mdata)
     return response, nodename
 
