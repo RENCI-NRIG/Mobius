@@ -93,11 +93,19 @@ def main():
         required=False
     )
     parser.add_argument(
-        '-n',
-        '--workers',
-        dest='workers',
+        '-n1',
+        '--exoworkers',
+        dest='exoworkers',
         type = int,
-        help='Number of workers to be provisioned; must be specified for create operation',
+        help='Number of workers to be provisioned on Exogeni; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
+        '-n2',
+        '--chworkers',
+        dest='chworkers',
+        type = int,
+        help='Number of workers to be provisioned on Chameleon; must be specified for create operation',
         required=False
     )
     parser.add_argument(
@@ -205,7 +213,7 @@ def main():
             response=comet.delete_families(args.comethost, args.workflowId, None, args.workflowId, args.workflowId)
     elif args.operation == 'create':
         ipMap = dict()
-        if (args.exogenisite is None and args.chameleonsite is None) or args.workers is None or (args.exodatadir is None and args.chdatadir is None) :
+        if (args.exogenisite is None and args.chameleonsite is None) or (args.exoworkers is None and args.chworkers is None)  or (args.exodatadir is None and args.chdatadir is None) :
             print ("ERROR: site name, number of workers and data directory must be specified for create operation")
             parser.print_help()
             sys.exit(1)
@@ -214,7 +222,7 @@ def main():
                 print ("ERROR: Invalid start ip address specified")
                 parser.print_help()
                 sys.exit(1)
-            if can_ip_satisfy_range(args.exoipStart, args.workers + 1) == False:
+            if can_ip_satisfy_range(args.exoipStart, args.exoworkers + 1) == False:
                 print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
                 parser.print_help()
                 sys.exit(1)
@@ -223,7 +231,7 @@ def main():
                 print ("ERROR: Invalid start ip address specified")
                 parser.print_help()
                 sys.exit(1)
-            if can_ip_satisfy_range(args.chipStart, args.workers + 1) == False:
+            if can_ip_satisfy_range(args.chipStart, args.chworkers + 1) == False:
                 print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
                 parser.print_help()
                 sys.exit(1)
@@ -250,6 +258,7 @@ def main():
         chstoragename = None
         exostoragename = None
         if response.json()["status"] == 200:
+            submitSubnet=None
             sip=None
             # Determine Stitching IP for storage node to be used for configuring routes on chameleon
             if args.exogenisite is not None and args.exodatadir is not None:
@@ -259,13 +268,20 @@ def main():
                     stitchdata = json.load(d_f)
                     d_f.close()
                     sip = stitchdata["stitchIP"]
+                d = args.exodatadir + "/storage.json"
+                if os.path.exists(d) :
+                    d_f = open(d, 'r')
+                    submitdata = json.load(d_f)
+                    d_f.close()
+                    submitSticthIP = submitdata["stitchIP"]
+                    submitSubnet = get_cidr(submitSticthIP)
             if args.chameleonsite is not None and args.chdatadir is not None:
-                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart)
+                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet)
                 if status == False:
                     return
                 chstoragename = chstoragename + ".novalocal"
             if args.exogenisite is not None and args.exodatadir is not None:
-                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, sip)
+                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip)
                 if status == False :
                     return
             if args.chameleonsite is not None and args.chdatadir is not None:
@@ -275,7 +291,7 @@ def main():
                 forwardIP = None
                 if stitchdata is not None:
                     forwardIP = stitchdata["stitchIP"]
-                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, chstoragename, exogeniSubnet, str(forwardIP))
+                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, str(forwardIP), str(submitSubnet))
                 if status == False:
                     return
                 print ("ipMap after chameleon: "  + str(ipMap))
@@ -300,7 +316,7 @@ def main():
                     chSubnet = get_cidr(args.chipStart)
                 if exostoragename is not None:
                     forwardIP = ipMap[exostoragename]
-                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, exostoragename, chSubnet, str(forwardIP))
+                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, args.exoworkers, exostoragename, chSubnet, str(forwardIP), str(submitSubnet))
                 if status == False :
                     return
                 print ("ipMap after exogeni: "  + str(ipMap))
@@ -402,7 +418,7 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
         return response
 
-def provision_storage(args, datadir, site, ipMap, count, ipStart, sip=None):
+def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip=None):
     stdata = None
     st = datadir + "/storage.json"
     if os.path.exists(st):
@@ -421,6 +437,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, sip=None):
         s=s.replace("CIDR",cidr)
         if sip is not None:
             s=s.replace("SIP", str(sip))
+        s=s.replace("SUBMIT", str(submitSubnet))
         stdata["postBootScript"] = s
 
     mb=MobiusInterface()
@@ -428,7 +445,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, sip=None):
         print ("Provisioning compute storage node")
         nodename="Node" + str(count)
         oldnodename = "NODENAME"
-        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site)
+        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site, submitSubnet)
         print (nodename + " after create_compute")
         if response.json()["status"] != 200:
             print ("Deleting workflow")
@@ -437,7 +454,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, sip=None):
         count = count + 1
     return True, count, nodename
 
-def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, storagename, subnet, forwardIP):
+def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers, storagename, subnet, forwardIP, submitSubnet):
     mdata = None
     sdata = None
     wdata = None
@@ -483,7 +500,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, storage
         oldnodename = "NODENAME"
         if ipStart is not None :
             ipStart = get_next_ip(ipStart)
-        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, sdata, count, ipMap, oldnodename, site, storagename, subnet, forwardIP)
+        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, sdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP)
         print (nodename + " after create_compute")
         if response.json()["status"] != 200:
             print ("Deleting workflow")
@@ -492,12 +509,12 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, storage
         count = count + 1
     if wdata is not None :
         oldnodename = "NODENAME"
-        for x in range(args.workers):
+        for x in range(workers):
             print ("Provisioning worker: " + str(x))
             nodename="Node" + str(count)
             if ipStart is not None :
                 ipStart = get_next_ip(ipStart)
-            response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, wdata, count, ipMap, oldnodename, site, storagename, subnet, forwardIP)
+            response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, wdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP)
             print (nodename + " after create_compute")
             oldnodename = nodename
             if response.json()["status"] != 200:
@@ -507,7 +524,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, storage
             count = count + 1
     return True, count
 
-def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, storagename=None, subnet=None, forwardIP=None):
+def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename=None, subnet=None, forwardIP=None):
     if mdata["hostNamePrefix"] is not None :
         if "Exogeni" in site:
             nodename = mdata["hostNamePrefix"] + str(count)
@@ -527,6 +544,7 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
         s=mdata["postBootScript"]
         s=s.replace("WORKFLOW", workflowId)
         s=s.replace(oldnodename, nodename)
+        s=s.replace("SUBMIT", str(submitSubnet))
         print ("replacing " + oldnodename + " to " + nodename)
         if forwardIP is not None:
             s=s.replace("IPADDR", forwardIP)
