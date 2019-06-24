@@ -73,62 +73,65 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ### <a name="usage2"></a>Usage
 ```
 usage: condor_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
-                         [-n WORKERS] [-c COMETHOST] [-t CERT] [-k KEY]
-                         [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                         [-i1 EXOIPSTART] [-i2 CHIPSTART] [-l LEASEEND]
-                         [-d1 EXODATADIR] [-d2 CHDATADIR]
+                        [-n1 EXOWORKERS] [-n2 CHWORKERS] [-c COMETHOST]
+                        [-t CERT] [-k KEY] [-m MOBIUSHOST] -o OPERATION -w
+                        WORKFLOWID [-i1 EXOIPSTART] [-i2 CHIPSTART]
+                        [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
 
- Python client to create Condor cluster using mobius. Uses master.json,
- submit.json and worker.json for compute requests present in data directory
- specified. Currently only supports provisioning compute resources. Other
- resources can be provisioned via mobius_client. Creates COMET contexts for
- Chameleon resources and thus enables exchanging keys and hostnames within
- workflow
+Python client to create Condor cluster using mobius. Uses master.json,
+submit.json and worker.json for compute requests present in data directory
+specified. Currently only supports provisioning compute resources. Other
+resources can be provisioned via mobius_client. Creates COMET contexts for
+Chameleon resources and thus enables exchanging keys and hostnames within
+workflow
 
- optional arguments:
-   -h, --help            show this help message and exit
-   -s1 EXOGENISITE, --exogenisite EXOGENISITE
-                         Exogeni Site at which resources must be provisioned;
-                         must be specified for create operation
-   -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
-                         Chameleon Site at which resources must be provisioned;
-                         must be specified for create operation
-   -n WORKERS, --workers WORKERS
-                         Number of workers to be provisioned; must be specified
-                         for create operation
-   -c COMETHOST, --comethost COMETHOST
-                         Comet Host e.g. https://18.218.34.48:8111/; used only
-                         for provisioning resources on chameleon
-   -t CERT, --cert CERT  Comet Certificate; used only for provisioning
-                         resources on chameleon
-   -k KEY, --key KEY     Comet Certificate key; used only for provisioning
-                         resources on chameleon
-   -m MOBIUSHOST, --mobiushost MOBIUSHOST
-                         Mobius Host e.g. http://localhost:8080/mobius
-   -o OPERATION, --operation OPERATION
-                         Operation allowed values: create|get|delete
-   -w WORKFLOWID, --workflowId WORKFLOWID
-                         workflowId
-   -i1 EXOIPSTART, --exoipStart EXOIPSTART
-                         Exogeni Start IP Address of the range of IPs to be
-                         used for VMs; 1st IP is assigned to master and
-                         subsequent IPs are assigned to submit node and
-                         workers; can be specified for create operation
-   -i2 CHIPSTART, --chipStart CHIPSTART
-                         Chameleon Start IP Address of the range of IPs to be
-                         used for VMs; 1st IP is assigned to master and
-                         subsequent IPs are assigned to submit node and
-                         workers; can be specified for create operation
-   -l LEASEEND, --leaseEnd LEASEEND
-                         Lease End Time; can be specified for create operation
-   -d1 EXODATADIR, --exodatadir EXODATADIR
-                         Exogeni Data directory where to look for master.json,
-                         submit.json and worker.json; must be specified for
-                         create operation
-   -d2 CHDATADIR, --chdatadir CHDATADIR
-                         Chameleon Data directory where to look for
-                         master.json, submit.json and worker.json; must be
-                         specified for create operation                        
+optional arguments:
+  -h, --help            show this help message and exit
+  -s1 EXOGENISITE, --exogenisite EXOGENISITE
+                        Exogeni Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
+                        Chameleon Site at which resources must be provisioned;
+                        must be specified for create operation
+  -n1 EXOWORKERS, --exoworkers EXOWORKERS
+                        Number of workers to be provisioned on Exogeni; must
+                        be specified for create operation
+  -n2 CHWORKERS, --chworkers CHWORKERS
+                        Number of workers to be provisioned on Chameleon; must
+                        be specified for create operation
+  -c COMETHOST, --comethost COMETHOST
+                        Comet Host e.g. https://18.218.34.48:8111/; used only
+                        for provisioning resources on chameleon
+  -t CERT, --cert CERT  Comet Certificate; used only for provisioning
+                        resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key; used only for provisioning
+                        resources on chameleon
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -o OPERATION, --operation OPERATION
+                        Operation allowed values: create|get|delete
+  -w WORKFLOWID, --workflowId WORKFLOWID
+                        workflowId
+  -i1 EXOIPSTART, --exoipStart EXOIPSTART
+                        Exogeni Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i2 CHIPSTART, --chipStart CHIPSTART
+                        Chameleon Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time; can be specified for create operation
+  -d1 EXODATADIR, --exodatadir EXODATADIR
+                        Exogeni Data directory where to look for master.json,
+                        submit.json and worker.json; must be specified for
+                        create operation
+  -d2 CHDATADIR, --chdatadir CHDATADIR
+                        Chameleon Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation                   
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -191,13 +194,13 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ##### Chameleon:
 - Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n 1
+python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n2 1
 ```
 ##### Exogeni: For controller where COMET is not enabled (EXOSOM)
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json if present in the directory would be used to stitch
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n 1
+python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
 ```
 ##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
@@ -205,7 +208,7 @@ python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogen
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
 - Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n 1
+python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
