@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers;
 
+import exoplex.client.exogeni.SdxExogeniClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -314,26 +315,7 @@ class Workflow {
                 LOGGER.debug("processNetworkRequest(): OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
-            CloudContext sourceContext = null, targetContext = null;
-            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
-                sourceContext = e.getValue();
-                targetContext = e.getValue();
-                if (sourceContext == null && e.getValue().containsHost(request.getSource())) {
-                    sourceContext = e.getValue();
-                    LOGGER.debug("Context found to handle network request=" + sourceContext.getSite());
-                }
-                if (targetContext == null && e.getValue().containsHost(request.getDestination())) {
-                    targetContext = e.getValue();
-                    LOGGER.debug("Context found to handle network request=" + targetContext.getSite());
-                }
-                if(sourceContext != null && targetContext != null) {
-                    break;
-                }
-            }
-            if(sourceContext == null || targetContext == null) {
-                LOGGER.debug("processNetworkRequest(): OUT");
-                throw new MobiusException(HttpStatus.NOT_FOUND, " source or destination context not found");
-            }
+
 
             // sudo ${BIN_DIR}/SafeSdxExogeniClient -c client-config/c0.conf -e 'stitch client-1 192.168.20.2 192.168.20.1/24'
             JSONObject object =  new JSONObject();
@@ -342,12 +324,12 @@ class Workflow {
             // Exogeni Controller URL
             object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
             // Exogeni Slice name
-            object.put("config.slicename", sourceContext.getSite());
+            object.put("config.slicename", request.getSourceSliceName());
 
             LOGGER.debug("processNetworkRequest(): source = " + object.toString());
-
+            
             // Exogeni Slice name
-            object.put("config.slicename", targetContext.getSite());
+            object.put("config.slicename", request.getDestinationSliceName());
 
             LOGGER.debug("processNetworkRequest(): source = " + object.toString());
         }

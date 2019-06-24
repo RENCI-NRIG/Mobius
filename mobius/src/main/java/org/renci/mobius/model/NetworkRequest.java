@@ -14,14 +14,20 @@ import javax.validation.constraints.*;
  * NetworkRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2018-12-12T15:18:29.707-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-06-21T14:54:33.975-04:00[America/New_York]")
 
 public class NetworkRequest   {
-  @JsonProperty("source")
-  private String source = null;
+  @JsonProperty("sourceIP")
+  private String sourceIP = null;
 
-  @JsonProperty("destination")
-  private String destination = null;
+  @JsonProperty("sourceSliceName")
+  private String sourceSliceName = null;
+
+  @JsonProperty("destinationIP")
+  private String destinationIP = null;
+
+  @JsonProperty("destinationSliceName")
+  private String destinationSliceName = null;
 
   @JsonProperty("linkSpeed")
   private Integer linkSpeed = null;
@@ -71,44 +77,88 @@ public class NetworkRequest   {
   @JsonProperty("action")
   private ActionEnum action = null;
 
-  public NetworkRequest source(String source) {
-    this.source = source;
+  public NetworkRequest sourceIP(String sourceIP) {
+    this.sourceIP = sourceIP;
     return this;
   }
 
   /**
-   * hostname or ip of the source
-   * @return source
+   * ip of the source
+   * @return sourceIP
   **/
-  @ApiModelProperty(value = "hostname or ip of the source")
+  @ApiModelProperty(required = true, value = "ip of the source")
+  @NotNull
 
 
-  public String getSource() {
-    return source;
+  public String getSourceIP() {
+    return sourceIP;
   }
 
-  public void setSource(String source) {
-    this.source = source;
+  public void setSourceIP(String sourceIP) {
+    this.sourceIP = sourceIP;
   }
 
-  public NetworkRequest destination(String destination) {
-    this.destination = destination;
+  public NetworkRequest sourceSliceName(String sourceSliceName) {
+    this.sourceSliceName = sourceSliceName;
     return this;
   }
 
   /**
-   * hostname or ip of the destination
-   * @return destination
+   * ip of the source
+   * @return sourceSliceName
   **/
-  @ApiModelProperty(value = "hostname or ip of the destination")
+  @ApiModelProperty(required = true, value = "ip of the source")
+  @NotNull
 
 
-  public String getDestination() {
-    return destination;
+  public String getSourceSliceName() {
+    return sourceSliceName;
   }
 
-  public void setDestination(String destination) {
-    this.destination = destination;
+  public void setSourceSliceName(String sourceSliceName) {
+    this.sourceSliceName = sourceSliceName;
+  }
+
+  public NetworkRequest destinationIP(String destinationIP) {
+    this.destinationIP = destinationIP;
+    return this;
+  }
+
+  /**
+   * ip of the destination
+   * @return destinationIP
+  **/
+  @ApiModelProperty(required = true, value = "ip of the destination")
+  @NotNull
+
+
+  public String getDestinationIP() {
+    return destinationIP;
+  }
+
+  public void setDestinationIP(String destinationIP) {
+    this.destinationIP = destinationIP;
+  }
+
+  public NetworkRequest destinationSliceName(String destinationSliceName) {
+    this.destinationSliceName = destinationSliceName;
+    return this;
+  }
+
+  /**
+   * ip of the destination
+   * @return destinationSliceName
+  **/
+  @ApiModelProperty(required = true, value = "ip of the destination")
+  @NotNull
+
+
+  public String getDestinationSliceName() {
+    return destinationSliceName;
+  }
+
+  public void setDestinationSliceName(String destinationSliceName) {
+    this.destinationSliceName = destinationSliceName;
   }
 
   public NetworkRequest linkSpeed(Integer linkSpeed) {
@@ -201,7 +251,8 @@ public class NetworkRequest   {
    * Get action
    * @return action
   **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "")
+  @NotNull
 
 
   public ActionEnum getAction() {
@@ -222,8 +273,10 @@ public class NetworkRequest   {
       return false;
     }
     NetworkRequest networkRequest = (NetworkRequest) o;
-    return Objects.equals(this.source, networkRequest.source) &&
-        Objects.equals(this.destination, networkRequest.destination) &&
+    return Objects.equals(this.sourceIP, networkRequest.sourceIP) &&
+        Objects.equals(this.sourceSliceName, networkRequest.sourceSliceName) &&
+        Objects.equals(this.destinationIP, networkRequest.destinationIP) &&
+        Objects.equals(this.destinationSliceName, networkRequest.destinationSliceName) &&
         Objects.equals(this.linkSpeed, networkRequest.linkSpeed) &&
         Objects.equals(this.qos, networkRequest.qos) &&
         Objects.equals(this.leaseStart, networkRequest.leaseStart) &&
@@ -233,7 +286,7 @@ public class NetworkRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(source, destination, linkSpeed, qos, leaseStart, leaseEnd, action);
+    return Objects.hash(sourceIP, sourceSliceName, destinationIP, destinationSliceName, linkSpeed, qos, leaseStart, leaseEnd, action);
   }
 
   @Override
@@ -241,8 +294,10 @@ public class NetworkRequest   {
     StringBuilder sb = new StringBuilder();
     sb.append("class NetworkRequest {\n");
     
-    sb.append("    source: ").append(toIndentedString(source)).append("\n");
-    sb.append("    destination: ").append(toIndentedString(destination)).append("\n");
+    sb.append("    sourceIP: ").append(toIndentedString(sourceIP)).append("\n");
+    sb.append("    sourceSliceName: ").append(toIndentedString(sourceSliceName)).append("\n");
+    sb.append("    destinationIP: ").append(toIndentedString(destinationIP)).append("\n");
+    sb.append("    destinationSliceName: ").append(toIndentedString(destinationSliceName)).append("\n");
     sb.append("    linkSpeed: ").append(toIndentedString(linkSpeed)).append("\n");
     sb.append("    qos: ").append(toIndentedString(qos)).append("\n");
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
