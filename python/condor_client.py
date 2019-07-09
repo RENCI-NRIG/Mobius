@@ -277,7 +277,10 @@ def main():
                     print("KOMAL debug: " + str(ip))
                     submitSubnet = get_cidr(ip)
             if args.chameleonsite is not None and args.chdatadir is not None:
-                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet)
+                exogeniSubnet = None
+                if args.exoipStart is not None:
+                    exogeniSubnet = get_cidr(args.exoipStart)
+                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, None, exogeniSubnet)
                 if status == False:
                     return
                 chstoragename = chstoragename + ".novalocal"
@@ -292,7 +295,7 @@ def main():
                 forwardIP = None
                 if stitchdata is not None:
                     forwardIP = stitchdata["stitchIP"]
-                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, str(forwardIP), str(submitSubnet))
+                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, forwardIP, submitSubnet)
                 if status == False:
                     return
                 print ("ipMap after chameleon: "  + str(ipMap))
@@ -317,7 +320,7 @@ def main():
                     chSubnet = get_cidr(args.chipStart)
                 if exostoragename is not None:
                     forwardIP = ipMap[exostoragename]
-                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, args.exoworkers, exostoragename, chSubnet, str(forwardIP), str(submitSubnet))
+                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, args.exoworkers, exostoragename, chSubnet, forwardIP, submitSubnet)
                 if status == False :
                     return
                 print ("ipMap after exogeni: "  + str(ipMap))
@@ -419,7 +422,7 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
         return response
 
-def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip=None):
+def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip=None, exogeniSubnet=None):
     stdata = None
     st = datadir + "/storage.json"
     if os.path.exists(st):
@@ -445,7 +448,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
         print ("Provisioning compute storage node")
         nodename="Node" + str(count)
         oldnodename = "NODENAME"
-        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site, submitSubnet)
+        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site, submitSubnet, None, exogeniSubnet)
         print (nodename + " after create_compute")
         if response.json()["status"] != 200:
             print ("Deleting workflow")
