@@ -1,5 +1,5 @@
  {
-      "target":"storage",
+      "target":"master",
       "portUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1",
       "tag":"709",
       "bandwidth":"1000000000",
