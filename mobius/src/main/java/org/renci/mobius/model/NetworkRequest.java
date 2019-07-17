@@ -14,26 +14,29 @@ import javax.validation.constraints.*;
  * NetworkRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-06-21T14:54:33.975-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-07-09T13:20:19.076-04:00[America/New_York]")
 
 public class NetworkRequest   {
+  @JsonProperty("source")
+  private String source = null;
+
   @JsonProperty("sourceIP")
   private String sourceIP = null;
 
-  @JsonProperty("sourceSliceName")
-  private String sourceSliceName = null;
+  @JsonProperty("sourceSubnet")
+  private String sourceSubnet = null;
+
+  @JsonProperty("destination")
+  private String destination = null;
 
   @JsonProperty("destinationIP")
   private String destinationIP = null;
 
-  @JsonProperty("destinationSliceName")
-  private String destinationSliceName = null;
+  @JsonProperty("destinationSubnet")
+  private String destinationSubnet = null;
 
   @JsonProperty("linkSpeed")
   private Integer linkSpeed = null;
-
-  @JsonProperty("qos")
-  private String qos = null;
 
   @JsonProperty("leaseStart")
   private String leaseStart = null;
@@ -47,9 +50,7 @@ public class NetworkRequest   {
   public enum ActionEnum {
     ADD("add"),
     
-    DELETE("delete"),
-    
-    UPDATE("update");
+    DELETE("delete");
 
     private String value;
 
@@ -77,16 +78,37 @@ public class NetworkRequest   {
   @JsonProperty("action")
   private ActionEnum action = null;
 
+  public NetworkRequest source(String source) {
+    this.source = source;
+    return this;
+  }
+
+  /**
+   * hostname of the source node
+   * @return source
+  **/
+  @ApiModelProperty(required = true, value = "hostname of the source node")
+  @NotNull
+
+
+  public String getSource() {
+    return source;
+  }
+
+  public void setSource(String source) {
+    this.source = source;
+  }
+
   public NetworkRequest sourceIP(String sourceIP) {
     this.sourceIP = sourceIP;
     return this;
   }
 
   /**
-   * ip of the source
+   * ip of the source node
    * @return sourceIP
   **/
-  @ApiModelProperty(required = true, value = "ip of the source")
+  @ApiModelProperty(required = true, value = "ip of the source node")
   @NotNull
 
 
@@ -98,25 +120,46 @@ public class NetworkRequest   {
     this.sourceIP = sourceIP;
   }
 
-  public NetworkRequest sourceSliceName(String sourceSliceName) {
-    this.sourceSliceName = sourceSliceName;
+  public NetworkRequest sourceSubnet(String sourceSubnet) {
+    this.sourceSubnet = sourceSubnet;
     return this;
   }
 
   /**
-   * ip of the source
-   * @return sourceSliceName
+   * subnet of the source node
+   * @return sourceSubnet
   **/
-  @ApiModelProperty(required = true, value = "ip of the source")
+  @ApiModelProperty(required = true, value = "subnet of the source node")
   @NotNull
 
 
-  public String getSourceSliceName() {
-    return sourceSliceName;
+  public String getSourceSubnet() {
+    return sourceSubnet;
   }
 
-  public void setSourceSliceName(String sourceSliceName) {
-    this.sourceSliceName = sourceSliceName;
+  public void setSourceSubnet(String sourceSubnet) {
+    this.sourceSubnet = sourceSubnet;
+  }
+
+  public NetworkRequest destination(String destination) {
+    this.destination = destination;
+    return this;
+  }
+
+  /**
+   * hostname of the destination node
+   * @return destination
+  **/
+  @ApiModelProperty(required = true, value = "hostname of the destination node")
+  @NotNull
+
+
+  public String getDestination() {
+    return destination;
+  }
+
+  public void setDestination(String destination) {
+    this.destination = destination;
   }
 
   public NetworkRequest destinationIP(String destinationIP) {
@@ -125,10 +168,10 @@ public class NetworkRequest   {
   }
 
   /**
-   * ip of the destination
+   * ip of the destination node
    * @return destinationIP
   **/
-  @ApiModelProperty(required = true, value = "ip of the destination")
+  @ApiModelProperty(required = true, value = "ip of the destination node")
   @NotNull
 
 
@@ -140,25 +183,25 @@ public class NetworkRequest   {
     this.destinationIP = destinationIP;
   }
 
-  public NetworkRequest destinationSliceName(String destinationSliceName) {
-    this.destinationSliceName = destinationSliceName;
+  public NetworkRequest destinationSubnet(String destinationSubnet) {
+    this.destinationSubnet = destinationSubnet;
     return this;
   }
 
   /**
-   * ip of the destination
-   * @return destinationSliceName
+   * subnet of the destination node
+   * @return destinationSubnet
   **/
-  @ApiModelProperty(required = true, value = "ip of the destination")
+  @ApiModelProperty(required = true, value = "subnet of the destination node")
   @NotNull
 
 
-  public String getDestinationSliceName() {
-    return destinationSliceName;
+  public String getDestinationSubnet() {
+    return destinationSubnet;
   }
 
-  public void setDestinationSliceName(String destinationSliceName) {
-    this.destinationSliceName = destinationSliceName;
+  public void setDestinationSubnet(String destinationSubnet) {
+    this.destinationSubnet = destinationSubnet;
   }
 
   public NetworkRequest linkSpeed(Integer linkSpeed) {
@@ -168,38 +211,17 @@ public class NetworkRequest   {
 
   /**
    * Link speed
-   * minimum: 0
    * @return linkSpeed
   **/
   @ApiModelProperty(value = "Link speed")
 
-@Min(0)
+
   public Integer getLinkSpeed() {
     return linkSpeed;
   }
 
   public void setLinkSpeed(Integer linkSpeed) {
     this.linkSpeed = linkSpeed;
-  }
-
-  public NetworkRequest qos(String qos) {
-    this.qos = qos;
-    return this;
-  }
-
-  /**
-   * Qos parameters
-   * @return qos
-  **/
-  @ApiModelProperty(value = "Qos parameters")
-
-
-  public String getQos() {
-    return qos;
-  }
-
-  public void setQos(String qos) {
-    this.qos = qos;
   }
 
   public NetworkRequest leaseStart(String leaseStart) {
@@ -273,12 +295,13 @@ public class NetworkRequest   {
       return false;
     }
     NetworkRequest networkRequest = (NetworkRequest) o;
-    return Objects.equals(this.sourceIP, networkRequest.sourceIP) &&
-        Objects.equals(this.sourceSliceName, networkRequest.sourceSliceName) &&
+    return Objects.equals(this.source, networkRequest.source) &&
+        Objects.equals(this.sourceIP, networkRequest.sourceIP) &&
+        Objects.equals(this.sourceSubnet, networkRequest.sourceSubnet) &&
+        Objects.equals(this.destination, networkRequest.destination) &&
         Objects.equals(this.destinationIP, networkRequest.destinationIP) &&
-        Objects.equals(this.destinationSliceName, networkRequest.destinationSliceName) &&
+        Objects.equals(this.destinationSubnet, networkRequest.destinationSubnet) &&
         Objects.equals(this.linkSpeed, networkRequest.linkSpeed) &&
-        Objects.equals(this.qos, networkRequest.qos) &&
         Objects.equals(this.leaseStart, networkRequest.leaseStart) &&
         Objects.equals(this.leaseEnd, networkRequest.leaseEnd) &&
         Objects.equals(this.action, networkRequest.action);
@@ -286,7 +309,7 @@ public class NetworkRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sourceIP, sourceSliceName, destinationIP, destinationSliceName, linkSpeed, qos, leaseStart, leaseEnd, action);
+    return Objects.hash(source, sourceIP, sourceSubnet, destination, destinationIP, destinationSubnet, linkSpeed, leaseStart, leaseEnd, action);
   }
 
   @Override
@@ -294,12 +317,13 @@ public class NetworkRequest   {
     StringBuilder sb = new StringBuilder();
     sb.append("class NetworkRequest {\n");
     
+    sb.append("    source: ").append(toIndentedString(source)).append("\n");
     sb.append("    sourceIP: ").append(toIndentedString(sourceIP)).append("\n");
-    sb.append("    sourceSliceName: ").append(toIndentedString(sourceSliceName)).append("\n");
+    sb.append("    sourceSubnet: ").append(toIndentedString(sourceSubnet)).append("\n");
+    sb.append("    destination: ").append(toIndentedString(destination)).append("\n");
     sb.append("    destinationIP: ").append(toIndentedString(destinationIP)).append("\n");
-    sb.append("    destinationSliceName: ").append(toIndentedString(destinationSliceName)).append("\n");
+    sb.append("    destinationSubnet: ").append(toIndentedString(destinationSubnet)).append("\n");
     sb.append("    linkSpeed: ").append(toIndentedString(linkSpeed)).append("\n");
-    sb.append("    qos: ").append(toIndentedString(qos)).append("\n");
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
     sb.append("    leaseEnd: ").append(toIndentedString(leaseEnd)).append("\n");
     sb.append("    action: ").append(toIndentedString(action)).append("\n");

@@ -6,8 +6,7 @@ import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.MobiusResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,7 +28,7 @@ import java.util.Map;
 @Controller
 public class WorkflowApiController implements WorkflowApi {
 
-    private static final Logger log = LoggerFactory.getLogger(WorkflowApiController.class);
+    private static final Logger log = Logger.getLogger(WorkflowApiController.class);
 
     private final ObjectMapper objectMapper;
 

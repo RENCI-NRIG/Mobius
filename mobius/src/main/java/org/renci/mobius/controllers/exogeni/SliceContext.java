@@ -1,5 +1,9 @@
 package org.renci.mobius.controllers.exogeni;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import exoplex.client.exogeni.SdxExogeniClient;
+import injection.SingleSdxModule;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.ahab.libndl.Slice;
@@ -14,6 +18,7 @@ import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
@@ -655,6 +660,161 @@ public class SliceContext {
         }
         finally {
             LOGGER.debug("processStitchRequest: OUT");
+        }
+    }
+    private void stitchToSdx(JSONObject config, String opParams, String routeParams) throws Exception {
+        //String sliceName, String IPPrefix, String config, SdxExogeniClient.Operation operation, String operationParams
+        Injector injector = Guice.createInjector(new SingleSdxModule());
+        SdxExogeniClient sdxExogeniClient = injector.getInstance(SdxExogeniClient.class);
+        sdxExogeniClient.readConfigFromJson(config.toString());
+        sdxExogeniClient.safeEnabled = false;
+        sdxExogeniClient.runExec(opParams);
+        if(routeParams != null) {
+            System.out.println("routeParams=" + routeParams);
+            sdxExogeniClient.runExec(routeParams);
+        }
+    }
+    /*
+     * @brief function to process network request
+     *
+     * @param hostName - hostName
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
+        LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: IN");
+
+        try {
+            Slice slice = getSlice();
+            if (slice == null) {
+                throw new MobiusException("Unable to load slice");
+            }
+
+            ComputeNode c = (ComputeNode) slice.getResourceByName(hostname);
+            if (c == null) {
+                throw new MobiusException("Unable to load compute node");
+            }
+
+            JSONObject object =  new JSONObject();
+            object.put("config.type", "client");
+
+            // hack needed to remove .pub from filename as SDX code expects to not have file extension
+            String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
+            int indexOfLast = sshfile.lastIndexOf(".pub");
+            String newString = null;
+            if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
+
+            object.put("config.sshkey", newString);
+            object.put("config.safe", "false");
+            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
+            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+            object.put("config.serverurl","http://18.191.204.20:8888/");
+
+            // Stitch Source Node
+            object.put("config.slicename", sliceName);
+            System.out.println("processNetworkRequestSetupStitchingAndRoute(): source = " + object.toString());
+            // TODO: determine IP Address
+            String opParams = "stitch ";
+            String routeParams = "route ";
+            if(action == NetworkRequest.ActionEnum.DELETE) {
+                opParams = "unstitch ";
+                routeParams = null;
+            }
+            opParams = opParams + hostname + " " + ip + " " + subnet;
+            if(routeParams != null) {
+                routeParams = routeParams + subnet + " " + ip;
+            }
+            System.out.println("processNetworkRequestSetupStitchingAndRoute(): opParams = " + opParams);
+            stitchToSdx(object, opParams, routeParams);
+            System.out.println("processNetworkRequestSetupStitchingAndRoute(): completed stitchToSdx");
+
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: OUT");
+        }
+    }
+
+
+    /*
+     * @brief function to process network request
+     *
+     * @param hostName - hostName
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestLink(String subnet1, String subnet2) throws Exception{
+        LOGGER.debug("processNetworkRequestLink: IN");
+
+        try {
+            Slice slice = getSlice();
+            if (slice == null) {
+                throw new MobiusException("Unable to load slice");
+            }
+
+            JSONObject object =  new JSONObject();
+            object.put("config.type", "client");
+
+            // hack needed to remove .pub from filename as SDX code expects to not have file extension
+            String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
+            int indexOfLast = sshfile.lastIndexOf(".pub");
+            String newString = null;
+            if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
+
+            object.put("config.sshkey", newString);
+            object.put("config.safe", "false");
+            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
+            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+            object.put("config.serverurl","http://18.191.204.20:8888/");
+
+            // Stitch Source Node
+            object.put("config.slicename", sliceName);
+            System.out.println("processNetworkRequestLink(): source = " + object.toString());
+            String opParams = "link " + subnet1 + " " + subnet2;
+            System.out.println("processNetworkRequestLink(): opParams = " + opParams);
+            stitchToSdx(object, opParams, null);
+            System.out.println("processNetworkRequestLink(): completed stitchToSdx");
+
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("processNetworkRequestLink: OUT");
         }
     }
 }

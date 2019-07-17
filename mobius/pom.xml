@@ -266,7 +266,7 @@
         </dependency>
         <dependency>
             <groupId>safe</groupId>
-            <artifactId>exoplex.sdx-simple</artifactId>
+            <artifactId>exoplex</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

@@ -4,6 +4,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
@@ -173,6 +174,26 @@ abstract public class CloudContext {
      *
      */
     abstract public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
+
+    /*
+     * @brief function to process a network request;
+     *
+     * @param hostname - hostname
+     *
+     * @throws Exception in case of error
+     *
+     */
+    abstract public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception;
+
+    /*
+     * @brief function to process a network request;
+     *
+     * @param hostname - hostname
+     *
+     * @throws Exception in case of error
+     *
+     */
+    abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception;
 
     /*
      * @brief function to check get status for the context

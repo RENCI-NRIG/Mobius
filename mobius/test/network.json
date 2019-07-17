@@ -1,0 +1,10 @@
+{
+    "source":"master0",
+    "sourceIP":"192.168.10.2",
+    "sourceSubnet":"192.168.10.1/24",
+    "destination":"master1",
+    "destinationIP":"192.168.20.2",
+    "destinationSubnet":"192.168.20.1/24",
+    "action":"add"
+}
+

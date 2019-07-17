@@ -1,5 +1,5 @@
 {
-    "site":"Exogeni:UNF (Jacksonville, FL) XO Rack",
+    "site":"Exogeni:UH (Houston, TX USA) XO Rack",
     "cpus":"4",
     "gpus":"0",
     "ramPerCpus":"3072",
@@ -12,4 +12,3 @@
     "postBootScript":"yum -y install quagga iperf\necho '1' > /proc/sys/net/ipv4/ip_forward",
     "leaseEnd":"1563455759"
 }
-

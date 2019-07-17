@@ -547,23 +547,35 @@
     },
     "networkRequest" : {
       "type" : "object",
+      "required" : [ "action", "destination", "destinationIP", "destinationSubnet", "source", "sourceIP", "sourceSubnet" ],
       "properties" : {
         "source" : {
           "type" : "string",
-          "description" : "hostname or ip of the source"
+          "description" : "hostname of the source node"
+        },
+        "sourceIP" : {
+          "type" : "string",
+          "description" : "ip of the source node"
+        },
+        "sourceSubnet" : {
+          "type" : "string",
+          "description" : "subnet of the source node"
         },
         "destination" : {
           "type" : "string",
-          "description" : "hostname or ip of the destination"
+          "description" : "hostname of the destination node"
+        },
+        "destinationIP" : {
+          "type" : "string",
+          "description" : "ip of the destination node"
+        },
+        "destinationSubnet" : {
+          "type" : "string",
+          "description" : "subnet of the destination node"
         },
         "linkSpeed" : {
           "type" : "integer",
-          "description" : "Link speed",
-          "minimum" : 0
-        },
-        "qos" : {
-          "type" : "string",
-          "description" : "Qos parameters"
+          "description" : "Link speed"
         },
         "leaseStart" : {
           "type" : "string",
@@ -575,7 +587,7 @@
         },
         "action" : {
           "type" : "string",
-          "enum" : [ "add", "delete", "update" ]
+          "enum" : [ "add", "delete" ]
         }
       }
     },

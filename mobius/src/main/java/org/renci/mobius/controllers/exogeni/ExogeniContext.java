@@ -9,6 +9,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
@@ -381,6 +382,7 @@ public class ExogeniContext extends CloudContext {
             SliceContext context = null;
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
+            System.out.println("Clearing hostNameToSliceNameHashMap");
             hostNameToSliceNameHashMap.clear();
             leaseEndTimeToSliceNameHashMap.clear();
             hostNameSet.clear();
@@ -400,6 +402,7 @@ public class ExogeniContext extends CloudContext {
                 hostNameSet.addAll(hostNames);
                 for (String h : hostNames) {
                     if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
+                        System.out.println("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
                         hostNameToSliceNameHashMap.put(h, context.getSliceName());
                     }
                 }
@@ -492,5 +495,74 @@ public class ExogeniContext extends CloudContext {
             }
         }
         LOGGER.debug("handSliceNotFoundException: OUT");
+    }
+
+    /*
+     * @brief function to process network request
+     *
+     * @param hostname - hostname
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
+        synchronized (this) {
+            System.out.println("processNetworkRequestSetupStitchingAndRoute: IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+
+            String sliceName = hostNameToSliceNameHashMap.get(hostname);
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
+            }
+            SliceContext context = sliceContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+            try {
+                context.processNetworkRequestSetupStitchingAndRoute(hostname, ip, subnet, action);
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: OUT");
+            }
+        }
+    }
+
+    /*
+     * @brief function to process network request
+     *
+     * @param hostname - hostname
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception{
+        synchronized (this) {
+            System.out.println("processNetworkRequestLink: IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            String sliceName = hostNameToSliceNameHashMap.get(hostname);
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
+            }
+            SliceContext context = sliceContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+            try {
+                context.processNetworkRequestLink(subnet1, subnet2);
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("processNetworkRequestLink: OUT");
+            }
+        }
     }
 }

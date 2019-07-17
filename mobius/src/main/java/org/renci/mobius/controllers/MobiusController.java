@@ -345,12 +345,14 @@ public class MobiusController {
                     workflow = workflowHashMap.get(workflowId);
                 }
                 if (workflow != null) {
+                    LOGGER.debug("processNetworkRequest(): workflow found; locking workflow");
                     workflow.lock();
                     try {
+                        LOGGER.debug("processNetworkRequest(): invoking workflow processNetwork");
                         workflow.processNetworkRequest(request, false);
-                        dbWrite(workflow, DbOperation.Update);
+                        LOGGER.debug("processNetworkRequest(): workflow processNetwork completed successfully");
+                        //dbWrite(workflow, DbOperation.Update);
                     } finally {
-
                         workflow.unlock();
                     }
                 } else {

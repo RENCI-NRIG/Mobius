@@ -1,6 +1,9 @@
 package org.renci.mobius.controllers;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import exoplex.client.exogeni.SdxExogeniClient;
+import injection.SingleSdxModule;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -300,6 +303,33 @@ class Workflow {
     }
 
     /*
+     * @brief function to find Cloud Context which contains a node with specified hostname
+     *
+     * @param hostname - hostname
+     *
+     * @throws Exception in case of error
+     *
+     */
+    private CloudContext findContext(String hostname) throws Exception{
+        // lookup source and target nodes
+        CloudContext context = null;
+        for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
+            context = e.getValue();
+            if (context.containsHost(hostname)) {
+                LOGGER.debug("Context found =" + context.getSite());
+                break;
+            }else {
+                context = null;
+            }
+        }
+        if(context == null) {
+            LOGGER.debug("findContext(): OUT");
+            throw new MobiusException(HttpStatus.NOT_FOUND, "source not found");
+        }
+        return context;
+    }
+
+    /*
      * @brief function to process network request
      *
      * @param request - network request
@@ -316,22 +346,15 @@ class Workflow {
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
 
+            // lookup source and target nodes
+            CloudContext context1 = findContext(request.getSource());
+            context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(), request.getSourceSubnet(), request.getAction());
 
-            // sudo ${BIN_DIR}/SafeSdxExogeniClient -c client-config/c0.conf -e 'stitch client-1 192.168.20.2 192.168.20.1/24'
-            JSONObject object =  new JSONObject();
-            // Exogeni User PEM
-            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
-            // Exogeni Controller URL
-            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
-            // Exogeni Slice name
-            object.put("config.slicename", request.getSourceSliceName());
+            CloudContext context2 = findContext(request.getDestination());
+            context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(), request.getDestinationSubnet(), request.getAction());
 
-            LOGGER.debug("processNetworkRequest(): source = " + object.toString());
-            
-            // Exogeni Slice name
-            object.put("config.slicename", request.getDestinationSliceName());
-
-            LOGGER.debug("processNetworkRequest(): source = " + object.toString());
+            context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(), request.getDestinationSubnet());
+            context2.processNetworkRequestLink(request.getDestination(), request.getSourceSubnet(), request.getDestinationSubnet());
         }
         finally {
             LOGGER.debug("processNetworkRequest(): OUT");

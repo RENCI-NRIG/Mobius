@@ -7,8 +7,7 @@ import org.renci.mobius.model.MobiusResponse;
 import org.renci.mobius.model.StitchRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,7 +29,7 @@ import java.util.Map;
 @Controller
 public class StitchApiController implements StitchApi {
 
-    private static final Logger log = LoggerFactory.getLogger(StitchApiController.class);
+    private static final Logger log = Logger.getLogger(StitchApiController.class);
 
     private final ObjectMapper objectMapper;
 

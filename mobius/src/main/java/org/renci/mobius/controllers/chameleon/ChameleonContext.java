@@ -8,6 +8,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
+import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 
@@ -651,6 +652,36 @@ public class ChameleonContext extends CloudContext {
      */
     @Override
     public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
+        throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
+    }
+    /*
+     * @brief function to process a network request;
+     *
+     * @param hostname - hostname
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    @Override
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception {
+        throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
+    }
+    /*
+     * @brief function to process a network request;
+     *
+     * @param hostname - hostname
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
+     *
+     * @throws Exception in case of error
+     *
+     */
+    @Override
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
     }
 }
