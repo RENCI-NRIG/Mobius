@@ -60,6 +60,7 @@ No changes needed until pegasus to mobius integration is complete.
          - "./config/log4j.properties:/code/config/log4j.properties"
          - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "./ssh/id_rsa:/code/ssh/id_rsa"
 ```
 ### <a name="run3"></a>Run Docker
 Run docker-compose up -d from Mobius/docker directory
