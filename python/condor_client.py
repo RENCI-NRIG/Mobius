@@ -210,7 +210,9 @@ def main():
         if args.comethost is not None:
             print ("Cleaning up COMET context for workflow")
             comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-            response=comet.delete_families(args.comethost, args.workflowId, None, args.workflowId, args.workflowId)
+            readToken=args.workflowId + "read"
+            writeToken=args.workflowId + "write"
+            response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
     elif args.operation == 'create':
         ipMap = dict()
         if (args.exogenisite is None and args.chameleonsite is None) or (args.exoworkers is None and args.chworkers is None)  or (args.exodatadir is None and args.chdatadir is None) :

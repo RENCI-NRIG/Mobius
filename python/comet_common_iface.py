@@ -65,6 +65,8 @@ class CometInterface:
                 response = self.enumerate_families(host, sliceId, readToken, family)
             elif operation == 'delete_families' :
                 response = self.delete_families(host, sliceId, rId, readToken, writeToken)
+            elif operation == 'reset_families' :
+                response = self.reset_families(host, sliceId, rId, readToken, writeToken)
             if response.status_code == 200:
                 break
         return response
@@ -158,8 +160,21 @@ class CometInterface:
             raise CometException('delete_families: Cannot Enumerate Scope: ' + str(response.status_code))
         if response.json()["value"] and response.json()["value"]["entries"]:
             for key in response.json()["value"]["entries"]:
-                self._log.debug ("delete_families: Deleting Family: '" + key["family"] + "' SliceId: '" + sliceId + "' rId: '" + rId + "'")
-                response = self.delete_family(host, sliceId, rId, readToken, writeToken, key["family"])
+                self._log.debug ("delete_families: Deleting Family: '" + key["family"] + "' SliceId: '" + sliceId + "' rId: '" + str(rId) + "'")
+                response = self.delete_family(host, sliceId, key["key"], readToken, writeToken, key["family"])
                 if response.status_code != 200:
-                    self._log.debug('delete_families: Cannot Delete Family: ' + key["family"])
+                    self._log.debug ('delete_families: Cannot Delete Family: ' + key["family"])
+        return response
+
+    @classmethod
+    def reset_families(self, host, sliceId, rId, readToken, writeToken):
+        response = self.enumerate_families(host, sliceId, readToken)
+        if response.status_code != 200:
+            raise CometException('reset_families: Cannot Enumerate Scope: ' + str(response.status_code))
+        if response.json()["value"] and response.json()["value"]["entries"]:
+            for key in response.json()["value"]["entries"]:
+                self._log.debug ("reset_families: Deleting Family: '" + key["family"] + "' SliceId: '" + sliceId + "' rId: '" + str(rId) + "'")
+                response = self.update_family(host, sliceId, key["key"], readToken, writeToken, key["family"], "")
+                if response.status_code != 200:
+                    self._log.debug ('reset_families: Cannot Delete Family: ' + key["family"])
         return response
