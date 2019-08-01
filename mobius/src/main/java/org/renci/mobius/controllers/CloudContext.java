@@ -11,7 +11,8 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /*
  * @brief class represents context for all resources on a specific cloud
@@ -66,7 +67,7 @@ abstract public class CloudContext {
         return "Mobius-" + type.name() + "-" + user + "-" + generateRandomString();
     }
 
-    private static final Logger LOGGER = Logger.getLogger( CloudContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( CloudContext.class.getName() );
 
     protected CloudType type;
     protected String site;
@@ -162,23 +163,25 @@ abstract public class CloudContext {
     abstract public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
 
     /*
-     * @brief function to process a stitch request;
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
      *
-     * @param request - stitch request
-     * @param nameIndex - number representing index to be added to instance name
-     * @param isFutureRequest - true in case this is a future request; false otherwise
+     * @param hostname - hostname
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param action - action
      *
      * @throws Exception in case of error
-     *
-     * @return number representing index to be added for the instance name
      *
      */
     abstract public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
 
     /*
-     * @brief function to process a network request;
+     * @brief function to connect the link between source and destination subnet
      *
      * @param hostname - hostname
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
      *
      * @throws Exception in case of error
      *
@@ -193,7 +196,7 @@ abstract public class CloudContext {
      * @throws Exception in case of error
      *
      */
-    abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception;
+    abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception;
 
     /*
      * @brief function to check get status for the context
@@ -269,7 +272,7 @@ abstract public class CloudContext {
      */
     protected void validateLeasTime(String startTime, String endTime,
                                     boolean isFutureRequest, Long maxDiffInSeconds) throws Exception {
-        LOGGER.debug("validateLeasTime: IN");
+        LOGGER.debug("IN startTime=" + startTime + " endTime=" + endTime + " isFutureRequest=" + isFutureRequest + " maxDiffInSeconds=" + maxDiffInSeconds);
         if(startTime != null && endTime != null) {
             long currTime = System.currentTimeMillis();
             long beginTimestamp = Long.parseLong(startTime) * 1000;
@@ -303,6 +306,6 @@ abstract public class CloudContext {
                 }
             }
         }
-        LOGGER.debug("validateLeasTime: OUT");
+        LOGGER.debug("OUT");
     }
 }

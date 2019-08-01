@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +17,7 @@ public class PeriodicProcessingThread implements Runnable {
 
     public static final int MAX_DEFAULT_WAIT_TIME = 60; // seconds
     public static final int DEFAULT_PERIODIC_THREAD_PERIOD = 60; // seconds
-    private static final Logger LOGGER = Logger.getLogger( PeriodicProcessingThread.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( PeriodicProcessingThread.class.getName() );
 
 
     protected static Lock syncLock = new ReentrantLock();
@@ -30,11 +31,11 @@ public class PeriodicProcessingThread implements Runnable {
 
     @Override
     public void run() {
-        LOGGER.debug("run(): IN");
+        LOGGER.debug("IN");
         synchronized (this) {
             if (running) {
                 LOGGER.debug("PeriodicProcessingThread ran into itself, leaving");
-                LOGGER.debug("run(): OUT");
+                LOGGER.debug("OUT");
                 return;
             }
             running = true;
@@ -64,7 +65,7 @@ public class PeriodicProcessingThread implements Runnable {
             releaseLock();
             running = false;
         }
-        LOGGER.debug("run(): OUT");
+        LOGGER.debug("OUT");
     }
 
 

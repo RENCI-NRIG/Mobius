@@ -3,8 +3,8 @@ package org.renci.mobius.controllers.jetstream;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import jdk.nashorn.internal.ir.WhileNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.google.common.collect.MinMaxPriorityQueue;
 
 import java.util.*;
@@ -15,7 +15,7 @@ import java.util.*;
  * @author kthare10
  */
 public class JetstreamFlavorAlgo {
-    private static final Logger LOGGER = Logger.getLogger(JetstreamFlavorAlgo.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(JetstreamFlavorAlgo.class.getName());
 
     private static MinMaxPriorityQueue<Flavor> flavorsSortedByNumberOfCpus;
     private static Multimap<Integer, Flavor> flavorsByCpuKey;
@@ -72,7 +72,7 @@ public class JetstreamFlavorAlgo {
 
     public static Map<String, Integer> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus) {
         Map<String, Integer> result = new HashMap<>();
-        LOGGER.debug("determineFlavors: IN");
+        LOGGER.debug("IN cpus=" + cpus + " ramPerCpus=" + ramPerCpus + " diskPerCpus=" + diskPerCpus);
 
 
         Collection<Flavor> flavors = flavorsByCpuKey.get(cpus);
@@ -122,7 +122,7 @@ public class JetstreamFlavorAlgo {
             return null;
         }
 
-        LOGGER.debug("determineFlavors: OUT");
+        LOGGER.debug("OUT result=" + result.toString());
         return result;
     }
 }

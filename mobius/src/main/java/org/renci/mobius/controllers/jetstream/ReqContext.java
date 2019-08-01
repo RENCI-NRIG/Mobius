@@ -1,7 +1,7 @@
 package org.renci.mobius.controllers.jetstream;
 
-import io.swagger.models.auth.In;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.json.simple.JSONArray;
@@ -19,7 +19,7 @@ import java.util.*;
  * @author kthare10
  */
 public class ReqContext {
-    private static final Logger LOGGER = Logger.getLogger( ReqContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( ReqContext.class.getName() );
 
     private String sliceName;
     private String workflowId;
@@ -144,7 +144,7 @@ public class ReqContext {
      * @brief function to release all resources associated with this context
      */
     public void stop() {
-        LOGGER.debug("stop: IN");
+        LOGGER.debug("IN");
         LOGGER.debug("Instance destruction taking plance =============================");
 
         try {
@@ -177,7 +177,7 @@ public class ReqContext {
             LOGGER.debug("Exception occured while deleting slice " + sliceName);
         }
         LOGGER.debug("Instance destruction taking plance =============================");
-        LOGGER.debug("stop: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -205,7 +205,9 @@ public class ReqContext {
                              String leaseEnd, String hostNamePrefix, String postBootScript,
                              Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
 
-        LOGGER.debug("provisionNode: IN");
+        LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
+                + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
+                + " ip=" + ip + " sgName=" + sgName);
 
         ComputeController computeController = null;
         try {
@@ -289,7 +291,7 @@ public class ReqContext {
                 computeController.close();
             }
             // TODO clean any allocated CPUs, keys, leases
-            LOGGER.debug("provisionNode: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -302,7 +304,7 @@ public class ReqContext {
      * @return JSONObject representing server
      */
     private JSONObject nodeToJson(Server server, String ip){
-        LOGGER.debug("nodeToJson: IN");
+        LOGGER.debug("IN server=" + server.toString() + " ip=" + ip);
         JSONObject object = new JSONObject();
         object.put(CloudContext.JsonKeyName, server.getName());
         object.put(CloudContext.JsonKeyState, server.getStatus().toString());
@@ -312,7 +314,7 @@ public class ReqContext {
         else {
             object.put(CloudContext.JsonKeyPublicIP, "");
         }
-        LOGGER.debug("nodeToJson: OUT");
+        LOGGER.debug("OUT");
         return object;
     }
 
@@ -324,7 +326,7 @@ public class ReqContext {
      * @return JSONObject representing status of context
      */
     public JSONObject status(Set<String> hostNameSet) {
-        LOGGER.debug("status: IN");
+        LOGGER.debug("IN hostNameSet=" + hostNameSet);
         ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
@@ -388,7 +390,7 @@ public class ReqContext {
             if(computeController != null) {
                 computeController.close();
             }
-            LOGGER.debug("status: OUT");
+            LOGGER.debug("OUT");
         }
         return returnValue;
     }
@@ -402,7 +404,7 @@ public class ReqContext {
      * @return JSONObject representing status of context
      */
     public JSONObject doPeriodic(Set<String> hostNameSet) {
-        LOGGER.debug("doPeriodic: IN");
+        LOGGER.debug("IN hostNameSet=" + hostNameSet);
 
         JSONObject object = null;
         try {
@@ -411,13 +413,13 @@ public class ReqContext {
         catch (Exception e){
             LOGGER.error("Exception occured while performing periodic updates to slice " + sliceName);
         }
-        LOGGER.debug("doPeriodic: OUT");
+        LOGGER.debug("OUT");
         return object;
     }
 
     public int addStorage(StorageRequest request, int nameIndex) throws Exception {
 
-        LOGGER.debug("addStorage: IN");
+        LOGGER.debug("IN request=" + request + " nameIndex=" + nameIndex);
 
         ComputeController computeController = null;
         try {
@@ -459,12 +461,12 @@ public class ReqContext {
                 computeController.close();
             }
             // TODO clean any allocated CPUs, keys, leases
-            LOGGER.debug("addStorage: OUT");
+            LOGGER.debug("OUT");
         }
     }
     public void deleteStorage(StorageRequest request) throws Exception {
 
-        LOGGER.debug("deleteStorage: IN");
+        LOGGER.debug("IN request" + request);
 
         ComputeController computeController = null;
         try {
@@ -491,7 +493,7 @@ public class ReqContext {
                 computeController.close();
             }
             // TODO clean any allocated CPUs, keys, leases
-            LOGGER.debug("deleteStorage: OUT");
+            LOGGER.debug("OUT");
         }
     }
 }

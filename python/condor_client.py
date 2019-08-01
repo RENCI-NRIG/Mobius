@@ -113,7 +113,7 @@ def main():
         '--comethost',
         dest='comethost',
         type = str,
-        help='Comet Host e.g. https://18.218.34.48:8111/; used only for provisioning resources on chameleon',
+        help='Comet Host e.g. https://comet-hn1.exogeni.net:8111/; used only for provisioning resources on chameleon',
         required=False
     )
     parser.add_argument(
@@ -285,7 +285,8 @@ def main():
                 status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, None, exogeniSubnet)
                 if status == False:
                     return
-                chstoragename = chstoragename + ".novalocal"
+                if chstoragename is not None:
+                    chstoragename = chstoragename + ".novalocal"
             if args.exogenisite is not None and args.exodatadir is not None:
                 status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip)
                 if status == False :

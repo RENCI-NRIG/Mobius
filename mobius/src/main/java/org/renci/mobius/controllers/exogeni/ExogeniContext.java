@@ -14,7 +14,8 @@ import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 import java.util.*;
@@ -26,7 +27,7 @@ import java.util.*;
  * @author kthare10
  */
 public class ExogeniContext extends CloudContext {
-    private static final Logger LOGGER = Logger.getLogger( ExogeniContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( ExogeniContext.class.getName() );
     private HashMap<String, SliceContext> sliceContextHashMap;
     private Multimap<Date, String> leaseEndTimeToSliceNameHashMap;
 
@@ -85,17 +86,17 @@ public class ExogeniContext extends CloudContext {
                 for (Object object : array) {
                     JSONObject slice = (JSONObject) object;
                     String sliceName = (String) slice.get("name");
-                    LOGGER.debug("fromJson(): sliceName=" + sliceName);
+                    LOGGER.debug("sliceName=" + sliceName);
                     SliceContext sliceContext = new SliceContext(sliceName);
                     String expiry = (String) slice.get("expiry");
-                    LOGGER.debug("fromJson(): expiry=" + expiry);
+                    LOGGER.debug("expiry=" + expiry);
                     if (expiry != null) {
                         sliceContext.setExpiry(expiry);
                     }
                     sliceContextHashMap.put(sliceName, sliceContext);
                 }
             } else {
-                LOGGER.error("fromJson(): Null array passed");
+                LOGGER.error("Null array passed");
             }
         }
     }
@@ -130,7 +131,7 @@ public class ExogeniContext extends CloudContext {
      *
      */
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("validateComputeRequest: IN");
+        LOGGER.debug("IN");
 
         if(request.getGpus() > 0) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Exogeni does not support Gpus");
@@ -158,7 +159,7 @@ public class ExogeniContext extends CloudContext {
             request.setLeaseStart(Long.toString(milliseconds));
         }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, null);
-        LOGGER.debug("validateComputeRequest: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -175,7 +176,7 @@ public class ExogeniContext extends CloudContext {
     @Override
     public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
-            LOGGER.debug("processCompute: IN");
+            LOGGER.debug("IN");
 
             validateComputeRequest(request, isFutureRequest);
 
@@ -232,7 +233,7 @@ public class ExogeniContext extends CloudContext {
                 sliceContextHashMap.remove(context);
                 throw new MobiusException("Slice not found");
             } finally {
-                LOGGER.debug("processCompute: OUT");
+                LOGGER.debug("OUT");
             }
         }
     }
@@ -251,7 +252,7 @@ public class ExogeniContext extends CloudContext {
     @Override
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
-            LOGGER.debug("processStorageRequest: IN");
+            LOGGER.debug("IN");
             validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, null);
 
             String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
@@ -270,7 +271,7 @@ public class ExogeniContext extends CloudContext {
                 sliceContextHashMap.remove(context);
                 throw new MobiusException("Slice not found");
             } finally {
-                LOGGER.debug("processStorageRequest: OUT");
+                LOGGER.debug("OUT");
             }
         }
     }
@@ -290,7 +291,7 @@ public class ExogeniContext extends CloudContext {
     @Override
     public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
-            LOGGER.debug("processStitchRequest: IN");
+            LOGGER.debug("IN");
 
             String sliceName = hostNameToSliceNameHashMap.get(request.getTarget());
             if (sliceName == null) {
@@ -308,7 +309,7 @@ public class ExogeniContext extends CloudContext {
                 sliceContextHashMap.remove(context);
                 throw new MobiusException("Slice not found");
             } finally {
-                LOGGER.debug("processStitchRequest: OUT");
+                LOGGER.debug("OUT");
             }
         }
     }
@@ -321,7 +322,7 @@ public class ExogeniContext extends CloudContext {
     @Override
     public JSONObject getStatus() throws Exception {
         synchronized (this) {
-            LOGGER.debug("getStatus: IN");
+            LOGGER.debug("IN");
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
 
@@ -344,7 +345,7 @@ public class ExogeniContext extends CloudContext {
                 retVal.put(CloudContext.JsonKeySite, getSite());
                 retVal.put(CloudContext.JsonKeySlices, array);
             }
-            LOGGER.debug("getStatus: OUT");
+            LOGGER.debug("OUT");
             return retVal;
         }
     }
@@ -355,14 +356,14 @@ public class ExogeniContext extends CloudContext {
     @Override
     public void stop() throws Exception {
         synchronized (this) {
-            LOGGER.debug("stop: IN");
+            LOGGER.debug("IN");
             SliceContext context = null;
             for (HashMap.Entry<String, SliceContext> entry : sliceContextHashMap.entrySet()) {
                 context = entry.getValue();
                 context.stop();
             }
             sliceContextHashMap.clear();
-            LOGGER.debug("stop: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -378,7 +379,7 @@ public class ExogeniContext extends CloudContext {
     @Override
     public JSONObject doPeriodic() {
         synchronized (this) {
-            LOGGER.debug("doPeriodic: IN");
+            LOGGER.debug("IN");
             SliceContext context = null;
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
@@ -424,7 +425,7 @@ public class ExogeniContext extends CloudContext {
                 retVal.put(CloudContext.JsonKeySlices, array);
             }
 
-            LOGGER.debug("doPeriodic: OUT");
+            LOGGER.debug("OUT");
             return retVal;
         }
     }
@@ -447,14 +448,14 @@ public class ExogeniContext extends CloudContext {
      * @return slice name
      */
     protected String findSlice(ComputeRequest request) {
-        LOGGER.debug("findSlice: IN");
+        LOGGER.debug("IN");
         if(leaseEndTimeToSliceNameHashMap.size() == 0) {
-            LOGGER.debug("findSlice: OUT - leaseEndTimeToSliceNameHashMap empty");
+            LOGGER.debug("OUT - leaseEndTimeToSliceNameHashMap empty");
             return null;
         }
 
         if(request.getLeaseEnd() == null) {
-            LOGGER.debug("findSlice: OUT - getLeaseEnd null");
+            LOGGER.debug("OUT - getLeaseEnd null");
             return null;
         }
 
@@ -465,7 +466,7 @@ public class ExogeniContext extends CloudContext {
         if(leaseEndTimeToSliceNameHashMap.containsKey(expiry)) {
             sliceName = leaseEndTimeToSliceNameHashMap.get(expiry).iterator().next();
         }
-        LOGGER.debug("findSlice: OUT");
+        LOGGER.debug("OUT");
         return sliceName;
     }
 
@@ -475,7 +476,7 @@ public class ExogeniContext extends CloudContext {
      * @param sliceName - slice name
      */
     protected void handSliceNotFoundException(String sliceName) {
-        LOGGER.debug("handSliceNotFoundException: IN");
+        LOGGER.debug("IN");
         if(hostNameToSliceNameHashMap.containsValue(sliceName)) {
             Iterator<HashMap.Entry<String, String>> iterator = hostNameToSliceNameHashMap.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -494,11 +495,11 @@ public class ExogeniContext extends CloudContext {
                 }
             }
         }
-        LOGGER.debug("handSliceNotFoundException: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
-     * @brief function to process network request
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
      *
      * @param hostname - hostname
      * @param ip - ip
@@ -510,7 +511,7 @@ public class ExogeniContext extends CloudContext {
      */
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
         synchronized (this) {
-            System.out.println("processNetworkRequestSetupStitchingAndRoute: IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            System.out.println("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
@@ -527,25 +528,25 @@ public class ExogeniContext extends CloudContext {
                 sliceContextHashMap.remove(context);
                 throw new MobiusException("Slice not found");
             } finally {
-                LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: OUT");
+                LOGGER.debug("OUT");
             }
         }
     }
 
     /*
-     * @brief function to process network request
+     * @brief function to connect the link between source and destination subnet
      *
      * @param hostname - hostname
-     * @param ip - ip
-     * @param subnet - subnet
-     * @param action - action
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception{
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
         synchronized (this) {
-            System.out.println("processNetworkRequestLink: IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            System.out.println("IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
                 throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
@@ -555,13 +556,13 @@ public class ExogeniContext extends CloudContext {
                 throw new MobiusException("slice context not found");
             }
             try {
-                context.processNetworkRequestLink(subnet1, subnet2);
+                context.processNetworkRequestLink(subnet1, subnet2, bandwidth);
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);
                 throw new MobiusException("Slice not found");
             } finally {
-                LOGGER.debug("processNetworkRequestLink: OUT");
+                LOGGER.debug("OUT");
             }
         }
     }

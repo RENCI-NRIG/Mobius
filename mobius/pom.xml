@@ -64,7 +64,7 @@
                     <systemProperties>
                         <property>
                             <name>loggerPath</name>
-                            <value>conf/log4j.properties</value>
+                            <value>log4j.properties</value>
                         </property>
                     </systemProperties>
                     <argLine>-Xms512m -Xmx1500m</argLine>

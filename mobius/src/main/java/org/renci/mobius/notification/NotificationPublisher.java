@@ -3,8 +3,8 @@ package org.renci.mobius.notification;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.apache.log4j.Logger;
-import org.renci.mobius.controllers.MobiusConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;import org.renci.mobius.controllers.MobiusConfig;
 
 public class NotificationPublisher {
     ConnectionFactory factory;
@@ -13,7 +13,7 @@ public class NotificationPublisher {
     public static NotificationPublisher getInstance() {
         return fINSTANCE;
     }
-    private static final Logger LOGGER = Logger.getLogger( NotificationPublisher.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( NotificationPublisher.class.getName() );
 
     private static final String ExchangeType = "topic";
 
@@ -23,7 +23,7 @@ public class NotificationPublisher {
     }
 
     private synchronized void connect() {
-        LOGGER.debug("connect(): IN");
+        LOGGER.debug("IN");
         try {
             factory = new ConnectionFactory();
             factory.setHost(MobiusConfig.getInstance().getAmqpServerHost());
@@ -53,7 +53,7 @@ public class NotificationPublisher {
             LOGGER.debug("Failed to connect to AMQP");
         }
         finally {
-            LOGGER.debug("connect(): OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -65,7 +65,7 @@ public class NotificationPublisher {
     }
 
     public synchronized void push(String workflowId, String notification) {
-        LOGGER.debug("push(): IN");
+        LOGGER.debug("IN");
         try {
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
@@ -78,7 +78,7 @@ public class NotificationPublisher {
             e.printStackTrace();
         }
         finally {
-            LOGGER.debug("push(): OUT");
+            LOGGER.debug("OUT");
         }
     }
 

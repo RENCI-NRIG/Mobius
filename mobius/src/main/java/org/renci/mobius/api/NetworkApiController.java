@@ -7,7 +7,8 @@ import org.renci.mobius.model.MobiusResponse;
 import org.renci.mobius.model.NetworkRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.*;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,7 +30,7 @@ import java.util.Map;
 @Controller
 public class NetworkApiController implements NetworkApi {
 
-    private static final Logger log = Logger.getLogger(NetworkApiController.class);
+    private static final Logger log = LogManager.getLogger(NetworkApiController.class);
 
     private final ObjectMapper objectMapper;
 
@@ -42,16 +43,16 @@ public class NetworkApiController implements NetworkApi {
     }
 
     public ResponseEntity<MobiusResponse> networkPost(@ApiParam(value = "" ,required=true )  @Valid @RequestBody NetworkRequest body,@NotNull @ApiParam(value = "", required = true) @Valid @RequestParam(value = "workflowID", required = true) String workflowID) {
-        log.debug("NetworkApiController:networkPost() IN");
+        log.debug("IN");
         String accept = request.getHeader("Accept");
         JSONObject output = new JSONObject();
         MobiusResponse resp = new MobiusResponse();
         resp.setVersion("0.1");
         HttpStatus status = HttpStatus.OK;
         try {
-            log.debug("NetworkApiController:networkPost() Invoking controller processNetwork");
+            log.debug("Invoking controller processNetwork");
             MobiusController.getInstance().processNetworkRequest(workflowID, body);
-            log.debug("NetworkApiController:networkPost() OK response");
+            log.debug("OK response");
             resp.setStatus(HttpStatus.OK.value());
             resp.setMessage("Success");
         }
@@ -69,7 +70,7 @@ public class NetworkApiController implements NetworkApi {
             resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             resp.setMessage(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         }
-        log.debug("NetworkApiController:networkPost() OUT");
+        log.debug("OUT");
         return new ResponseEntity<MobiusResponse>(resp, status);
     }
 

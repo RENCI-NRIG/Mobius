@@ -38,9 +38,9 @@ defaultComputeExogeniData={
     "diskPerCpus":"19200",
     "hostNamePrefix":"master",
     "coallocate":"true",
-    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
-    "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
-    "imageName":"centos7.4-v1.0.3-comet",
+    "imageUrl":"http://geni-images.renci.org/images/kthare10/mobius/mb-centos-7/mb-centos-7.xml",
+    "imageName":"mb-centos-7",
+    "imageHash":"2dc5f35c91712845f9b6fec6bad1f6f33c64df39",
     "leaseEnd":"1557733832"
 }
 defaultStorageChameleonData= {

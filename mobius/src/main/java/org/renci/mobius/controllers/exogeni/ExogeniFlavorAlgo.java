@@ -2,7 +2,8 @@ package org.renci.mobius.controllers.exogeni;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -14,7 +15,7 @@ import java.util.List;
  * @author kthare10
  */
 class ExogeniFlavorAlgo {
-    private static final Logger LOGGER = Logger.getLogger( ExogeniFlavorAlgo.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( ExogeniFlavorAlgo.class.getName() );
 
     enum Flavor {
         // cpus, diskspace, ram, name
@@ -102,7 +103,7 @@ class ExogeniFlavorAlgo {
      *
      */
     public static List<String> determineFlavors(Integer cpus, Integer ramPerCpus, Integer diskPerCpus, boolean isCoallocate) {
-        LOGGER.debug("determineFlavors: IN");
+        LOGGER.debug("IN");
 
         List<String> result = new LinkedList<String>();
         Integer requestedCpus = cpus;
@@ -177,7 +178,7 @@ class ExogeniFlavorAlgo {
         if(requestedCpus != 0) {
             result = null;
         }
-        LOGGER.debug("determineFlavors: OUT");
+        LOGGER.debug("OUT");
         return result;
     }
 }

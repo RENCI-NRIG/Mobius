@@ -3,7 +3,8 @@ package org.renci.mobius.controllers.chameleon;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.http.*;
@@ -30,7 +31,7 @@ public class OsReservationApi {
     private final String tokenUrl = "/auth/tokens";
     private final String leaseUrl = "/leases";
     private final static String X_Subject_Token = "X-Subject-Token";
-    private static final Logger LOGGER = Logger.getLogger(OsReservationApi.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(OsReservationApi.class.getName());
 
     private static final String AUTH_DOCUMENT = "{\n" +
             "     \"auth\": {\n" +

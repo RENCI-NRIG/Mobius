@@ -4,6 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import exoplex.client.exogeni.SdxExogeniClient;
 import injection.SingleSdxModule;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.ahab.libndl.Slice;
@@ -12,6 +13,7 @@ import org.renci.ahab.libndl.resources.request.LinkNetwork;
 import org.renci.ahab.libndl.resources.request.*;
 import org.renci.ahab.libtransport.*;
 import org.renci.ahab.libtransport.util.SSHAccessTokenFileFactory;
+import org.renci.ahab.libtransport.util.TransportException;
 import org.renci.ahab.libtransport.xmlrpc.XMLRPCProxyFactory;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
@@ -26,7 +28,8 @@ import org.springframework.http.HttpStatus;
 
 import java.net.URL;
 import java.util.*;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /*
  * @brief class representing resources associated with a slice; it represents all resources associated with
@@ -35,7 +38,7 @@ import org.apache.log4j.Logger;
  * @author kthare10
  */
 public class SliceContext {
-    private static final Logger LOGGER = Logger.getLogger( SliceContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( SliceContext.class.getName() );
 
     private ComputeRequest lastRequest;
     private String sliceName;
@@ -115,7 +118,7 @@ public class SliceContext {
      * @return ISliceTransportAPIv1
      */
     private ISliceTransportAPIv1 getSliceProxy(String pem, String controllerUrl){
-        LOGGER.debug("getSliceProxy: IN");
+        LOGGER.debug("IN");
 
         ISliceTransportAPIv1 sliceProxy = null;
         try{
@@ -131,7 +134,7 @@ public class SliceContext {
             assert(false);
         }
 
-        LOGGER.debug("getSliceProxy: OUT");
+        LOGGER.debug("OUT");
         return sliceProxy;
     }
 
@@ -143,10 +146,10 @@ public class SliceContext {
      * @throws exception in case of error
      */
     private Slice getSlice() throws Exception {
-        LOGGER.debug("getSlice: IN");
+        LOGGER.debug("IN");
         ISliceTransportAPIv1 sliceProxy = getSliceProxy(MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
                 MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
-        LOGGER.debug("getSlice: OUT");
+        LOGGER.debug("OUT");
         return Slice.loadManifestFile(sliceProxy,sliceName);
     }
 
@@ -158,7 +161,7 @@ public class SliceContext {
      * @return JSONObject representing server
      */
     private JSONObject nodeToJson(Node n){
-        LOGGER.debug("nodeToJson: IN");
+        LOGGER.debug("IN");
         JSONObject object = new JSONObject();
         object.put(CloudContext.JsonKeyName, n.getName());
         object.put(CloudContext.JsonKeyState, n.getState());
@@ -179,7 +182,7 @@ public class SliceContext {
                 }
             }
         }
-        LOGGER.debug("nodeToJson: OUT");
+        LOGGER.debug("OUT");
         return object;
     }
 
@@ -191,7 +194,7 @@ public class SliceContext {
      * @return JSONObject representing status of context
      */
     public JSONObject status(Set<String> hostNameSet) throws Exception{
-        LOGGER.debug("status: IN");
+        LOGGER.debug("IN");
         JSONObject returnValue = new JSONObject();
         try {
 
@@ -249,7 +252,7 @@ public class SliceContext {
             e.printStackTrace();
         }
         finally {
-            LOGGER.debug("status: OUT");
+            LOGGER.debug("OUT");
         }
         return returnValue;
     }
@@ -258,7 +261,7 @@ public class SliceContext {
      * @brief function to release all resources associated with this context
      */
     public void stop() {
-        LOGGER.debug("stop: IN");
+        LOGGER.debug("IN");
 
         try {
             Slice slice = getSlice();
@@ -270,7 +273,7 @@ public class SliceContext {
         catch (Exception e){
             LOGGER.debug("Exception occured while deleting slice " + sliceName);
         }
-        LOGGER.debug("stop: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -283,25 +286,25 @@ public class SliceContext {
      * @throws SliceNotFoundOrDeadException exception in case slice no longer exists
      */
     public JSONObject doPeriodic(Set<String> hostNameSet) throws SliceNotFoundOrDeadException {
-        LOGGER.debug("doPeriodic: IN");
+        LOGGER.debug("IN");
 
         JSONObject object = null;
         try {
             object = status(hostNameSet);
         }
         catch (SliceNotFoundOrDeadException e) {
-            LOGGER.debug("doPeriodic: OUT");
+            LOGGER.debug("OUT");
             throw e;
         }
         catch (Exception e){
             if(e.getMessage() != null && (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
-                LOGGER.debug("doPeriodic: OUT");
+                LOGGER.debug("OUT");
                 // Slice not found
                 throw new SliceNotFoundOrDeadException("slice no longer exists");
             }
             LOGGER.error("Exception occured while performing periodic updates to slice " + sliceName);
         }
-        LOGGER.debug("doPeriodic: OUT");
+        LOGGER.debug("OUT");
         return object;
     }
 
@@ -318,7 +321,7 @@ public class SliceContext {
      */
     public Pair<Integer, Integer> processCompute(List<String> flavorList, int nameIndex,
                                                  int spNameIndex, ComputeRequest request) throws Exception {
-        LOGGER.debug("processCompute: IN");
+        LOGGER.debug("IN");
 
         try {
             Slice slice = null;
@@ -469,7 +472,7 @@ public class SliceContext {
             throw new MobiusException("Failed to server compute request = " + e.getLocalizedMessage());
         }
         finally {
-            LOGGER.debug("processCompute: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -484,7 +487,7 @@ public class SliceContext {
      * @return number representing index to be added for the instance name
      */
     public int processStorageRequest(StorageRequest request, int nameIndex) throws Exception {
-        LOGGER.debug("processStorageRequest: IN");
+        LOGGER.debug("IN");
 
         try {
             Slice slice = getSlice();
@@ -595,7 +598,7 @@ public class SliceContext {
             throw new MobiusException("Failed to server storage request = " + e.getLocalizedMessage());
         }
         finally {
-            LOGGER.debug("processStorageRequest: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -611,7 +614,7 @@ public class SliceContext {
      *
      */
     public int processStitchRequest(StitchRequest request, int nameIndex) throws Exception {
-        LOGGER.debug("processStitchRequest: IN");
+        LOGGER.debug("IN");
 
         try {
             Slice slice = getSlice();
@@ -659,23 +662,12 @@ public class SliceContext {
             throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
         }
         finally {
-            LOGGER.debug("processStitchRequest: OUT");
+            LOGGER.debug("OUT");
         }
     }
-    private void stitchToSdx(JSONObject config, String opParams, String routeParams) throws Exception {
-        //String sliceName, String IPPrefix, String config, SdxExogeniClient.Operation operation, String operationParams
-        Injector injector = Guice.createInjector(new SingleSdxModule());
-        SdxExogeniClient sdxExogeniClient = injector.getInstance(SdxExogeniClient.class);
-        sdxExogeniClient.readConfigFromJson(config.toString());
-        sdxExogeniClient.safeEnabled = false;
-        sdxExogeniClient.runExec(opParams);
-        if(routeParams != null) {
-            System.out.println("routeParams=" + routeParams);
-            sdxExogeniClient.runExec(routeParams);
-        }
-    }
+
     /*
-     * @brief function to process network request
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
      *
      * @param hostName - hostName
      * @param ip - ip
@@ -686,7 +678,7 @@ public class SliceContext {
      *
      */
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
-        LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: IN");
+        LOGGER.debug("IN");
 
         try {
             Slice slice = getSlice();
@@ -698,40 +690,26 @@ public class SliceContext {
             if (c == null) {
                 throw new MobiusException("Unable to load compute node");
             }
-
-            JSONObject object =  new JSONObject();
-            object.put("config.type", "client");
-
-            // hack needed to remove .pub from filename as SDX code expects to not have file extension
             String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
             int indexOfLast = sshfile.lastIndexOf(".pub");
             String newString = null;
             if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
 
-            object.put("config.sshkey", newString);
-            object.put("config.safe", "false");
-            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
-            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
-            object.put("config.serverurl","http://18.191.204.20:8888/");
+            SdxClient sdxClient = new SdxClient(sshfile, MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
+                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),"http://18.191.204.20:8888/" );
 
-            // Stitch Source Node
-            object.put("config.slicename", sliceName);
-            System.out.println("processNetworkRequestSetupStitchingAndRoute(): source = " + object.toString());
-            // TODO: determine IP Address
-            String opParams = "stitch ";
-            String routeParams = "route ";
-            if(action == NetworkRequest.ActionEnum.DELETE) {
-                opParams = "unstitch ";
-                routeParams = null;
+            switch (action) {
+                case ADD:
+                {
+                    String secret = permitStitch(c.getStitchingGUID());
+                    sdxClient.stitch(sliceName, c.getDomain(), c.getStitchingGUID(), ip, subnet, secret);
+                    sdxClient.prefix(sliceName, ip, subnet);
+                }
+                    break;
+                case DELETE:
+                    // unstitch
+                    break;
             }
-            opParams = opParams + hostname + " " + ip + " " + subnet;
-            if(routeParams != null) {
-                routeParams = routeParams + subnet + " " + ip;
-            }
-            System.out.println("processNetworkRequestSetupStitchingAndRoute(): opParams = " + opParams);
-            stitchToSdx(object, opParams, routeParams);
-            System.out.println("processNetworkRequestSetupStitchingAndRoute(): completed stitchToSdx");
-
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
@@ -749,24 +727,23 @@ public class SliceContext {
             throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
         }
         finally {
-            LOGGER.debug("processNetworkRequestSetupStitchingAndRoute: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
 
     /*
-     * @brief function to process network request
+     * @brief function to connect the link between source and destination subnet
      *
-     * @param hostName - hostName
-     * @param ip - ip
-     * @param subnet - subnet
-     * @param action - action
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String subnet1, String subnet2) throws Exception{
-        LOGGER.debug("processNetworkRequestLink: IN");
+    public void processNetworkRequestLink(String subnet1, String subnet2, String bandwidth) throws Exception{
+        LOGGER.debug("IN");
 
         try {
             Slice slice = getSlice();
@@ -774,29 +751,16 @@ public class SliceContext {
                 throw new MobiusException("Unable to load slice");
             }
 
-            JSONObject object =  new JSONObject();
-            object.put("config.type", "client");
-
             // hack needed to remove .pub from filename as SDX code expects to not have file extension
             String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
             int indexOfLast = sshfile.lastIndexOf(".pub");
             String newString = null;
             if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
 
-            object.put("config.sshkey", newString);
-            object.put("config.safe", "false");
-            object.put("config.exogenipem", MobiusConfig.getInstance().getDefaultExogeniUserCertKey());
-            object.put("config.exogenism", MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
-            object.put("config.serverurl","http://18.191.204.20:8888/");
+            SdxClient sdxClient = new SdxClient(sshfile, MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
+                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),"http://18.191.204.20:8888/" );
 
-            // Stitch Source Node
-            object.put("config.slicename", sliceName);
-            System.out.println("processNetworkRequestLink(): source = " + object.toString());
-            String opParams = "link " + subnet1 + " " + subnet2;
-            System.out.println("processNetworkRequestLink(): opParams = " + opParams);
-            stitchToSdx(object, opParams, null);
-            System.out.println("processNetworkRequestLink(): completed stitchToSdx");
-
+            sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
@@ -811,10 +775,47 @@ public class SliceContext {
             }
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
-            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
+            throw new MobiusException("Failed to server connect request = " + e.getLocalizedMessage());
         }
         finally {
-            LOGGER.debug("processNetworkRequestLink: OUT");
+            LOGGER.debug("OUT");
         }
+    }
+
+    /*
+     * @brief function to generate the secret from the stitching guid to be used for stitch sdx request
+     *
+     * @param GUID - stitching guid
+     *
+     * @throws Exception in case of error
+     *
+     */
+    private String permitStitch(String GUID) throws MobiusException {
+        int maxCommitCount = MobiusConfig.getInstance().getDefaultExogeniCommitRetryCount();
+        int sleepInterval = MobiusConfig.getInstance().getDefaultExogeniCommitSleepInterval();
+        int times = 0;
+        while (times < maxCommitCount) {
+            try {
+                ISliceTransportAPIv1 sliceProxy = getSliceProxy(MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
+                        MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+
+                String secret = RandomStringUtils.randomAlphabetic(10);
+                sliceProxy.permitSliceStitch(sliceName, GUID, secret);
+                return secret;
+            } catch (TransportException e) {
+                // TODO Auto-generated catch block
+                LOGGER.warn("Failed to permit stitch, retry");
+                times++;
+                if (times == maxCommitCount) {
+                    throw new MobiusException(e.getMessage());
+                }
+                try {
+                    Thread.sleep((long) (sleepInterval * 1000));
+                } catch (InterruptedException var6) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        return null;
     }
 }

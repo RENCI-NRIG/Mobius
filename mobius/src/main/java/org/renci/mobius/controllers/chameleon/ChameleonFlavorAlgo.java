@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers.chameleon;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.renci.mobius.controllers.MobiusException;
 import org.springframework.http.HttpStatus;
 
@@ -12,7 +13,7 @@ import java.util.*;
  * @author kthare10
  */
 public class ChameleonFlavorAlgo {
-    private static final Logger LOGGER = Logger.getLogger(ChameleonFlavorAlgo.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ChameleonFlavorAlgo.class.getName());
 
     private static final Integer minCpus = Flavor.Haswell.getCpus();
 
@@ -106,7 +107,7 @@ public class ChameleonFlavorAlgo {
                                                         Integer diskPerCpus, String forceFlavor) throws Exception{
         Map<String, Integer> result = new HashMap<>();
         Integer requestedCpus = cpus;
-        LOGGER.debug("determineFlavors: IN");
+        LOGGER.debug("IN: cpus=" + cpus + " gpus=" + gpus + " ramPerCpus=" + ramPerCpus + " diskPerCpus=" + diskPerCpus + " forceFlavor=" + forceFlavor);
 
         // Number of CPUs, DiskSpace and RAM for Haswell, Skylake and InfinityBand nodes is almost similar
         // Current algorithm; just picks a flavor in a round robin fashion between these 3 compute flavors
@@ -161,7 +162,7 @@ public class ChameleonFlavorAlgo {
         }
 
 
-        LOGGER.debug("determineFlavors: OUT");
+        LOGGER.debug("OUT result=" + result);
         return result;
     }
 }

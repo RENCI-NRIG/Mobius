@@ -1,9 +1,6 @@
 package org.renci.mobius.controllers;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import exoplex.client.exogeni.SdxExogeniClient;
-import injection.SingleSdxModule;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -19,9 +16,8 @@ import org.springframework.http.HttpStatus;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.log4j.Logger;
-
-import javax.swing.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /*
  * @brief class represents a worflow and maintains hashmap of cloud context per site
@@ -34,7 +30,7 @@ class Workflow {
     private HashMap<String, CloudContext> siteToContextHashMap;
     private int nodeCount, storageCount, stitchCount;
     private FutureRequests futureRequests;
-    private static final Logger LOGGER = Logger.getLogger( Workflow.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( Workflow.class.getName() );
 
     /*
      * @brief constructor
@@ -58,13 +54,13 @@ class Workflow {
      */
     Workflow(WorkflowEntity workflow) {
         workflowID = workflow.getWorkflowId();
-        LOGGER.debug("Workflow(): workflowID=" + workflowID);
+        LOGGER.debug("workflowID=" + workflowID);
         nodeCount = workflow.getNodeCount();
-        LOGGER.debug("Workflow(): nodeCount=" + nodeCount);
+        LOGGER.debug("nodeCount=" + nodeCount);
         storageCount = workflow.getStorageCount();
-        LOGGER.debug("Workflow(): storageCount=" + storageCount);
+        LOGGER.debug("storageCount=" + storageCount);
         stitchCount = workflow.getStorageCount();
-        LOGGER.debug("Workflow(): stitchCount=" + stitchCount);
+        LOGGER.debug("stitchCount=" + stitchCount);
         lock = new WorkflowOperationLock();
         siteToContextHashMap = new HashMap<String, CloudContext>();
         futureRequests = new FutureRequests();
@@ -78,20 +74,20 @@ class Workflow {
                     try {
                         JSONObject c = (JSONObject) object;
                         String site = (String) c.get("site");
-                        LOGGER.debug("Workflow(): site=" + site);
+                        LOGGER.debug("site=" + site);
                         CloudContext context = CloudContextFactory.getInstance().createCloudContext(site, workflow.getWorkflowId());
                         JSONArray sliceArray = (JSONArray) c.get("slices");
                         context.fromJson(sliceArray);
                         context.loadCloudSpecificDataFromJson(c);
                         siteToContextHashMap.put(site, context);
                     } catch (Exception e) {
-                        LOGGER.error("Workflow(): Exception occured while loading context from database e= " + e);
+                        LOGGER.error("Exception occured while loading context from database e= " + e);
                         e.printStackTrace();
                     }
                 }
             }
             else {
-                LOGGER.error("Workflow(): JSON parsing failed");
+                LOGGER.error("JSON parsing failed");
             }
         }
     }
@@ -129,7 +125,7 @@ class Workflow {
                 c = context.addCloudSpecificDataToJson(c);
                 array.add(c);
             }
-            LOGGER.debug("convert(): array=" + array.toJSONString());
+            LOGGER.debug("array=" + array.toJSONString());
             retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, stitchCount, array.toJSONString());
         }
 
@@ -141,14 +137,14 @@ class Workflow {
      * @brief function to release all resources associated with this workflow
      */
     public void stop() throws Exception {
-        LOGGER.debug("stop(): IN");
+        LOGGER.debug("IN");
         CloudContext context = null;
         for(HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
             context = e.getValue();
             context.stop();
         }
         siteToContextHashMap.clear();
-        LOGGER.debug("stop(): OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -157,7 +153,7 @@ class Workflow {
      * @return string representing status
      */
     public String status() throws Exception {
-        LOGGER.debug("status(): IN");
+        LOGGER.debug("IN");
 
         JSONArray array = new JSONArray();
 
@@ -169,7 +165,7 @@ class Workflow {
                 array.add(result);
             }
         }
-        LOGGER.debug("status(): OUT");
+        LOGGER.debug("OUT");
         return array.toString();
     }
 
@@ -209,7 +205,7 @@ class Workflow {
      *
      */
     public void processComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception{
-        LOGGER.debug("processComputeRequest(): IN");
+        LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         CloudContext context = null;
         boolean addContextToMap = false;
         try {
@@ -242,7 +238,7 @@ class Workflow {
             Pair<Integer, Integer> r = context.processCompute(request, nodeCount, stitchCount, isFutureRequest);
             nodeCount = r.getFirst();
             stitchCount = r.getSecond();
-            LOGGER.debug("processComputeRequest(): nodeCount = " + nodeCount);
+            LOGGER.debug("nodeCount = " + nodeCount);
             if (addContextToMap) {
                 siteToContextHashMap.put(request.getSite(), context);
             }
@@ -259,7 +255,7 @@ class Workflow {
             }
             throw e;
         }
-        LOGGER.debug("processComputeRequest(): OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -272,10 +268,10 @@ class Workflow {
      *
      */
     public void processStorageRequest(StorageRequest request, boolean isFutureRequest) throws Exception{
-        LOGGER.debug("processStorageRequest(): IN");
+        LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         try {
             if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("processStorageRequest(): OUT");
+                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
             CloudContext context = null;
@@ -290,7 +286,7 @@ class Workflow {
                 }
             }
             if(context == null) {
-                LOGGER.debug("processStorageRequest(): OUT");
+                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
         }
@@ -298,7 +294,7 @@ class Workflow {
             futureRequests.add(request);
         }
         finally {
-            LOGGER.debug("processStorageRequest(): OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -312,6 +308,7 @@ class Workflow {
      */
     private CloudContext findContext(String hostname) throws Exception{
         // lookup source and target nodes
+        LOGGER.debug("IN hostname=" + hostname);
         CloudContext context = null;
         for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
             context = e.getValue();
@@ -323,9 +320,10 @@ class Workflow {
             }
         }
         if(context == null) {
-            LOGGER.debug("findContext(): OUT");
+            LOGGER.debug("OUT");
             throw new MobiusException(HttpStatus.NOT_FOUND, "source not found");
         }
+        LOGGER.debug("OUT");
         return context;
     }
 
@@ -339,25 +337,30 @@ class Workflow {
      *
      */
     public void processNetworkRequest(NetworkRequest request, boolean isFutureRequest) throws Exception{
-        LOGGER.debug("processNetworkRequest(): IN");
+        LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         try {
             if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("processNetworkRequest(): OUT");
+                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
 
             // lookup source and target nodes
             CloudContext context1 = findContext(request.getSource());
-            context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(), request.getSourceSubnet(), request.getAction());
+            context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
+                    request.getSourceSubnet(), request.getAction());
 
             CloudContext context2 = findContext(request.getDestination());
-            context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(), request.getDestinationSubnet(), request.getAction());
+            context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
+                    request.getDestinationSubnet(), request.getAction());
 
-            context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(), request.getDestinationSubnet());
-            context2.processNetworkRequestLink(request.getDestination(), request.getSourceSubnet(), request.getDestinationSubnet());
+            context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
+                    request.getDestinationSubnet(), request.getLinkSpeed().toString());
+            
+            context2.processNetworkRequestLink(request.getDestination(), request.getSourceSubnet(),
+                    request.getDestinationSubnet(), request.getLinkSpeed().toString());
         }
         finally {
-            LOGGER.debug("processNetworkRequest(): OUT");
+            LOGGER.debug("OUT");
         }
     }
     /*
@@ -371,10 +374,10 @@ class Workflow {
      *
      */
     public void processStitchRequest(StitchRequest request, boolean isFutureRequest) throws Exception{
-        LOGGER.debug("processStitchRequest(): IN");
+        LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         try {
             if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("processStitchRequest(): OUT");
+                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
             CloudContext context = null;
@@ -389,7 +392,7 @@ class Workflow {
                 }
             }
             if(context == null) {
-                LOGGER.debug("processStitchRequest(): OUT");
+                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
         }
@@ -397,7 +400,7 @@ class Workflow {
             futureRequests.add(request);
         }
         finally {
-            LOGGER.debug("processStitchRequest(): OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -412,7 +415,7 @@ class Workflow {
      * @return JSONObject representing notification for context to be sent to pegasus
      */
     public void doPeriodic() {
-        LOGGER.debug("doPeriodic(): IN");
+        LOGGER.debug("IN");
 
         JSONArray array = new JSONArray();
         CloudContext context = null;
@@ -441,14 +444,14 @@ class Workflow {
         // Process future requests
         processFutureComputeRequests();
         processFutureStorageRequests();
-        LOGGER.debug("doPeriodic(): OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
      * @brief check and trigger any future compute requests if their startTime is current time
      */
     public void processFutureComputeRequests() {
-        LOGGER.debug("processFutureComputeRequests(): IN");
+        LOGGER.debug("IN");
         try {
             List<ComputeRequest> computeRequests = futureRequests.getFutureComputeRequests();
             Iterator iterator = computeRequests.iterator();
@@ -474,14 +477,14 @@ class Workflow {
             LOGGER.error("Error occurred while processing future compute request = " + e.getMessage());
             e.printStackTrace();
         }
-        LOGGER.debug("processFutureComputeRequests(): OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
      * @brief check and trigger any future storage requests if their startTime is current time
      */
     public void processFutureStorageRequests() {
-        LOGGER.debug("processFutureStorageRequests(): IN");
+        LOGGER.debug("IN");
 
         try {
             List<StorageRequest> storageRequests = futureRequests.getFutureStorageRequests();
@@ -508,6 +511,6 @@ class Workflow {
             LOGGER.error("Error occurred while processing future compute request = " + e.getMessage());
             e.printStackTrace();
         }
-        LOGGER.debug("processFutureStorageRequests(): OUT");
+        LOGGER.debug("OUT");
     }
 }

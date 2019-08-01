@@ -1,7 +1,8 @@
 package org.renci.mobius.controllers.chameleon;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
 import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.json.simple.JSONArray;
@@ -21,7 +22,7 @@ import java.util.*;
  * @author kthare10
  */
 public class StackContext {
-    private static final Logger LOGGER = Logger.getLogger( StackContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( StackContext.class.getName() );
 
     private String sliceName;
     private String workflowId;
@@ -213,7 +214,7 @@ public class StackContext {
      * @brief function to release all resources associated with this context
      */
     public void stop() {
-        LOGGER.debug("stop: IN");
+        LOGGER.debug("IN");
         LOGGER.debug("Instance destruction taking plance =============================");
 
         try {
@@ -255,7 +256,7 @@ public class StackContext {
             LOGGER.debug("Exception occured while deleting slice " + sliceName);
         }
         LOGGER.debug("Instance destruction taking plance =============================");
-        LOGGER.debug("stop: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -281,7 +282,9 @@ public class StackContext {
                              String leaseEnd, String hostNamePrefix, String postBootScript,
                              Map<String, String> metaData, String networkId, String ip) throws Exception {
 
-        LOGGER.debug("provisionNode: IN");
+        LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
+        + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
+        + " ip=" + ip);
 
         ComputeController computeController = null;
         OsReservationApi api = null;
@@ -407,7 +410,7 @@ public class StackContext {
                 computeController.close();
             }
             // TODO clean any allocated CPUs, keys, leases
-            LOGGER.debug("provisionNode: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -420,7 +423,7 @@ public class StackContext {
      * @return JSONObject representing server
      */
     private JSONObject nodeToJson(Server server, String ip){
-        LOGGER.debug("nodeToJson: IN");
+        LOGGER.debug("IN server=" + server.toString() + " ip=" + ip);
         JSONObject object = new JSONObject();
         object.put(CloudContext.JsonKeyName, server.getName());
         object.put(CloudContext.JsonKeyState, server.getStatus().toString());
@@ -430,7 +433,7 @@ public class StackContext {
         else {
             object.put(CloudContext.JsonKeyPublicIP, "");
         }
-        LOGGER.debug("nodeToJson: OUT");
+        LOGGER.debug("OUT object=" + object.toString());
         return object;
     }
 
@@ -442,7 +445,7 @@ public class StackContext {
      * @return JSONObject representing status of context
      */
     public JSONObject status(Set<String> hostNameSet) {
-        LOGGER.debug("status: IN");
+        LOGGER.debug("IN hostNameSet=" + hostNameSet.toString());
         ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
@@ -507,7 +510,7 @@ public class StackContext {
             if(computeController != null) {
                 computeController.close();
             }
-            LOGGER.debug("status: OUT");
+            LOGGER.debug("OUT returnValue=" + returnValue);
         }
         return returnValue;
     }
@@ -521,7 +524,7 @@ public class StackContext {
      * @return JSONObject representing status of context
      */
     public JSONObject doPeriodic(Set<String> hostNameSet) {
-        LOGGER.debug("doPeriodic: IN");
+        LOGGER.debug("IN hostNameSet=" + hostNameSet.toString());
 
         JSONObject object = null;
         try {
@@ -530,11 +533,11 @@ public class StackContext {
         catch (Exception e){
             LOGGER.error("Exception occured while performing periodic updates to slice " + sliceName);
         }
-        LOGGER.debug("doPeriodic: OUT");
+        LOGGER.debug("OUT object=" + object.toString());
         return object;
     }
     public void renew(String leaseEnd) throws Exception{
-        LOGGER.debug("renew: IN");
+        LOGGER.debug("IN leaseEnd=" + leaseEnd);
 
         try {
 
@@ -571,7 +574,7 @@ public class StackContext {
             throw new MobiusException("Failed to server compute request e=" + e.getMessage());
         }
         finally {
-            LOGGER.debug("renew: OUT");
+            LOGGER.debug("OUT");
         }
 
     }

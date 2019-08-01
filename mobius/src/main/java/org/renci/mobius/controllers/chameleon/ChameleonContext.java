@@ -15,7 +15,8 @@ import org.renci.mobius.model.StorageRequest;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -27,7 +28,7 @@ import org.springframework.http.HttpStatus;
  */
 public class ChameleonContext extends CloudContext {
     private static final String stitchablePhysicalNetwork = "exogeni";
-    private static final Logger LOGGER = Logger.getLogger( ChameleonContext.class.getName() );
+    private static final Logger LOGGER = LogManager.getLogger( ChameleonContext.class.getName() );
     private static final Long maxDiffInSeconds = 604800L;
     private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private final static TimeZone utc = TimeZone.getTimeZone("UTC");
@@ -76,7 +77,7 @@ public class ChameleonContext extends CloudContext {
      *        network;
      */
     private String setupNetwork(ComputeRequest request) throws Exception {
-
+        LOGGER.debug("IN: request=" + request.toString());
         NetworkController networkController = null;
         String networkId = null;
         try {
@@ -155,7 +156,7 @@ public class ChameleonContext extends CloudContext {
             if(networkController != null) {
                 networkController.close();
             }
-            LOGGER.debug("setupNetwork: OUT");
+            LOGGER.debug("OUT: networkId=" + networkId);
         }
         return networkId;
     }
@@ -170,7 +171,7 @@ public class ChameleonContext extends CloudContext {
      *
      */
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("validateComputeRequest: IN");
+        LOGGER.debug("IN: request="+ request.toString() + " isFutureRequest=" + isFutureRequest);
 
         if(request.getCpus() == 0 && request.getGpus() == 0) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "No cpus and gpus are requested");
@@ -193,7 +194,7 @@ public class ChameleonContext extends CloudContext {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Host Name prefix can only contain alphabet characters");
         }
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, maxDiffInSeconds);
-        LOGGER.debug("validateComputeRequest: OUT");
+        LOGGER.debug("OUT");
     }
 
 
@@ -207,9 +208,9 @@ public class ChameleonContext extends CloudContext {
      *
      */
     protected void validateStorageRequest(StorageRequest request, boolean isFutureRequest) throws Exception {
-        LOGGER.debug("validateStorageRequest: IN");
+        LOGGER.debug("IN request=" + request.toString() + " isFutureRequest=" + isFutureRequest);
         validateLeasTime(request.getLeaseStart(), request.getLeaseEnd(), isFutureRequest, maxDiffInSeconds);
-        LOGGER.debug("validateStorageRequest: OUT");
+        LOGGER.debug("OUT");
     }
 
     /*
@@ -247,13 +248,13 @@ public class ChameleonContext extends CloudContext {
                 for (Object object : array) {
                     JSONObject slice = (JSONObject) object;
                     String sliceName = (String) slice.get("name");
-                    LOGGER.debug("fromJson(): sliceName=" + sliceName);
+                    LOGGER.debug("sliceName=" + sliceName);
                     StackContext sliceContext = new StackContext(sliceName, workflowId, region);
                     sliceContext.fromJson(slice);
                     stackContextHashMap.put(sliceName, sliceContext);
                 }
             } else {
-                LOGGER.error("fromJson(): Null array passed");
+                LOGGER.error("Null array passed");
             }
         }
     }
@@ -327,6 +328,7 @@ public class ChameleonContext extends CloudContext {
     @Override
     public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
+            LOGGER.debug("IN request=" + request.toString() + " nameIndex=" + nameIndex + " spNameIndex=" + spNameIndex + " isFutureRequest=" + isFutureRequest);
             validateComputeRequest(request, isFutureRequest);
 
             int retries = MobiusConfig.getInstance().getChameleonLeaseRetry(), count = 0;
@@ -358,7 +360,6 @@ public class ChameleonContext extends CloudContext {
                 } catch (LeaseException e) {
                     // Retry only when flavor is not forced
                     if(count+1 == retries || request.getForceflavor() != null) {
-                        LOGGER.debug("processCompute: OUT");
                         throw e;
                     }
                     else {
@@ -369,12 +370,14 @@ public class ChameleonContext extends CloudContext {
                     }
                 }
                 catch (Exception e) {
-                    LOGGER.debug("processCompute: OUT");
                     throw e;
+                }
+                finally {
+                    LOGGER.debug("OUT");
                 }
             }
         }
-        LOGGER.debug("processCompute: OUT");
+        LOGGER.debug("OUT");
         throw new MobiusException("failed to serve compute request - should never occur");
     }
 
@@ -392,6 +395,7 @@ public class ChameleonContext extends CloudContext {
     @Override
     public int processStorageRequest(StorageRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
+            LOGGER.debug("IN request=" + request + " nameIndex=" + nameIndex + " isFutureRequest=" + isFutureRequest);
             NetworkController networkController = null;
             validateStorageRequest(request, isFutureRequest);
 
@@ -437,7 +441,6 @@ public class ChameleonContext extends CloudContext {
                         if (networkController != null) {
                             networkController.close();
                         }
-                        LOGGER.debug("processStorage: OUT");
                     }
                     break;
                 }
@@ -490,6 +493,7 @@ public class ChameleonContext extends CloudContext {
                     break;
                 }
             }
+            LOGGER.debug("OUT nameIndex=" + nameIndex);
         }
         return nameIndex;
     }
@@ -506,10 +510,11 @@ public class ChameleonContext extends CloudContext {
     @Override
     public JSONObject doPeriodic() {
         synchronized (this) {
-            LOGGER.debug("doPeriodic: IN");
+            LOGGER.debug("IN");
             StackContext context = null;
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
+            LOGGER.debug("clearing maps");
             hostNameToSliceNameHashMap.clear();
             hostNameSet.clear();
             Iterator<HashMap.Entry<String, StackContext>> iterator = stackContextHashMap.entrySet().iterator();
@@ -540,7 +545,7 @@ public class ChameleonContext extends CloudContext {
                 retVal.put(CloudContext.JsonKeySlices, array);
             }
 
-            LOGGER.debug("doPeriodic: OUT");
+            LOGGER.debug("OUT");
             return retVal;
         }
     }
@@ -553,7 +558,7 @@ public class ChameleonContext extends CloudContext {
     @Override
     public JSONObject getStatus() {
         synchronized (this) {
-            LOGGER.debug("getStatus: IN");
+            LOGGER.debug("IN");
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
 
@@ -587,8 +592,9 @@ public class ChameleonContext extends CloudContext {
                 }
 
             }
-            LOGGER.debug("getStatus: OUT");
-            return retVal;        }
+            LOGGER.debug("OUT");
+            return retVal;
+        }
     }
 
     /*
@@ -607,7 +613,7 @@ public class ChameleonContext extends CloudContext {
     @Override
     public void stop() {
         synchronized (this) {
-            LOGGER.debug("stop: IN");
+            LOGGER.debug("IN");
             StackContext context = null;
             for (HashMap.Entry<String, StackContext> entry : stackContextHashMap.entrySet()) {
                 context = entry.getValue();
@@ -634,7 +640,7 @@ public class ChameleonContext extends CloudContext {
                     }
                 }
             }
-            LOGGER.debug("stop: OUT");
+            LOGGER.debug("OUT");
         }
     }
 
@@ -655,7 +661,7 @@ public class ChameleonContext extends CloudContext {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
     }
     /*
-     * @brief function to process a network request;
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
      *
      * @param hostname - hostname
      * @param ip - ip
@@ -670,18 +676,18 @@ public class ChameleonContext extends CloudContext {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
     }
     /*
-     * @brief function to process a network request;
+     * @brief function to connect the link between source and destination subnet
      *
      * @param hostname - hostname
-     * @param ip - ip
-     * @param subnet - subnet
-     * @param action - action
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
      *
      * @throws Exception in case of error
      *
      */
     @Override
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2) throws Exception {
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for chameleon");
     }
 }

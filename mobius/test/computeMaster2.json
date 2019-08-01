@@ -10,5 +10,5 @@
     "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
     "imageName":"centos7.4-v1.0.3-comet",    
     "postBootScript":"yum -y install quagga iperf\necho '1' > /proc/sys/net/ipv4/ip_forward",
-    "leaseEnd":"1563455759"
+    "leaseEnd":"1563742536"
 }

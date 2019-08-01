@@ -3,7 +3,6 @@
     "gpus":"0",
     "ramPerCpus":"4096",
     "diskPerCpus":"5000",
-    "coallocate":"true",
     "hostNamePrefix":"master",
     "imageName":"CC-CentOS7",
     "networkType":"private",
@@ -11,5 +10,5 @@
     "externalNetwork":"public",
     "networkCidr":"192.168.100.0/24",
     "forceflavor":"compute_haswell",
-    "postBootScript":""
+    "postBootScript":"#!/bin/bash\npip install python-daemon==2.1.2\ngit clone https://github.com/RENCI-NRIG/host-key-tools.git /root/host-key-tools\ncd /root/host-key-tools/hostkey-py/\npython setup.py install\ncp /root/host-key-tools/ch-host-key-tools.service /usr/lib/systemd/system/host-key-tools.service\nsed -i 's/ExecStart=.*/ExecStart=\\/usr\\/bin\\/hostkeyd start -c https:\\/\\/18.221.238.74:8111\\/ -s WORKFLOW -r WORKFLOWread -w WORKFLOWwrite -i NODENAME.novalocal/g' /usr/lib/systemd/system/host-key-tools.service\nsystemctl enable host-key-tools.service\nservice host-key-tools.service start"
 }
