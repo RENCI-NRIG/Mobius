@@ -100,7 +100,7 @@ optional arguments:
                         Number of workers to be provisioned on Chameleon; must
                         be specified for create operation
   -c COMETHOST, --comethost COMETHOST
-                        Comet Host e.g. https://18.218.34.48:8111/; used only
+                        Comet Host e.g. https://comet-hn1.exogeni.net:8111/; used only
                         for provisioning resources on chameleon
   -t CERT, --cert CERT  Comet Certificate; used only for provisioning
                         resources on chameleon
@@ -156,9 +156,9 @@ python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
     "hostNamePrefix":"master",
     "ipAddress": "172.16.0.1",
     "coallocate":"true",
-    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos7.4-v1.0.3-comet/centos7.4-v1.0.3-comet.xml",
-    "imageHash":"3dd17be8e0c24dd34b4dbc0f0d75a0b3f398c520",
-    "imageName":"centos7.4-v1.0.3-comet",
+    "imageUrl":"http://geni-images.renci.org/images/kthare10/mobius/mb-centos-7/mb-centos-7.xml",
+    "imageName":"mb-centos-7",
+    "imageHash":"2dc5f35c91712845f9b6fec6bad1f6f33c64df39",
     "leaseEnd":"1557733832",
     "postBootScript":"curl http://geni-images.renci.org/images/cwang/Condor/scripts/exogeni-scripts/master.sh -o /root/master.sh; sh /root/master.sh"
 }'
@@ -194,13 +194,13 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ##### Chameleon:
 - Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n2 1
+python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n2 1
 ```
 ##### Exogeni: For controller where COMET is not enabled (EXOSOM)
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json if present in the directory would be used to stitch
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
+python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
 ```
 ##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
@@ -208,7 +208,7 @@ python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogen
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
 - Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
 ```
-python3 condor_client.py  -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
@@ -223,5 +223,5 @@ python3 condor_client.py -o delete -w abcd-1114
 ```
 Delete cluster when created by specifying COMET
 ```
-python3 condor_client.py -o delete -w abcd-1114 -c https://18.221.238.74:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
+python3 condor_client.py -o delete -w abcd-1114 -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
 ```
