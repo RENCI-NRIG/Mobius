@@ -73,10 +73,12 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ### <a name="usage2"></a>Usage
 ```
 usage: condor_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
-                        [-n1 EXOWORKERS] [-n2 CHWORKERS] [-c COMETHOST]
-                        [-t CERT] [-k KEY] [-m MOBIUSHOST] -o OPERATION -w
-                        WORKFLOWID [-i1 EXOIPSTART] [-i2 CHIPSTART]
+                        [-s3 JETSTREAMSITE] [-n1 EXOWORKERS] [-n2 CHWORKERS]
+                        [-n3 JTWORKERS] [-c COMETHOST] [-t CERT] [-k KEY]
+                        [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
+                        [-i1 EXOIPSTART] [-i2 CHIPSTART] [-i3 JTIPSTART]
                         [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
+                        [-d3 JTDATADIR]
 
 Python client to create Condor cluster using mobius. Uses master.json,
 submit.json and worker.json for compute requests present in data directory
@@ -93,18 +95,27 @@ optional arguments:
   -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
                         Chameleon Site at which resources must be provisioned;
                         must be specified for create operation
+  -s3 JETSTREAMSITE, --jetstreamsite JETSTREAMSITE
+                        Jetstream Site at which resources must be provisioned;
+                        must be specified for create operation
   -n1 EXOWORKERS, --exoworkers EXOWORKERS
                         Number of workers to be provisioned on Exogeni; must
                         be specified for create operation
   -n2 CHWORKERS, --chworkers CHWORKERS
                         Number of workers to be provisioned on Chameleon; must
                         be specified for create operation
+  -n3 JTWORKERS, --jtworkers JTWORKERS
+                        Number of workers to be provisioned on Jetstream; must
+                        be specified for create operation
   -c COMETHOST, --comethost COMETHOST
-                        Comet Host e.g. https://comet-hn1.exogeni.net:8111/; used only
-                        for provisioning resources on chameleon
-  -t CERT, --cert CERT  Comet Certificate; used only for provisioning
+                        Comet Host default(https://comet-
+                        hn1.exogeni.net:8111/) used only for provisioning
                         resources on chameleon
-  -k KEY, --key KEY     Comet Certificate key; used only for provisioning
+  -t CERT, --cert CERT  Comet Certificate default(certs/inno-
+                        hn_exogeni_net.pem); used only for provisioning
+                        resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key default(certs/inno-
+                        hn_exogeni_net.key); used only for provisioning
                         resources on chameleon
   -m MOBIUSHOST, --mobiushost MOBIUSHOST
                         Mobius Host e.g. http://localhost:8080/mobius
@@ -122,6 +133,11 @@ optional arguments:
                         used for VMs; 1st IP is assigned to master and
                         subsequent IPs are assigned to submit node and
                         workers; can be specified for create operation
+  -i3 JTIPSTART, --jtipStart JTIPSTART
+                        Jetstream Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
   -l LEASEEND, --leaseEnd LEASEEND
                         Lease End Time; can be specified for create operation
   -d1 EXODATADIR, --exodatadir EXODATADIR
@@ -131,7 +147,11 @@ optional arguments:
   -d2 CHDATADIR, --chdatadir CHDATADIR
                         Chameleon Data directory where to look for
                         master.json, submit.json and worker.json; must be
-                        specified for create operation                   
+                        specified for create operation
+  -d3 JTDATADIR, --jtdatadir JTDATADIR
+                        Jetstream Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation           
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -194,7 +214,7 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ##### Chameleon:
 - Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
 ```
-python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
+python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
 ```
 
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
@@ -202,7 +222,7 @@ NOTE: Start IP address passed via -i2 should match the network specified in JSON
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json if present in the directory would be used to stitch
 ```
-python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
 ```
 ##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
@@ -210,7 +230,7 @@ python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-h
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
 - Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
 ```
-python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
@@ -223,8 +243,4 @@ python3 condor_client.py -o get -w abcd-1114
 #### <a name="delete"></a>Delete condor cluster
 ```
 python3 condor_client.py -o delete -w abcd-1114 
-```
-Delete cluster when created by specifying COMET
-```
-python3 condor_client.py -o delete -w abcd-1114 -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key
 ```
