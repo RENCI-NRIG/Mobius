@@ -129,7 +129,7 @@ def main():
         '--comethost',
         dest='comethost',
         type = str,
-        help='Comet Host e.g. https://comet-hn1.exogeni.net:8111/; used only for provisioning resources on chameleon',
+        help='Comet Host default(https://comet-hn1.exogeni.net:8111/) used only for provisioning resources on chameleon',
         required=False,
         default='https://comet-hn1.exogeni.net:8111/'
     )
@@ -138,7 +138,7 @@ def main():
         '--cert',
         dest='cert',
         type = str,
-        help='Comet Certificate; used only for provisioning resources on chameleon',
+        help='Comet Certificate default(certs/inno-hn_exogeni_net.pem); used only for provisioning resources on chameleon',
         required=False,
         default='certs/inno-hn_exogeni_net.pem'
     )
@@ -147,7 +147,7 @@ def main():
         '--key',
         dest='key',
         type = str,
-        help='Comet Certificate key; used only for provisioning resources on chameleon',
+        help='Comet Certificate key default(certs/inno-hn_exogeni_net.key); used only for provisioning resources on chameleon',
         required=False,
         default='certs/inno-hn_exogeni_net.key'
     )
