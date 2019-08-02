@@ -194,8 +194,10 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ##### Chameleon:
 - Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
 ```
-python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.10.5" -o create -w abcd-1114 -n2 1
+python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
 ```
+
+NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 ##### Exogeni: For controller where COMET is not enabled (EXOSOM)
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json if present in the directory would be used to stitch
@@ -210,6 +212,7 @@ python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-h
 ```
 python3 condor_client.py  -c https://comet-hn1.exogeni.net:8111/ -t certs/inno-hn_exogeni_net.pem -k certs/inno-hn_exogeni_net.key -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/  -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
+NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
 #### <a name="get"></a>Get status of condor cluster
