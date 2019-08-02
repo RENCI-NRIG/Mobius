@@ -206,7 +206,7 @@ public class ReqContext {
                              Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
 
         LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
-                + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
+                + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData + " networkId=" + networkId
                 + " ip=" + ip + " sgName=" + sgName);
 
         ComputeController computeController = null;

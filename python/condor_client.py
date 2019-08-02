@@ -93,6 +93,14 @@ def main():
         required=False
     )
     parser.add_argument(
+        '-s3',
+        '--jetstreamsite',
+        dest='jetstreamsite',
+        type = str,
+        help='Jetstream Site at which resources must be provisioned; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
         '-n1',
         '--exoworkers',
         dest='exoworkers',
@@ -109,12 +117,21 @@ def main():
         required=False
     )
     parser.add_argument(
+        '-n3',
+        '--jtworkers',
+        dest='jtworkers',
+        type = int,
+        help='Number of workers to be provisioned on Jetstream; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
         '-c',
         '--comethost',
         dest='comethost',
         type = str,
         help='Comet Host e.g. https://comet-hn1.exogeni.net:8111/; used only for provisioning resources on chameleon',
-        required=False
+        required=False,
+        default='https://comet-hn1.exogeni.net:8111/'
     )
     parser.add_argument(
         '-t',
@@ -122,7 +139,8 @@ def main():
         dest='cert',
         type = str,
         help='Comet Certificate; used only for provisioning resources on chameleon',
-        required=False
+        required=False,
+        default='certs/inno-hn_exogeni_net.pem'
     )
     parser.add_argument(
         '-k',
@@ -130,7 +148,8 @@ def main():
         dest='key',
         type = str,
         help='Comet Certificate key; used only for provisioning resources on chameleon',
-        required=False
+        required=False,
+        default='certs/inno-hn_exogeni_net.key'
     )
     parser.add_argument(
         '-m',
@@ -174,6 +193,14 @@ def main():
         required=False
     )
     parser.add_argument(
+         '-i3',
+         '--jtipStart',
+         dest='jtipStart',
+         type = str,
+         help='Jetstream Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers;   can be specified for create operation',
+         required=False
+    )
+    parser.add_argument(
         '-l',
         '--leaseEnd',
         dest='leaseEnd',
@@ -197,6 +224,14 @@ def main():
         help='Chameleon Data directory where to look for master.json, submit.json and worker.json; must be specified for create operation',
         required=False
     )
+    parser.add_argument(
+        '-d3',
+        '--jtdatadir',
+        dest='jtdatadir',
+        type = str,
+        help='Jetstream Data directory where to look for master.json, submit.json and worker.json; must be specified for create operation',
+        required=False
+    )
 
     args = parser.parse_args()
     mb=MobiusInterface()
@@ -215,7 +250,7 @@ def main():
             response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
     elif args.operation == 'create':
         ipMap = dict()
-        if (args.exogenisite is None and args.chameleonsite is None) or (args.exoworkers is None and args.chworkers is None)  or (args.exodatadir is None and args.chdatadir is None) :
+        if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None) :
             print ("ERROR: site name, number of workers and data directory must be specified for create operation")
             parser.print_help()
             sys.exit(1)
@@ -237,6 +272,15 @@ def main():
                 print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
                 parser.print_help()
                 sys.exit(1)
+        if args.jtipStart is not None:
+            if is_valid_ipv4_address(args.jtipStart) == False :
+                print ("ERROR: Invalid start ip address specified")
+                parser.print_help()
+                sys.exit(1)
+            if can_ip_satisfy_range(args.jtipStart, args.jtworkers + 1) == False:
+                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+                parser.print_help()
+                sys.exit(1)
         if args.comethost is not None:
             if args.cert is None or args.key is None:
                 print ("ERROR: comet certificate and key must be specified when comethost is indicated")
@@ -249,6 +293,11 @@ def main():
                 sys.exit(1)
         if args.exogenisite is not None :
             if "Exogeni" not in args.exogenisite :
+                print ("ERROR: Invalid site specified")
+                parser.print_help()
+                sys.exit(1)
+        if args.jetstreamsite is not None :
+            if "Jetstream" not in args.jetstreamsite :
                 print ("ERROR: Invalid site specified")
                 parser.print_help()
                 sys.exit(1)
@@ -327,6 +376,11 @@ def main():
                 if status == False :
                     return
                 print ("ipMap after exogeni: "  + str(ipMap))
+            if args.jetstreamsite is not None and args.jtdatadir is not None:
+                status, count = provision_condor_cluster(args, args.jtdatadir, args.jetstreamsite, ipMap, count, args.jtipStart, args.jtworkers, chstoragename, None, None, None)
+                if status == False:
+                    return
+                print ("ipMap after jetstream: "  + str(ipMap))
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             stitcVlanToChameleon = None
             if response.json()["status"] == 200 and args.comethost is not None:
