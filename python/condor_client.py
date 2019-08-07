@@ -584,7 +584,34 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
             count = count + 1
     return True, count
 
+def wait_for_network_to_be_active(mb, host, workflowId, site):
+    networkStatus = ""
+    while networkStatus != "Active" :
+        shouldSleep = False
+        response=mb.get_workflow(host, workflowId)
+        if response.json()["status"] == 200 :
+            status=json.loads(response.json()["value"])
+            requests = json.loads(status["workflowStatus"])
+            for req in requests:
+                if site in req["site"] :
+                    slices = req["slices"]
+                    for s in slices:
+                        shouldSleep = True
+                        nodes = s["nodes"]
+                        for n in nodes :
+                            if "cmnw" == n["name"] :
+                                print ("Updating state of " + n["name"])
+                                networkStatus = n["state"]
+        if shouldSleep == True:
+            if networkStatus != "Active":
+                print ("Sleeping for 5 seconds")
+                time.sleep(5)
+        else:
+            break
+
 def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename=None, subnet=None, forwardIP=None):
+    if "Exogeni" in site:
+        wait_for_network_to_be_active(mb, host, workflowId, site)
     if mdata["hostNamePrefix"] is not None :
         if "Exogeni" in site:
             nodename = mdata["hostNamePrefix"] + str(count)

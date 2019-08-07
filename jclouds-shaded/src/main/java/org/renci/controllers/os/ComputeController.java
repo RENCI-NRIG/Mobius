@@ -211,7 +211,7 @@ public class ComputeController implements Closeable {
                     byte[] encoded = Files.readAllBytes(Paths.get(sshKeyFile));
                     String publicKey = new String(encoded);
 
-                    System.out.println("Creating keypair.");
+                    System.out.println("Creating keypair using " + sshKeyFile);
                     KeyPair k = keyPairApi.createWithPublicKey(name, publicKey);
                     System.out.println("Keypair " + name + " created.");
 

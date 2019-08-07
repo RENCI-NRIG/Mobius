@@ -222,6 +222,16 @@ public class SliceContext {
                         }
                     }
                 }
+                // Adding state of the broadcast network 
+                Collection<BroadcastNetwork> broadcastNetworks = slice.getBroadcastLinks();
+                for(BroadcastNetwork b : broadcastNetworks) {
+                    if(b.getName().compareToIgnoreCase(CloudContext.NetworkName) == 0) {
+                        JSONObject object = new JSONObject();
+                        object.put(CloudContext.JsonKeyName, b.getName());
+                        object.put(CloudContext.JsonKeyState, b.getState());
+                        array.add(object);
+                    }
+                }
                 NDLGenerator.SliceState currState = slice.getState();
                 LOGGER.debug("Slice state = " + currState);
                 if((currState == NDLGenerator.SliceState.STABLE_OK ||
@@ -371,6 +381,9 @@ public class SliceContext {
                 }
                 if(net == null) {
                     throw new MobiusException("No broadcast network found");
+                }
+                if(net.getState().compareToIgnoreCase("Active") != 0) {
+                    throw new MobiusException(HttpStatus.TEMPORARY_REDIRECT, "Broadcast network is for the slice " + sliceName + " is not active yet! Please try again!");
                 }
             }
 
