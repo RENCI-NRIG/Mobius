@@ -399,16 +399,6 @@ def main():
                     for s in slices:
                         nodes = s["nodes"]
                         for n in nodes :
-                            print ("Create comet context for node " + n["name"])
-                            response=comet.update_family(args.comethost, args.workflowId, n["name"],
-                                    readToken, writeToken, "pubkeysall", pubKeysVal)
-                            print ("Received Response Status Code: " + str(response.status_code))
-                            print ("Received Response Message: " + response.json()["message"])
-                            print ("Received Response Status: " + response.json()["status"])
-                            if response.status_code == 200 :
-                                print ("Received Response Value: " + str(response.json()["value"]))
-
-                            hostVal = json.dumps(hostNameVal)
                             if "Chameleon" in s["slice"] :
                                 hostname=n["name"] + ".novalocal"
                             else :
@@ -418,18 +408,28 @@ def main():
                                         print ("Updating target in exogeni stitch request")
                                         stitchdata["target"]=n["name"]
                                         stitchNodeStatus = n["state"]
+                            print ("Create comet context for node " + n["name"])
+                            response=comet.update_family(args.comethost, args.workflowId, hostname,
+                                    readToken, writeToken, "pubkeysall", pubKeysVal)
+                            print ("Received Response Status Code: " + str(response.status_code))
+                            print ("Received Response Message: " + response.json()["message"])
+                            print ("Received Response Status: " + response.json()["status"])
+                            if response.status_code == 200 :
+                                print ("Received Response Value: " + str(response.json()["value"]))
+
+                            hostVal = json.dumps(hostNameVal)
                             hostVal = hostVal.replace("REPLACE", hostname)
                             if n["name"] in ipMap:
-                                print ("Replacing IPADDR with " + ipMap[n["name"]])
+                                print ("Replacing IPADDR with " + ipMap[n["name"]] + " for " + hostVal)
                                 hostVal = hostVal.replace("IPADDR", ipMap[n["name"]])
                                 #if stitchdata["target"] == n["name"] :
                                 #    print ("Replacing IPADDR with " + stitchdata["stitchIP"])
                                 #    hostVal = hostVal.replace("IPADDR", stitchdata["stitchIP"])
                             else:
-                                print ("Replacing IPADDR with empty string")
+                                print ("Replacing IPADDR with empty string for" + hostVal)
                                 hostVal = hostVal.replace("IPADDR", "")
                             val = json.loads(hostVal)
-                            response=comet.update_family(args.comethost, args.workflowId, n["name"],
+                            response=comet.update_family(args.comethost, args.workflowId, hostname,
                                     readToken, writeToken, "hostsall", val)
                             print ("Received Response Status Code: " + str(response.status_code))
                             print ("Received Response Message: " + response.json()["message"])
