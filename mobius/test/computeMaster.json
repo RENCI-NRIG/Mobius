@@ -8,7 +8,7 @@
     "coallocate":"true",
     "imageUrl":"http://geni-images.renci.org/images/kthare10/mobius/mb-centos-7/mb-centos-7.xml",
     "imageName":"mb-centos-7",
-    "imageHash":"2dc5f35c91712845f9b6fec6bad1f6f33c64df39",    
+    "imageHash":"1cb9bde255314761e10d8c9bde727c69bb2c1ca4",
     "postBootScript":"",
     "leaseEnd":"1565268834"
 }
