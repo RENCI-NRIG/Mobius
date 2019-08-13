@@ -6,6 +6,7 @@ import com.google.common.net.InetAddresses;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
 import org.renci.mobius.model.ComputeRequest;
@@ -326,6 +327,10 @@ public class ExogeniContext extends CloudContext {
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
 
+            hostNameToSliceNameHashMap.clear();
+            leaseEndTimeToSliceNameHashMap.clear();
+            hostNameSet.clear();
+
             SliceContext context = null;
             for (HashMap.Entry<String, SliceContext> entry : sliceContextHashMap.entrySet()) {
                 context = entry.getValue();
@@ -338,7 +343,24 @@ public class ExogeniContext extends CloudContext {
                 } catch (SliceNotFoundOrDeadException e) {
                     handSliceNotFoundException(context.getSliceName());
                     sliceContextHashMap.remove(context);
+                    continue;
                 }
+                for (String h : hostNameSet) {
+                    if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
+                        System.out.println("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
+                        hostNameToSliceNameHashMap.put(h, context.getSliceName());
+                    }
+                }
+
+                // TODO find a way to reload expiryTime
+                if (context.getExpiry() != null) {
+                    leaseEndTimeToSliceNameHashMap.put(context.getExpiry(), context.getSliceName());
+                }
+                triggerNotification |= context.canTriggerNotification();
+                if (context.canTriggerNotification()) {
+                    context.setSendNotification(false);
+                }
+
             }
             if (!array.isEmpty()) {
                 retVal = new JSONObject();
