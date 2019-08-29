@@ -26,6 +26,7 @@ Once images are ready, update configuration in docker as indicated below:
  mobius.chameleon.user=kthare10
  mobius.chameleon.user.password=
  mobius.chameleon.sshKeyFile=id_rsa.pub
+ mobius.exogeni.sshPrivateKeyFile=id_rsa
  ```
  2. Update docker/config/application.properties to specify exogeni/chameleon controller/auth url
 ```
@@ -50,7 +51,8 @@ No changes needed until pegasus to mobius integration is complete.
  mobius.amqp.user.password=
  mobius.amqp.virtual.host=
 ```
-4. Update docker-compose.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
+4. Using Mobius without SDX (network requests would not work in this case)
+Update docker-compose.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
         # point to user specific keys below
          volumes:
@@ -62,8 +64,34 @@ No changes needed until pegasus to mobius integration is complete.
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
          - "./ssh/id_rsa:/code/ssh/id_rsa"
 ```
+
+4. Using Mobius with SDX 
+Update docker-compose_sdx.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
+```
+        # point to user specific keys below
+         volumes:
+         - "./logs:/code/logs"
+         - "./mobius-sync:/code/mobius-sync"
+         - "./config/application.properties:/code/config/application.properties"
+         - "./config/log4j.properties:/code/config/log4j.properties"
+         - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+         - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "./ssh/id_rsa:/code/ssh/id_rsa"
+```
+Update docker-compose_sdx.yml for sdxserver to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
+```
+         # point to user specific keys below
+         volumes:
+         - "./sdxlog:/code/log"
+         - "./config/sdx.conf:/code/config/sdx.conf"
+         - "~/.ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+         - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "~/.ssh/id_rsa:/code/ssh/id_rsa"
+         - "./resources:/code/resources"
+```
+
 ### <a name="run3"></a>Run Docker
-Run docker-compose up -d from Mobius/docker directory
+Run docker-compose up -d from Mobius/docker directory when running without SDX.
 
 ```
 $ docker-compose up -d
@@ -71,6 +99,16 @@ Creating database ... done
 Creating rabbitmq ... done
 Creating mobius   ... done
 Creating notification ... done
+```
+
+Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running without SDX.
+```
+$ docker-compose up -d
+Creating database ... done
+Creating rabbitmq ... done
+Creating mobius   ... done
+Creating notification ... done
+Creating sdxserver ... done
 ```
 After a few moments the docker containers will have stood up and configured themselves. User can now trigger requests to Mobius. Refer to [Interface](../mobius/Interface.md) to see the REST API
 
