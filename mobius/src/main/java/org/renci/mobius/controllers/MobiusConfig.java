@@ -19,16 +19,20 @@ public class MobiusConfig {
     public static final String exogeniUserKeyPath = "mobius.exogeni.KeyPath";
     public static final String exogeniUserCertKey = "mobius.exogeni.certKeyFile";
     public static final String exogeniUserSshKey = "mobius.exogeni.sshKeyFile";
+    public static final String exogeniUserSshPrivateKey = "mobius.exogeni.sshPrivateKeyFile";
     public static final String exogeniControllerUrl = "mobius.exogeni.controllerUrl";
     public static final String exogeniDefaultImageUrl = "mobius.exogeni.defaultImageUrl";
     public static final String exogeniDefaultImageName = "mobius.exogeni.defaultImageName";
     public static final String exogeniDefaultImageHash = "mobius.exogeni.defaultImageHash";
     public static final String exogeniCommitRetryCount = "mobius.exogeni.commitRetryCount";
     public static final String exogeniCommitSleepInterval = "mobius.exogeni.commitSleepInterval";
+    public static final String mobiusSdxUrl = "mobius.sdxUrl";
+
     public static final String enablePeriodicProcessingFilePath = "mobius.enable.periodic.processing.path";
     public static final String enablePeriodicProcessingFile = "mobius.enable.periodic.processing.file";
     public static final String periodicProcessingWaitTime = "mobius.periodic.processing.max.wait.time";
     public static final String periodicProcessingPeriod = "mobius.periodic.processing.period";
+
     public static final String amqpServerHost = "mobius.amqp.server.host";
     public static final String amqpServerPort = "mobius.amqp.server.port";
     public static final String amqpUseSsl = "mobius.amqp.use.ssl";
@@ -37,6 +41,7 @@ public class MobiusConfig {
     public static final String amqpVirtualHost = "mobius.amqp.virtual.host";
     public static final String amqpExchangeName = "mobius.amqp.exchange.name";
     public static final String amqpRoutingKey = "mobius.amqp.exchange.routing.key";
+
     public static final String chameleonAuthUrl = "mobius.chameleon.authUrl";
     public static final String chameleonUser = "mobius.chameleon.user";
     public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
@@ -64,6 +69,8 @@ public class MobiusConfig {
     public static final String jetStreamUserSshKey = "mobius.jetstream.sshKeyFile";
     public static final String jetStreamDefaultImageName = "mobius.jetstream.defaultImageName";
     public static final String jetStreamFloatingIpPool = "mobius.jetstream.floatingIpPool";
+
+    public String getMobiusSdxUrl() { return properties.getProperty(mobiusSdxUrl); }
 
     public String getJetStreamIuAuthUrl() { return properties.getProperty(jetStreamIuAuthUrl); }
 
@@ -198,6 +205,18 @@ public class MobiusConfig {
         else {
             return mobiusHome + "/ssh/" +
                     properties.getProperty(MobiusConfig.exogeniUserSshKey);
+        }
+    }
+
+    public String getDefaultExogeniUserSshPrivateKey() {
+        String mobiusHome = getMobiusHome();
+        if(mobiusHome == null) {
+            return properties.getProperty(MobiusConfig.exogeniUserKeyPath) + "/" +
+                    properties.getProperty(MobiusConfig.exogeniUserSshPrivateKey);
+        }
+        else {
+            return mobiusHome + "/ssh/" +
+                    properties.getProperty(MobiusConfig.exogeniUserSshPrivateKey);
         }
     }
 

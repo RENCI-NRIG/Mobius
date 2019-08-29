@@ -340,24 +340,45 @@ class Workflow {
         LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         try {
             if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+
+            if(request.getSource().compareToIgnoreCase(request.getDestination()) == 0) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "source and destination nodes must be different");
+            }
+
+
+            if(request.getAction() == NetworkRequest.ActionEnum.ADD &&
+                    (request.getSourceSubnet().compareToIgnoreCase(request.getDestinationSubnet()) == 0 ||
+                    request.getSourceIP().compareToIgnoreCase(request.getDestinationIP()) == 0)) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "source and destination subnet/ip must be different");
             }
 
             // lookup source and target nodes
             CloudContext context1 = findContext(request.getSource());
+            CloudContext context2 = findContext(request.getDestination());
+
+            if(context1.getSite().compareToIgnoreCase(context2.getSite()) == 0) {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "source and destination must be on different sites");
+            }
+
+            // Stitch to SDX and advertise the prefix or Unstitch
             context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
                     request.getSourceSubnet(), request.getAction());
 
-            CloudContext context2 = findContext(request.getDestination());
+            // Stitch to SDX and advertise the prefix or Unstitch
             context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
                     request.getDestinationSubnet(), request.getAction());
 
-            context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
-                    request.getDestinationSubnet(), request.getLinkSpeed().toString());
-            
-            context2.processNetworkRequestLink(request.getDestination(), request.getSourceSubnet(),
-                    request.getDestinationSubnet(), request.getLinkSpeed().toString());
+            if(request.getAction() == NetworkRequest.ActionEnum.ADD) {
+                // Connect the prefix source - destination
+                context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
+                        request.getDestinationSubnet(), request.getLinkSpeed());
+
+                // Connect the prefix destination - source
+                context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
+                        request.getSourceSubnet(), request.getLinkSpeed());
+            }
         }
         finally {
             LOGGER.debug("OUT");
@@ -377,7 +398,6 @@ class Workflow {
         LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
         try {
             if (siteToContextHashMap.size() == 0) {
-                LOGGER.debug("OUT");
                 throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
             }
             CloudContext context = null;

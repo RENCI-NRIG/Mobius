@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * NetworkRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-07-09T13:20:19.076-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-08-23T10:45:46.733-04:00[America/New_York]")
 
 public class NetworkRequest   {
   @JsonProperty("source")
@@ -36,7 +36,7 @@ public class NetworkRequest   {
   private String destinationSubnet = null;
 
   @JsonProperty("linkSpeed")
-  private Integer linkSpeed = null;
+  private String linkSpeed = "1000000000";
 
   @JsonProperty("leaseStart")
   private String leaseStart = null;
@@ -204,7 +204,7 @@ public class NetworkRequest   {
     this.destinationSubnet = destinationSubnet;
   }
 
-  public NetworkRequest linkSpeed(Integer linkSpeed) {
+  public NetworkRequest linkSpeed(String linkSpeed) {
     this.linkSpeed = linkSpeed;
     return this;
   }
@@ -216,11 +216,11 @@ public class NetworkRequest   {
   @ApiModelProperty(value = "Link speed")
 
 
-  public Integer getLinkSpeed() {
+  public String getLinkSpeed() {
     return linkSpeed;
   }
 
-  public void setLinkSpeed(Integer linkSpeed) {
+  public void setLinkSpeed(String linkSpeed) {
     this.linkSpeed = linkSpeed;
   }
 

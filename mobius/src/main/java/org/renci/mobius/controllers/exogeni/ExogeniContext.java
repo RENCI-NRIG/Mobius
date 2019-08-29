@@ -578,7 +578,7 @@ public class ExogeniContext extends CloudContext {
                 throw new MobiusException("slice context not found");
             }
             try {
-                context.processNetworkRequestLink(subnet1, subnet2, bandwidth);
+                context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth);
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);

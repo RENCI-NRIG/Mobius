@@ -1,6 +1,6 @@
 {
-    "site":"Exogeni:ROCKY XO Rack",
-    "cpus":"4",
+    "site":"Exogeni:UFL (Gainesville, FL USA) XO Rack",
+    "cpus":"1",
     "gpus":"0",
     "ramPerCpus":"3072",
     "diskPerCpus":"19200",
@@ -9,7 +9,7 @@
     "imageUrl":"http://geni-images.renci.org/images/kthare10/mobius/mb-centos-7/mb-centos-7.xml",
     "imageName":"mb-centos-7",
     "imageHash":"1cb9bde255314761e10d8c9bde727c69bb2c1ca4",
-    "postBootScript":"",
-    "leaseEnd":"1565268834"
+    "postBootScript":"yum -y install quagga iperf\necho '1' > /proc/sys/net/ipv4/ip_forward",
+    "leaseEnd":"1567171121"
 }
 

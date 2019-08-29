@@ -1,9 +1,5 @@
 package org.renci.mobius.controllers.exogeni;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import exoplex.client.exogeni.SdxExogeniClient;
-import injection.SingleSdxModule;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -19,6 +15,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
+import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
@@ -704,12 +701,8 @@ public class SliceContext {
                 throw new MobiusException("Unable to load compute node");
             }
             String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
-            int indexOfLast = sshfile.lastIndexOf(".pub");
-            String newString = null;
-            if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
-
             SdxClient sdxClient = new SdxClient(sshfile, MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
-                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),"http://18.191.204.20:8888/" );
+                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             switch (action) {
                 case ADD:
@@ -719,9 +712,13 @@ public class SliceContext {
                     sdxClient.prefix(sliceName, ip, subnet);
                 }
                     break;
-                case DELETE:
+                case DELETE: {
                     // unstitch
+                    sdxClient.unstitch(sliceName, c.getStitchingGUID());
                     break;
+                }
+                default:
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "unsupported network operation");
             }
         }
         catch (MobiusException e) {
@@ -748,6 +745,7 @@ public class SliceContext {
     /*
      * @brief function to connect the link between source and destination subnet
      *
+     * @param hostname - hostname
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
@@ -755,25 +753,37 @@ public class SliceContext {
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String subnet1, String subnet2, String bandwidth) throws Exception{
-        LOGGER.debug("IN");
-
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
+        LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
         try {
             Slice slice = getSlice();
             if (slice == null) {
                 throw new MobiusException("Unable to load slice");
             }
 
-            // hack needed to remove .pub from filename as SDX code expects to not have file extension
-            String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
-            int indexOfLast = sshfile.lastIndexOf(".pub");
-            String newString = null;
-            if(indexOfLast >= 0) newString = sshfile.substring(0, indexOfLast);
+            String ip = null;
+            ComputeNode node = (ComputeNode) slice.getResourceByName(hostname);
+            if (node != null) {
+                ip =  ((ComputeNode) slice.getResourceByName(hostname)).getManagementIP();
+            } else {
+                throw new MobiusException("Unable to find the node in slice");
+            }
 
-            SdxClient sdxClient = new SdxClient(sshfile, MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
-                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),"http://18.191.204.20:8888/" );
+            // hack needed to remove .pub from filename as SDX code expects to not have file extension
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getDefaultExogeniUserSshKey(),
+                    MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
+                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),
+                    MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
+
+            String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
+            String gateway2 = subnet2.substring(0, subnet2.indexOf("/"));
+            String startIP = gateway2.substring(0, gateway2.lastIndexOf("."));
+            startIP += ".2";
+            String command = String.format("ip route add %s/32 via %s", startIP, gateway1);
+            RemoteCommand remoteCommand = new RemoteCommand(null, MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
+            remoteCommand.runCmdByIP(command, ip,false);
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

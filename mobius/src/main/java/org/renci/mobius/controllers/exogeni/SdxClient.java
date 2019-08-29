@@ -4,7 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.MobiusException;
+import org.renci.mobius.controllers.chameleon.LeaseException;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
@@ -30,116 +33,171 @@ public class SdxClient {
     public void stitch(String sliceName, String siteName, String stitchingGuid, String ip, String subnet, String secret) throws Exception {
         LOGGER.debug("IN sliceName=" + sliceName + " siteName=" + siteName + " stitchingGuid=" + stitchingGuid
         + " ip=" + ip + " subnet=" + subnet + " secret=" + secret);
-        JSONObject object =  new JSONObject();
-        object.put("sdxsite", siteName);
-        object.put("cslice", sliceName);
-        object.put("creservid", stitchingGuid);
-        object.put("secret", secret);
-        object.put("gateway", ip);
-        object.put("ip", subnet);
-        object.put("ckeyhash", sliceName);
-        LOGGER.debug("Sending stitch request to Sdx server");
+        try {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            JSONObject object = new JSONObject();
+            object.put("sdxsite", siteName);
+            object.put("gateway", ip);
+            object.put("ip", subnet);
+            object.put("ckeyhash", sliceName);
+            object.put("cslice", sliceName);
+            object.put("creservid", stitchingGuid);
+            object.put("secret", secret);
 
-        HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
 
-        ResponseEntity<Map> result = rest.exchange(sdxUrl + "sdx/stitchrequest", HttpMethod.POST, requestEntity, Map.class);
-        LOGGER.debug("Stitch Response Status Code=" + result.getStatusCode());
+            LOGGER.debug("Sending stitch request to Sdx server: " + sdxUrl + " body: " + object);
 
-        if (result.getStatusCode() == HttpStatus.OK ||
-                result.getStatusCode() == HttpStatus.ACCEPTED ||
-                result.getStatusCode() == HttpStatus.CREATED) {
-            LOGGER.debug("Response= " + result.getBody());
-            String status = (String) result.getBody().get("result");
-            if(status.compareToIgnoreCase("true")==0) {
-                LOGGER.debug("stitch successful");
-            }
-            else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
+
+            ResponseEntity<Map> result = rest.exchange(sdxUrl + "sdx/stitchrequest", HttpMethod.POST, requestEntity, Map.class);
+            LOGGER.debug("Stitch Response Status Code=" + result.getStatusCode());
+
+            if (result.getStatusCode() == HttpStatus.OK ||
+                    result.getStatusCode() == HttpStatus.ACCEPTED ||
+                    result.getStatusCode() == HttpStatus.CREATED) {
+                LOGGER.debug("Response= " + result.getBody());
+                Boolean status = (Boolean) result.getBody().get("result");
+                if (status) {
+                    LOGGER.debug("stitch successful");
+                } else {
+                    LOGGER.debug("OUT");
+                    throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "stitch command failed" + result.toString());
+                }
+            } else {
                 LOGGER.debug("OUT");
-                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "stitch command failed" + result.toString());
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
             }
         }
-        else {
-            LOGGER.debug("OUT");
-            throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
+        catch (HttpClientErrorException|HttpServerErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            throw new MobiusException(e.getResponseBodyAsString());
         }
-        LOGGER.debug("OUT");
+        finally {
+            LOGGER.debug("OUT");
+        }
     }
 
     public void prefix(String sliceName, String ip, String subnet) throws Exception {
-        LOGGER.debug("IN sliceName=" + sliceName + " ip=" + ip + " subnet=" + subnet);
+        try {
+            LOGGER.debug("IN sliceName=" + sliceName + " ip=" + ip + " subnet=" + subnet);
 
-        JSONObject object =  new JSONObject();
-        object.put("dest", subnet);
-        object.put("gateway", ip);
-        object.put("customer", sliceName);
-        LOGGER.debug("Sending route/prefix request to Sdx server");
+            JSONObject object =  new JSONObject();
+            object.put("dest", subnet);
+            object.put("gateway", ip);
+            object.put("customer", sliceName);
+            LOGGER.debug("Sending route/prefix request to Sdx server");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-        HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
+            HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
 
-        ResponseEntity<Map> result = rest.exchange(sdxUrl + "sdx/notifyprefix", HttpMethod.POST, requestEntity, Map.class);
-        LOGGER.debug("prefix Response Status Code=" + result.getStatusCode());
+            ResponseEntity<Map> result = rest.exchange(sdxUrl + "sdx/notifyprefix", HttpMethod.POST, requestEntity, Map.class);
+            LOGGER.debug("prefix Response Status Code=" + result.getStatusCode());
 
-        if (result.getStatusCode() == HttpStatus.OK ||
-                result.getStatusCode() == HttpStatus.ACCEPTED ||
-                result.getStatusCode() == HttpStatus.CREATED) {
-            LOGGER.debug("Response= " + result.getBody());
-            String status = (String) result.getBody().get("result");
-            if(status.compareToIgnoreCase("true")==0) {
-                LOGGER.debug("prefix successful");
+            if (result.getStatusCode() == HttpStatus.OK ||
+                    result.getStatusCode() == HttpStatus.ACCEPTED ||
+                    result.getStatusCode() == HttpStatus.CREATED) {
+                LOGGER.debug("Response= " + result.getBody());
+                Boolean status = (Boolean) result.getBody().get("result");
+                if(status) {
+                    LOGGER.debug("prefix successful");
+                }
+                else {
+                    throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "prefix command failed" + result.toString());
+                }
             }
             else {
-                LOGGER.debug("OUT");
-                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "prefix command failed" + result.toString());
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
             }
         }
-        else {
-            LOGGER.debug("OUT");
-            throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
+        catch (HttpClientErrorException|HttpServerErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            throw new MobiusException(e.getResponseBodyAsString());
         }
-        LOGGER.debug("OUT");
+        finally {
+            LOGGER.debug("OUT");
+        }
     }
     public void connect(String sliceName, String sourceSubnet, String targetSubnet, String bandwidth) throws Exception {
-        LOGGER.debug("IN sliceName=" + sliceName + " sourceSubnet=" + sourceSubnet + " targetSubnet=" + targetSubnet + " bandwidth=" + bandwidth);
+        LOGGER.debug("IN sliceName=" + sliceName + " sourceSubnet=" + sourceSubnet + " targetSubnet=" +
+                targetSubnet + " bandwidth=" + bandwidth);
+        try {
+            JSONObject object = new JSONObject();
+            object.put("self_prefix", sourceSubnet);
+            object.put("target_prefix", targetSubnet);
+            object.put("ckeyhash", sliceName);
+            object.put("bandwidth", bandwidth);
+            LOGGER.debug("connection request to Sdx server");
 
-        JSONObject object = new JSONObject();
-        object.put("self_prefix", sourceSubnet);
-        object.put("target_prefix", targetSubnet);
-        object.put("ckeyhash", sliceName);
-        object.put("bandwidth", bandwidth);
-        LOGGER.debug("connection request to Sdx server");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.TEXT_PLAIN));
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
 
-        HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
+            ResponseEntity<String> result = rest.exchange(sdxUrl + "sdx/connectionrequest", HttpMethod.POST,
+                    requestEntity, String.class);
+            LOGGER.debug("connection Response Status Code=" + result.getStatusCode());
 
-        ResponseEntity<Map> result = rest.exchange(sdxUrl + "sdx/connectionrequest", HttpMethod.POST, requestEntity, Map.class);
-        LOGGER.debug("connection Response Status Code=" + result.getStatusCode());
-
-        if (result.getStatusCode() == HttpStatus.OK ||
-                result.getStatusCode() == HttpStatus.ACCEPTED ||
-                result.getStatusCode() == HttpStatus.CREATED) {
-            LOGGER.debug("Response= " + result.getBody());
-            String status = (String) result.getBody().get("result");
-            if (status.compareToIgnoreCase("true") == 0) {
-                LOGGER.debug("connection successful");
+            if (result.getStatusCode() == HttpStatus.OK ||
+                    result.getStatusCode() == HttpStatus.ACCEPTED ||
+                    result.getStatusCode() == HttpStatus.CREATED) {
+                LOGGER.debug("Response= " + result.getBody());
             } else {
-                LOGGER.debug("OUT");
-                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "link/connection command failed" + result.toString());
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
             }
-        } else {
-            LOGGER.debug("OUT");
-            throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
         }
-        LOGGER.debug("OUT");
+        catch (HttpClientErrorException|HttpServerErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            throw new MobiusException(e.getResponseBodyAsString());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+    public void unstitch(String sliceName, String stitchingGuid) throws Exception {
+        LOGGER.debug("IN sliceName=" + sliceName + " stitchingGuid=" + stitchingGuid);
+        try {
+
+            JSONObject object = new JSONObject();
+            object.put("ckeyhash", sliceName);
+            object.put("cslice", sliceName);
+            object.put("creservid", stitchingGuid);
+
+
+            LOGGER.debug("Sending unstitch request to Sdx server: " + sdxUrl + " body: " + object);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.TEXT_PLAIN));
+            HttpEntity<String> requestEntity = new HttpEntity<>(object.toString(), headers);
+
+            ResponseEntity<String> result = rest.exchange(sdxUrl + "sdx/undostitch", HttpMethod.POST, requestEntity, String.class);
+            LOGGER.debug("Unstitch Response Status Code=" + result.getStatusCode());
+
+            if (result.getStatusCode() == HttpStatus.OK ||
+                    result.getStatusCode() == HttpStatus.ACCEPTED ||
+                    result.getStatusCode() == HttpStatus.CREATED) {
+                LOGGER.debug("Response= " + result.getBody());
+            } else {
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, result.toString());
+            }
+        }
+        catch (HttpClientErrorException|HttpServerErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            throw new MobiusException(e.getResponseBodyAsString());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
     }
 }

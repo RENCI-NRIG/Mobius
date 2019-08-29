@@ -1,5 +1,5 @@
 {
-    "site":"Chameleon:CHI@TACC",
+    "site":"Chameleon:CHI@UC",
     "cpus":"50",
     "gpus":"0",
     "ramPerCpus":"4096",
