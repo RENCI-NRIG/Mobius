@@ -65,7 +65,7 @@ Update docker-compose.yml for mobius_server to point the below parameters to use
          - "./ssh/id_rsa:/code/ssh/id_rsa"
 ```
 
-4. Using Mobius with SDX 
+5. Using Mobius with SDX 
 Update docker-compose_sdx.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
         # point to user specific keys below
