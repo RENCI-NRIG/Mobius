@@ -239,6 +239,12 @@ python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybri
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
+##### Cluster spanning 3 clouds
+- Master and submit node on Exogeni
+- Worker on Chameleon and Jetstream
+```
+python2 condor_client.py -o create -w merit-w1 -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./merit/exogeni/ -s2 Chameleon:CHI@UC -d2 ./merit/chameleon/ -s3 'Jetstream:TACC' -d3 ./merit/jetstream/ -l `date -v +2d +%s` -n1 1 -n2 1 -n3 1
+```
 #### <a name="get"></a>Get status of condor cluster
 ```
 python3 condor_client.py -o get -w abcd-1114
