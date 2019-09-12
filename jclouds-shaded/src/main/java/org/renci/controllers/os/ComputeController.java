@@ -74,6 +74,7 @@ public class ComputeController implements Closeable {
         this.domain = domain;
         this.project = project;
 
+
         Iterable<Module> modules = ImmutableSet.<Module>of(new SLF4JLoggingModule());
 
         // Please refer to 'Keystone v2-v3 authentication' section for complete authentication use case
@@ -349,6 +350,34 @@ public class ComputeController implements Closeable {
                 instance = novaApi.getServerApi(region).get(instance.getId());
             }
         }
+    }
+
+
+    /*
+     * @brief get fixed ip from instance
+     *
+     * @param instance - server
+     *
+     * @return list of fixed ips
+     */
+    public List<String> getFixedIpFromInstance(Server instance) {
+        List<String> fixedIPs = new LinkedList<>();
+        if(instance != null) {
+            System.out.println("Addresses=" + instance.getAddresses());
+            if (instance.getAddresses() != null && instance.getAddresses().size() > 0) {
+                for (Address address : instance.getAddresses().values()) {
+                    System.out.println("Address =" + address);
+                    if (address.getType().get().compareToIgnoreCase("floating") != 0) {
+                        fixedIPs.add(address.getAddr());
+                    }
+                }
+            }
+        }
+        else {
+            System.out.println("Null instance passed");
+        }
+        System.out.println("fixedIPs =" + fixedIPs);
+        return fixedIPs;
     }
 
     /*

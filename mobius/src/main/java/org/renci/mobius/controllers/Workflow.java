@@ -358,17 +358,24 @@ class Workflow {
             CloudContext context1 = findContext(request.getSource());
             CloudContext context2 = findContext(request.getDestination());
 
-            if(context1.getSite().compareToIgnoreCase(context2.getSite()) == 0) {
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "source and destination must be on different sites");
+            String site1 = context1.getSite();
+            String site2 = context2.getSite();
+            String destHostOrSite = request.getDestination();
+            String sourceHostOrSite = request.getSource();
+            if(site1.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
+                destHostOrSite = site2.substring(site2.lastIndexOf(":") + 1);
+            }
+            if(site2.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
+                sourceHostOrSite = site1.substring(site1.lastIndexOf(":") + 1);
             }
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
-                    request.getSourceSubnet(), request.getAction());
+                    request.getSourceSubnet(), request.getAction(), destHostOrSite);
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
-                    request.getDestinationSubnet(), request.getAction());
+                    request.getDestinationSubnet(), request.getAction(), sourceHostOrSite);
 
             if(request.getAction() == NetworkRequest.ActionEnum.ADD) {
                 // Connect the prefix source - destination

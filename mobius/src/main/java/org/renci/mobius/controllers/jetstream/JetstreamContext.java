@@ -529,12 +529,14 @@ public class JetstreamContext extends CloudContext  {
      * @param ip - ip
      * @param subnet - subnet
      * @param action - action
+     * @param destHostName - destHostName
      *
      * @throws Exception in case of error
      *
      */
     @Override
-    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception {
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
+                                                            NetworkRequest.ActionEnum action, String destHostName) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
     }
     /*

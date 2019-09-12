@@ -300,10 +300,11 @@ public class ReqContext {
      *
      * @param server - server provisioned
      * @param ip - ip associated with server
+     * @param fixedIPs - fixedIPs associated with server
      *
      * @return JSONObject representing server
      */
-    private JSONObject nodeToJson(Server server, String ip){
+    private JSONObject nodeToJson(Server server, String ip, List<String> fixedIPs){
         LOGGER.debug("IN server=" + server.toString() + " ip=" + ip);
         JSONObject object = new JSONObject();
         object.put(CloudContext.JsonKeyName, server.getName());
@@ -313,6 +314,12 @@ public class ReqContext {
         }
         else {
             object.put(CloudContext.JsonKeyPublicIP, "");
+        }
+        if(fixedIPs != null) {
+            int index = 1;
+            for(String i: fixedIPs) {
+                object.put(CloudContext.JsonKeyIP + Integer.toString(index), i);
+            }
         }
         LOGGER.debug("OUT");
         return object;
@@ -346,6 +353,7 @@ public class ReqContext {
                     Server instance = computeController.getInstanceFromInstanceId(region, instanceId);
                     if(instance != null) {
                         String ip = computeController.getFloatingIpFromInstance(instance);
+                        List<String> fixedIPs = null;
                         if (!hostNameSet.contains(instance.getName())) {
                             LOGGER.debug("Adding hostname: " + instance.getName());
                             hostNameSet.add(instance.getName());
@@ -363,10 +371,11 @@ public class ReqContext {
                                 computeController.attachFloatingIp(region, instance, floatingIP);
                                 ip = floatingIP.getIp();
                             }
+                            fixedIPs = computeController.getFixedIpFromInstance(instance);
                         } else if (instance.getStatus() == Server.Status.ERROR) {
                             activeOrFailedInstances++;
                         }
-                        JSONObject object = nodeToJson(instance, ip);
+                        JSONObject object = nodeToJson(instance, ip, fixedIPs);
                         array.add(object);
                     }
                     else {

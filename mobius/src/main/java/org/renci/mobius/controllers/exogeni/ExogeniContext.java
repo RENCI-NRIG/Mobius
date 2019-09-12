@@ -527,17 +527,26 @@ public class ExogeniContext extends CloudContext {
      * @param ip - ip
      * @param subnet - subnet
      * @param action - action
+     * @param destHostName - destHostName
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
+                                                            NetworkRequest.ActionEnum action, String destHostName) throws Exception{
         synchronized (this) {
-            System.out.println("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            System.out.println("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
+                    + " destHostName=" + destHostName + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
                 throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
+            }
+            String destSliceName = hostNameToSliceNameHashMap.get(destHostName);
+            if (destSliceName != null) {
+                if (sliceName.equalsIgnoreCase(destSliceName)) {
+                    throw new MobiusException("destination and source cannot be in the same slice");
+                }
             }
             SliceContext context = sliceContextHashMap.get(sliceName);
             if (context == null) {

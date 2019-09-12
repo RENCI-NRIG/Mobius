@@ -3,7 +3,7 @@
     "cpus":"2",
     "gpus":"0",
     "ramPerCpus":"3072",
-    "imageName":"JS-API-Featured-CentOS7-May-20-2019",
+    "imageName":"JS-API-Featured-CentOS7-Sep-09-2019",
     "diskPerCpus":"19200",
     "hostNamePrefix":"master",
     "networkType":"private",

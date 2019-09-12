@@ -181,12 +181,15 @@ abstract public class CloudContext {
      * @param hostname - hostname
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
-     * @param bandwidth - bandwidth
+     * @param action - action
+     * @param destHostName - destHostName
      *
      * @throws Exception in case of error
      *
      */
-    abstract public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception;
+    abstract public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip,
+                                                                     String subnet, NetworkRequest.ActionEnum action,
+                                                                     String destHostName) throws Exception;
 
     /*
      * @brief function to process a network request;

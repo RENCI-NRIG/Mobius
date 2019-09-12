@@ -399,7 +399,7 @@ def main():
                     for s in slices:
                         nodes = s["nodes"]
                         for n in nodes :
-                            if "Chameleon" in s["slice"] :
+                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
                                 hostname=n["name"] + ".novalocal"
                             else :
                                 hostname=n["name"]
@@ -408,6 +408,8 @@ def main():
                                         print ("Updating target in exogeni stitch request")
                                         stitchdata["target"]=n["name"]
                                         stitchNodeStatus = n["state"]
+                            if n["name"] == "cmnw" :
+                                continue
                             print ("Create comet context for node " + n["name"])
                             response=comet.update_family(args.comethost, args.workflowId, hostname,
                                     readToken, writeToken, "pubkeysall", pubKeysVal)

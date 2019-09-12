@@ -36,12 +36,12 @@ services:
         # point to user specific keys below
         volumes:
         - "./logs:/code/logs"
-        - "./mobius-sync:/code/mobius-sync"
+          #- "./mobius-sync:/code/mobius-sync"
         - "./config/application.properties:/code/config/application.properties"
         - "./config/log4j2.properties:/code/config/log4j2.properties"
-        - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
-        - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
-        - "./ssh/id_rsa:/code/ssh/id_rsa"
+        - "~/.ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+        - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
+        - "~/.ssh/id_rsa:/code/ssh/id_rsa"
     notification:
         container_name: notification 
         hostname: notification 

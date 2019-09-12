@@ -15,6 +15,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
+import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
@@ -701,8 +702,7 @@ public class SliceContext {
                 throw new MobiusException("Unable to load compute node");
             }
             String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
-            SdxClient sdxClient = new SdxClient(sshfile, MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
-                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),MobiusConfig.getInstance().getMobiusSdxUrl() );
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             switch (action) {
                 case ADD:
@@ -770,10 +770,7 @@ public class SliceContext {
             }
 
             // hack needed to remove .pub from filename as SDX code expects to not have file extension
-            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getDefaultExogeniUserSshKey(),
-                    MobiusConfig.getInstance().getDefaultExogeniUserCertKey(),
-                    MobiusConfig.getInstance().getDefaultExogeniControllerUrl(),
-                    MobiusConfig.getInstance().getMobiusSdxUrl() );
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
 

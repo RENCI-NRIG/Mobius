@@ -55,6 +55,8 @@ public class MobiusConfig {
     public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
     public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
     public static final String chameleonLeaseRetry = "mobius.chameleon.leaseRetry";
+    public static final String chameleonUCStitchPort = "mobius.chameleon.uc.stitchport";
+    public static final String chameleonTACCStitchPort = "mobius.chameleon.tacc.stitchport";
 
     public static final String cometHost = "mobius.comet.host";
 
@@ -103,6 +105,10 @@ public class MobiusConfig {
     public String getJetStreamFloatingIpPool() { return properties.getProperty(jetStreamFloatingIpPool); }
 
     public String getCometHost() { return properties.getProperty(cometHost); }
+
+    public String getChameleonUCStitchPort() { return properties.getProperty(chameleonUCStitchPort); }
+
+    public String getChameleonTACCStitchPort() { return properties.getProperty(chameleonTACCStitchPort); }
 
     public String getChameleonAuthUrl() { return properties.getProperty(chameleonAuthUrl); }
 

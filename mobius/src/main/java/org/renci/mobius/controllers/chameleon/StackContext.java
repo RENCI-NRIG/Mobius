@@ -11,18 +11,25 @@ import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
+import org.renci.mobius.controllers.sdx.SdxClient;
+import org.renci.mobius.controllers.utils.RemoteCommand;
+import org.renci.mobius.model.NetworkRequest;
 import org.springframework.data.util.Pair;
+import org.springframework.http.HttpStatus;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Stream;
 
 /*
  * @brief class representing resources associated with a reservation; it represents all resources associated with
  *        a single mobius request
  * @author kthare10
  */
-public class StackContext {
+public class StackContext implements AutoCloseable{
     private static final Logger LOGGER = LogManager.getLogger( StackContext.class.getName() );
+    public static final String RegionUC = "CHI@UC";
+    public static final String RegionTACC = "CHI@TACC";
 
     private String sliceName;
     private String workflowId;
@@ -31,6 +38,8 @@ public class StackContext {
     private String leaseId;
     private String region;
     private boolean notificationSent;
+    private ComputeController computeController;
+    private OsReservationApi api;
 
     private final static String postBootScriptRequiredForComet = "#!/bin/bash\n" +
             "echo 'begin installing neuca'\n" +
@@ -135,6 +144,26 @@ public class StackContext {
         leaseId = null;
         this.region = region;
         notificationSent = false;
+
+        String user = MobiusConfig.getInstance().getChameleonUser();
+        String password = MobiusConfig.getInstance().getChameleonUserPassword();
+        String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
+        String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
+        String project = MobiusConfig.getInstance().getChameleonProject();
+        String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
+
+        // Instantiate Jclouds based Openstack Controller object
+        computeController = new ComputeController(authurl, user, password, userDomain, project);
+
+        // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
+        // jclouds
+        api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
+    }
+    /*
+     * @brief close computeController
+     */
+    public void close() {
+        computeController.close();
     }
 
     /*
@@ -162,6 +191,14 @@ public class StackContext {
             return true;
         }
         return false;
+    }
+
+    /*
+     * @brief return region
+     * @return retrun region
+     */
+    public String getRegion() {
+        return region;
     }
 
     /*
@@ -220,20 +257,6 @@ public class StackContext {
         try {
             LOGGER.debug("Successfully deleted slice " + sliceName);
 
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
-
-            // Instantiate Jclouds based Openstack Controller object
-            ComputeController computeController = new ComputeController(authurl, user, password, userDomain, project);
-
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            OsReservationApi api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
-
             for(String instanceId : instanceIdList) {
                 try {
                     computeController.destroyInstance(region, instanceId);
@@ -286,27 +309,12 @@ public class StackContext {
         + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
         + " ip=" + ip);
 
-        ComputeController computeController = null;
-        OsReservationApi api = null;
         try {
-
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
-
-            // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authurl, user, password, userDomain, project);
-
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
 
             // First compute request
             if (sliceName == null) {
-                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Chameleon, user);
+                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Chameleon,
+                        MobiusConfig.getInstance().getChameleonUser());
             }
 
             // Extract image name
@@ -406,9 +414,6 @@ public class StackContext {
             throw new MobiusException("Failed to server compute request e=" + e.getMessage());
         }
         finally {
-            if(computeController != null) {
-                computeController.close();
-            }
             // TODO clean any allocated CPUs, keys, leases
             LOGGER.debug("OUT");
         }
@@ -419,11 +424,11 @@ public class StackContext {
      *
      * @param server - server provisioned
      * @param ip - ip associated with server
-     *
+     * @param fixedIPs - fixedIPs associated with server
      * @return JSONObject representing server
      */
-    private JSONObject nodeToJson(Server server, String ip){
-        LOGGER.debug("IN server=" + server.toString() + " ip=" + ip);
+    private JSONObject nodeToJson(Server server, String ip, List<String> fixedIPs){
+        LOGGER.debug("IN server=" + server.toString() + " ip=" + ip + " fixedIPs=" + fixedIPs);
         JSONObject object = new JSONObject();
         object.put(CloudContext.JsonKeyName, server.getName());
         object.put(CloudContext.JsonKeyState, server.getStatus().toString());
@@ -432,6 +437,12 @@ public class StackContext {
         }
         else {
             object.put(CloudContext.JsonKeyPublicIP, "");
+        }
+        if(fixedIPs != null) {
+            int index = 1;
+            for(String i: fixedIPs) {
+                object.put(CloudContext.JsonKeyIP + Integer.toString(index), i);
+            }
         }
         LOGGER.debug("OUT object=" + object.toString());
         return object;
@@ -446,18 +457,11 @@ public class StackContext {
      */
     public JSONObject status(Set<String> hostNameSet) {
         LOGGER.debug("IN hostNameSet=" + hostNameSet.toString());
-        ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
             String floatingIpPool = MobiusConfig.getInstance().getChameleonFloatingIpPool();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authurl, user, password, userDomain, project);
             returnValue.put(CloudContext.JsonKeySlice, sliceName);
             JSONArray array = new JSONArray();
 
@@ -486,7 +490,8 @@ public class StackContext {
                         } else if (instance.getStatus() == Server.Status.ERROR) {
                             activeOrFailedInstances++;
                         }
-                        JSONObject object = nodeToJson(instance, ip);
+                        List<String> fixedIPs = computeController.getFixedIpFromInstance(instance);;
+                        JSONObject object = nodeToJson(instance, ip, fixedIPs);
                         array.add(object);
                     }
                     else {
@@ -507,9 +512,6 @@ public class StackContext {
             e.printStackTrace();
         }
         finally {
-            if(computeController != null) {
-                computeController.close();
-            }
             LOGGER.debug("OUT returnValue=" + returnValue);
         }
         return returnValue;
@@ -540,18 +542,6 @@ public class StackContext {
         LOGGER.debug("IN leaseEnd=" + leaseEnd);
 
         try {
-
-            String user = MobiusConfig.getInstance().getChameleonUser();
-            String password = MobiusConfig.getInstance().getChameleonUserPassword();
-            String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
-            String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
-            String project = MobiusConfig.getInstance().getChameleonProject();
-            String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
-
-            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-            // jclouds
-            OsReservationApi api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
-
             sdf.setTimeZone(utc);
             Date endTime = new Date();
             if(leaseEnd != null) {
@@ -578,4 +568,147 @@ public class StackContext {
         }
 
     }
+
+    public Server getInstance(String hostname) {
+        LOGGER.debug("IN hostname=" + hostname);
+        Server instance = null;
+        try {
+            for(String instanceId : instanceIdList) {
+                instance = computeController.getInstanceFromInstanceId(region, instanceId);
+                if(instance != null && instance.getName().equalsIgnoreCase(hostname)) {
+                    break;
+                }
+            }
+
+            if(instance == null) {
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "Instance with " + hostname + " not found");
+            }
+
+            if(instance.getStatus() != Server.Status.ACTIVE) {
+                throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "Instance with " + hostname + " not active");
+            }
+        }
+        catch (Exception e){
+            LOGGER.error("Exception occured while getting status of slice " + sliceName);
+            LOGGER.error("Ex= " + e);
+            e.printStackTrace();
+        }
+        finally {
+            LOGGER.debug("OUT returnValue=" + instance);
+        }
+        return instance;
+    }
+    /*
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
+     *
+     * @param hostName - hostName
+     * @param vlan - vlan
+     * @param subnet - subnet
+     * @param action - action
+     * @param destSite - destSite
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String vlan, String subnet,
+                                                            NetworkRequest.ActionEnum action, String destSite) throws Exception{
+        LOGGER.debug("IN");
+
+        try {
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl());
+            Server instance = getInstance(hostname);
+
+            switch (action) {
+                case ADD:
+                {
+                    List<String> fixedIPs = computeController.getFixedIpFromInstance(instance);
+                    if(fixedIPs.size() == 0) {
+                        throw new MobiusException("No fixed IPs associated with " + hostname);
+                    }
+                    String stitchPort = null;
+                    if(region.equalsIgnoreCase(RegionUC)) {
+                        stitchPort = MobiusConfig.getInstance().getChameleonUCStitchPort();
+                    }
+                    else if(region.equalsIgnoreCase(RegionTACC)) {
+                        stitchPort = MobiusConfig.getInstance().getChameleonTACCStitchPort();
+                    }
+                    sdxClient.stitch(stitchPort, vlan, fixedIPs.get(0), subnet, destSite);
+                    sdxClient.prefix(sliceName, fixedIPs.get(0), subnet);
+                }
+                break;
+                case DELETE: {
+                    // unstitch
+                    //sdxClient.unstitch();
+                    break;
+                }
+                default:
+                    throw new MobiusException(HttpStatus.BAD_REQUEST, "unsupported network operation");
+            }
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+    /*
+     * @brief function to connect the link between source and destination subnet
+     *
+     * @param hostname - hostname
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
+     *
+     * @throws Exception in case of error
+     *
+     */
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
+        LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
+        try {
+
+            Server node = getInstance(hostname);
+            String ip = null;
+            if (node != null) {
+                ip = computeController.getFloatingIpFromInstance(node);
+            } else {
+                throw new MobiusException("Unable to find the node in slice");
+            }
+
+
+            // hack needed to remove .pub from filename as SDX code expects to not have file extension
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
+
+            sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
+
+            String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
+            String gateway2 = subnet2.substring(0, subnet2.indexOf("/"));
+            String startIP = gateway2.substring(0, gateway2.lastIndexOf("."));
+            startIP += ".2";
+            String command = String.format("sudo ip route add %s/32 via %s", startIP, gateway1);
+            RemoteCommand remoteCommand = new RemoteCommand("cc", MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
+            remoteCommand.runCmdByIP(command, ip,false);
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server connect request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
 }
