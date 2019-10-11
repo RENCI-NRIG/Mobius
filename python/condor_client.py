@@ -527,7 +527,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
         print ("Provisioning compute storage node")
         nodename="Node" + str(count)
         oldnodename = "NODENAME"
-        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site, submitSubnet, None, exogeniSubnet)
+        response, nodename = create_compute(mb, args.mobiushost, nodename, ipStart, args.leaseEnd, args.workflowId, stdata, count, ipMap, oldnodename, site, submitSubnet, None, exogeniSubnet, None)
         print (nodename + " after create_compute")
         if response.json()["status"] != 200:
             print ("Deleting workflow")
