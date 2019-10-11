@@ -10,6 +10,6 @@
     "imageName":"mb-centos-7",
     "imageHash":"1cb9bde255314761e10d8c9bde727c69bb2c1ca4",
     "postBootScript":"yum -y install quagga iperf\necho '1' > /proc/sys/net/ipv4/ip_forward",
-    "leaseEnd":"1568383492"
+    "leaseEnd":"1569158887"
 }
 

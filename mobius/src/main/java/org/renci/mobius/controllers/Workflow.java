@@ -4,6 +4,7 @@ package org.renci.mobius.controllers;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.renci.mobius.controllers.exogeni.ExogeniFlavorAlgo;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
@@ -13,9 +14,8 @@ import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +28,7 @@ class Workflow {
     private String workflowID;
     protected WorkflowOperationLock lock;
     private HashMap<String, CloudContext> siteToContextHashMap;
+    private HashMap<String, ComputeRequest> hostNameToComputeRequestMap;
     private int nodeCount, storageCount, stitchCount;
     private FutureRequests futureRequests;
     private static final Logger LOGGER = LogManager.getLogger( Workflow.class.getName() );
@@ -40,7 +41,8 @@ class Workflow {
     Workflow(String id) {
         workflowID = id;
         lock = new WorkflowOperationLock();
-        siteToContextHashMap = new HashMap<String, CloudContext>();
+        siteToContextHashMap = new HashMap<>();
+        hostNameToComputeRequestMap = new HashMap<>();
         nodeCount = 0;
         storageCount = 0;
         stitchCount = 0;
@@ -59,13 +61,13 @@ class Workflow {
         LOGGER.debug("nodeCount=" + nodeCount);
         storageCount = workflow.getStorageCount();
         LOGGER.debug("storageCount=" + storageCount);
-        stitchCount = workflow.getStorageCount();
+        stitchCount = workflow.getStitchCount();
         LOGGER.debug("stitchCount=" + stitchCount);
         lock = new WorkflowOperationLock();
         siteToContextHashMap = new HashMap<String, CloudContext>();
         futureRequests = new FutureRequests();
 
-        // TODO process json to construct siteToContextHashMap
+        // process json to construct siteToContextHashMap
         if(workflow.getSiteContextJson() != null) {
             LOGGER.debug("SiteContext =" + workflow.getSiteContextJson());
             JSONArray array = (JSONArray) JSONValue.parse(workflow.getSiteContextJson());
@@ -80,6 +82,31 @@ class Workflow {
                         context.fromJson(sliceArray);
                         context.loadCloudSpecificDataFromJson(c);
                         siteToContextHashMap.put(site, context);
+                    } catch (Exception e) {
+                        LOGGER.error("Exception occured while loading context from database e= " + e);
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else {
+                LOGGER.error("JSON parsing failed");
+            }
+        }
+        if(workflow.getHostNamesJson() != null) {
+            // TODO populate the hostNameMap
+            LOGGER.debug("HostNameContexts =" + workflow.getHostNamesJson());
+            JSONArray array = (JSONArray) JSONValue.parse(workflow.getHostNamesJson());
+            if(array != null) {
+                for (Object object : array) {
+                    try {
+                        JSONObject c = (JSONObject) object;
+                        String hostname = (String) c.get("hostname");
+                        LOGGER.debug("hostname=" + hostname);
+                        String requestString = (String) c.get("request");
+                        LOGGER.debug("requestString=" + requestString);
+                        //ComputeRequest request = new ComputeRequest(requestString);
+                        ComputeRequest request = new ComputeRequest();
+                        hostNameToComputeRequestMap.put(hostname, request);
                     } catch (Exception e) {
                         LOGGER.error("Exception occured while loading context from database e= " + e);
                         e.printStackTrace();
@@ -107,8 +134,10 @@ class Workflow {
      * @return workflow entity
      */
     public WorkflowEntity convert() {
-        WorkflowEntity retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount,
-                stitchCount, null);
+        String siteJson = null;
+        String hostJson = null;
+
+        WorkflowEntity retVal = null;
 
         if(siteToContextHashMap != null && siteToContextHashMap.size() != 0) {
             JSONArray array = new JSONArray();
@@ -125,10 +154,86 @@ class Workflow {
                 c = context.addCloudSpecificDataToJson(c);
                 array.add(c);
             }
-            LOGGER.debug("array=" + array.toJSONString());
-            retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, stitchCount, array.toJSONString());
+            siteJson = array.toJSONString();
+            LOGGER.debug("siteJson=" + siteJson);
         }
+        if(hostNameToComputeRequestMap != null && hostNameToComputeRequestMap.size() != 0) {
+            JSONObject object = new JSONObject();
+            ComputeRequest request = null;
+            for (HashMap.Entry<String, ComputeRequest> e : hostNameToComputeRequestMap.entrySet()) {
+                request = e.getValue();
+                if(request != null) {
+                    object.put(e.getKey(), computeRequestToJsonString(request));
+                }
+            }
+            hostJson = object.toJSONString();
+            LOGGER.debug("hostJson=" + hostJson);
+        }
+        retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, stitchCount, siteJson, hostJson);
 
+        return retVal;
+    }
+
+    private String computeRequestToJsonString(ComputeRequest request) {
+        String retVal = null;
+        if(request != null) {
+            JSONObject object = new JSONObject();
+
+            if(request.getSite() != null) {
+                object.put("site", request.getSite());
+            }
+            if(request.getCpus() != null) {
+                object.put("cpus", request.getCpus().toString());
+            }
+            if(request.getGpus() != null) {
+                object.put("gpus", request.getGpus().toString());
+            }
+            if(request.getRamPerCpus()!= null) {
+                object.put("ramPerCpus", request.getRamPerCpus().toString());
+            }
+            if(request.getDiskPerCpus()!= null) {
+                object.put("diskPerCpus", request.getDiskPerCpus().toString());
+            }
+            object.put("coallocate", request.isCoallocate().toString());
+            object.put("slicePolicy", request.getSlicePolicy().toString());
+
+            if(request.getSliceName()!= null) {
+                object.put("sliceName", request.getSliceName());
+            }
+            if(request.getHostNamePrefix()!= null) {
+                object.put("hostNamePrefix", request.getHostNamePrefix() + "MON");
+            }
+            if(request.getBandwidth()!= null) {
+                object.put("bandwidth", request.getBandwidth());
+            }
+            object.put("networkType", request.getNetworkType().toString());
+
+            if(request.getPhysicalNetwork()!= null) {
+                object.put("physicalNetwork", request.getPhysicalNetwork());
+            }
+            if(request.getExternalNetwork()!= null) {
+                object.put("externalNetwork", request.getExternalNetwork());
+            }
+            if(request.getNetworkCidr()!= null) {
+                object.put("networkCidr", request.getNetworkCidr());
+            }
+            if(request.getImageUrl()!= null) {
+                object.put("imageUrl", request.getImageUrl());
+            }
+            if(request.getImageHash()!= null) {
+                object.put("imageHash", request.getImageHash());
+            }
+            if(request.getImageName()!= null) {
+                object.put("imageName", request.getImageName());
+            }
+            if(request.getPostBootScript()!= null) {
+                object.put("postBootScript", request.getPostBootScript());
+            }
+            if(request.getForceflavor()!= null) {
+                object.put("forceflavor", request.getForceflavor());
+            }
+            retVal = object.toString();
+        }
         return retVal;
     }
 
@@ -196,6 +301,27 @@ class Workflow {
     }
 
     /*
+     * @brief function to add HostNames and respective ComputeRequest to hostNameToRequest hashmap
+     *        which is used later on by monitoring if thresholds are crossed to reprovision instances
+     *
+     * @param response - compute response
+     * @param request - compute request
+     *
+     * @return None
+     */
+    private void addToHostNameMap(ComputeResponse response, ComputeRequest request) {
+        if(response.getHostNames() != null) {
+            for (Map.Entry<String, String> host: response.getHostNames().entrySet()) {
+                if(host.getValue() != null) {
+                    request.setSlicePolicy(ComputeRequest.SlicePolicyEnum.EXISTING);
+                    request.setSliceName(host.getValue());
+                }
+                hostNameToComputeRequestMap.put(host.getKey(), request);
+            }
+        }
+    }
+
+    /*
      * @brief function to process compute request
      *
      * @param request - compute request
@@ -204,8 +330,9 @@ class Workflow {
      * @throws Exception in case of error
      *
      */
-    public void processComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception{
+    public ComputeResponse processComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception{
         LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
+        ComputeResponse computeResponse = null;
         CloudContext context = null;
         boolean addContextToMap = false;
         try {
@@ -235,13 +362,14 @@ class Workflow {
                 }
             }
 
-            Pair<Integer, Integer> r = context.processCompute(request, nodeCount, stitchCount, isFutureRequest);
-            nodeCount = r.getFirst();
-            stitchCount = r.getSecond();
+            computeResponse = context.processCompute(request, nodeCount, stitchCount, isFutureRequest);
+            nodeCount = computeResponse.getNodeCount();
+            stitchCount = computeResponse.getStitchCount();
             LOGGER.debug("nodeCount = " + nodeCount);
             if (addContextToMap) {
                 siteToContextHashMap.put(request.getSite(), context);
             }
+            addToHostNameMap(computeResponse, request);
         }
         catch (FutureRequestException e) {
             futureRequests.add(request);
@@ -255,7 +383,10 @@ class Workflow {
             }
             throw e;
         }
-        LOGGER.debug("OUT");
+        finally {
+            LOGGER.debug("OUT");
+        }
+        return computeResponse;
     }
 
     /*

@@ -11,10 +11,7 @@ import org.renci.ahab.libtransport.*;
 import org.renci.ahab.libtransport.util.SSHAccessTokenFileFactory;
 import org.renci.ahab.libtransport.util.TransportException;
 import org.renci.ahab.libtransport.xmlrpc.XMLRPCProxyFactory;
-import org.renci.mobius.controllers.CloudContext;
-import org.renci.mobius.controllers.MobiusConfig;
-import org.renci.mobius.controllers.MobiusException;
-import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
+import org.renci.mobius.controllers.*;
 import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.ComputeRequest;
@@ -325,10 +322,10 @@ public class SliceContext {
      *
      * @throws Exception in case of error
      *
-     * @return number representing index to be added for the instance name
+     * @return ComputeResponse
      */
-    public Pair<Integer, Integer> processCompute(List<String> flavorList, int nameIndex,
-                                                 int spNameIndex, ComputeRequest request) throws Exception {
+    public ComputeResponse processCompute(List<String> flavorList, int nameIndex,
+                                          int spNameIndex, ComputeRequest request) throws Exception {
         LOGGER.debug("IN");
 
         try {
@@ -336,6 +333,7 @@ public class SliceContext {
             String user = MobiusConfig.getInstance().getDefaultExogeniUser();
             String certKey = MobiusConfig.getInstance().getDefaultExogeniUserCertKey();
             String sshKey = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
+            ComputeResponse response = new ComputeResponse(0,0);
 
             BroadcastNetwork net = null;
 
@@ -398,6 +396,7 @@ public class SliceContext {
                 else {
                     c = slice.addComputeNode(request.getHostNamePrefix() + nameIndex);
                 }
+                response.addHost(c.getName(), sliceName);
                 ++nameIndex;
                 if (request.getImageUrl() != null && request.getImageHash() != null && request.getImageName() != null) {
                     LOGGER.debug("Request imageUrl=" + request.getImageUrl());
@@ -464,7 +463,9 @@ public class SliceContext {
                 expiry = new Date();
                 expiry.setTime(expiry.getTime() + 604800);
             }
-            return  Pair.of(nameIndex, spNameIndex);
+            response.setStitchCount(spNameIndex);
+            response.setNodeCount(nameIndex);
+            return  response;
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

@@ -9,6 +9,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.sdx.SdxClient;
@@ -301,9 +302,9 @@ public class StackContext implements AutoCloseable{
      * @return name index
      * @throws Exception in case of error
      */
-    public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
-                             String leaseEnd, String hostNamePrefix, String postBootScript,
-                             Map<String, String> metaData, String networkId, String ip) throws Exception {
+    public ComputeResponse provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
+                                         String leaseEnd, String hostNamePrefix, String postBootScript,
+                                         Map<String, String> metaData, String networkId, String ip) throws Exception {
 
         LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
         + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
@@ -350,6 +351,7 @@ public class StackContext implements AutoCloseable{
 
             leaseId = result.getFirst();
             Map<String, Integer> reservationIds = result.getSecond();
+            ComputeResponse response = new ComputeResponse(0, 0);
 
             LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
@@ -369,6 +371,7 @@ public class StackContext implements AutoCloseable{
                     }
                     name = name.toLowerCase();
                     LOGGER.debug("adding node=" + name);
+                    response.addHost(name + ".novalocal", null);
 
                     Map<String, String> meta = null;
                     if (metaData != null) {
@@ -397,7 +400,8 @@ public class StackContext implements AutoCloseable{
                     ++nameIndex;
                 }
             }
-            return nameIndex;
+            response.setNodeCount(nameIndex);
+            return response;
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

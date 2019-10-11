@@ -1,4 +1,5 @@
 package org.renci.mobius.controllers;
+import org.renci.comet.CometDataManager;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
@@ -186,6 +187,15 @@ public class MobiusController {
                     }
                     deleteWorkflow(workflow);
                     dbWrite(workflow, DbOperation.Delete);
+                    String cometHost = MobiusConfig.getInstance().getCometHost();
+                    String caCert = MobiusConfig.getInstance().getCometCaCert();
+                    String cert = MobiusConfig.getInstance().getCometCert();
+                    String certPwd = MobiusConfig.getInstance().getCometCertPwd();
+
+                    if(cometHost != null && caCert != null && cert != null && certPwd != null) {
+                        CometDataManager cometDataManager = new CometDataManager(cometHost, caCert, cert, certPwd);
+                        cometDataManager.resetCometContext(workflowId);
+                    }
                 } else {
                     throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
                 }
@@ -264,8 +274,17 @@ public class MobiusController {
                 if (workflow != null) {
                     workflow.lock();
                     try {
-                        workflow.processComputeRequest(request, false);
+                        ComputeResponse response = workflow.processComputeRequest(request, false);
                         dbWrite(workflow, DbOperation.Update);
+                        String cometHost = MobiusConfig.getInstance().getCometHost();
+                        String caCert = MobiusConfig.getInstance().getCometCaCert();
+                        String cert = MobiusConfig.getInstance().getCometCert();
+                        String certPwd = MobiusConfig.getInstance().getCometCertPwd();
+
+                       if(cometHost != null && caCert != null && cert != null && certPwd != null) {
+                            CometDataManager cometDataManager = new CometDataManager(cometHost, caCert, cert, certPwd);
+                            cometDataManager.createCometEntry(workflowId, request.getIpAddress(), response.getHostNames().keySet());
+                        }
                     } finally {
 
                         workflow.unlock();

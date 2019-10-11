@@ -24,7 +24,9 @@ import socket
 
 from mobius import *
 from comet_common_iface import *
+from kafka import *
 
+resourcesVal={"val_":"[{\"cpu\":\"\"},{\"memory\":\"\"}, {\"disk\":\"\"}]"}
 pubKeysVal={"val_":"[{\"publicKey\":\"\"}]"}
 hostNameVal={"val_":"[{\"hostName\":\"REPLACE\",\"ip\":\"IPADDR\"}]"}
 
@@ -232,6 +234,15 @@ def main():
         help='Jetstream Data directory where to look for master.json, submit.json and worker.json; must be specified for create operation',
         required=False
     )
+    parser.add_argument(
+        '-kh',
+        '--kafkahost',
+        dest='kafkahost',
+        type = str,
+        help='Kafka Host - monitoring server; must be specified for delete operation',
+        default='18.223.195.153:9092',
+        required=False
+    )
 
     args = parser.parse_args()
     mb=MobiusInterface()
@@ -241,13 +252,16 @@ def main():
         response=mb.get_workflow(args.mobiushost, args.workflowId)
     elif args.operation == 'delete':
         print ("Deleting workflow")
+        cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost)
+        #topics = ['merit-w1exomaster1','merit-w1merit-w1-chworker0.novalocal','merit-w1merit-w1-jetworker2.novalocal']
+        #delete_kafka_topic(topics,args.kafkahost)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
-        if args.comethost is not None:
-            print ("Cleaning up COMET context for workflow")
-            comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-            readToken=args.workflowId + "read"
-            writeToken=args.workflowId + "write"
-            response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        #if args.comethost is not None:
+        #    print ("Cleaning up COMET context for workflow")
+        #    comet=CometInterface(args.comethost, None, args.cert, args.key, None)
+        #    readToken=args.workflowId + "read"
+        #    writeToken=args.workflowId + "write"
+        #    response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
     elif args.operation == 'create':
         ipMap = dict()
         if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None) :
@@ -325,7 +339,6 @@ def main():
                     submitdata = json.load(d_f)
                     d_f.close()
                     ip= submitdata["stitchIP"]
-                    print("KOMAL debug: " + str(ip))
                     submitSubnet = get_cidr(ip)
             if args.chameleonsite is not None and args.chdatadir is not None:
                 exogeniSubnet = None
@@ -337,7 +350,7 @@ def main():
                 if chstoragename is not None:
                     chstoragename = chstoragename + ".novalocal"
             if args.exogenisite is not None and args.exodatadir is not None:
-                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip)
+                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip, None)
                 if status == False :
                     return
             if args.chameleonsite is not None and args.chdatadir is not None:
@@ -384,10 +397,10 @@ def main():
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             stitcVlanToChameleon = None
             if response.json()["status"] == 200 and args.comethost is not None:
-                print ("Setting up COMET for exchanging host names and keys")
-                comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-                readToken=args.workflowId + "read"
-                writeToken=args.workflowId + "write"
+                #print ("Setting up COMET for exchanging host names and keys")
+                #comet=CometInterface(args.comethost, None, args.cert, args.key, None)
+                #readToken=args.workflowId + "read"
+                #writeToken=args.workflowId + "write"
                 status=json.loads(response.json()["value"])
                 requests = json.loads(status["workflowStatus"])
                 stitchNodeStatus = None
@@ -410,34 +423,41 @@ def main():
                                         stitchNodeStatus = n["state"]
                             if n["name"] == "cmnw" :
                                 continue
-                            print ("Create comet context for node " + n["name"])
-                            response=comet.update_family(args.comethost, args.workflowId, hostname,
-                                    readToken, writeToken, "pubkeysall", pubKeysVal)
-                            print ("Received Response Status Code: " + str(response.status_code))
-                            print ("Received Response Message: " + response.json()["message"])
-                            print ("Received Response Status: " + response.json()["status"])
-                            if response.status_code == 200 :
-                                print ("Received Response Value: " + str(response.json()["value"]))
+                            #print ("Create comet context for node " + n["name"])
+                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
+                            #        readToken, writeToken, "resourcesall", resourcesVal)
+                            #print ("Received Response Status Code: " + str(response.status_code))
+                            #print ("Received Response Message: " + response.json()["message"])
+                            #print ("Received Response Status: " + response.json()["status"])
+                            #if response.status_code == 200 :
+                            #    print ("Received Response Value: " + str(response.json()["value"]))
+                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
+                            #        readToken, writeToken, "pubkeysall", pubKeysVal)
+                            #print ("Received Response Status Code: " + str(response.status_code))
+                            #print ("Received Response Message: " + response.json()["message"])
+                            #print ("Received Response Status: " + response.json()["status"])
+                            #if response.status_code == 200 :
+                            #    print ("Received Response Value: " + str(response.json()["value"]))
 
-                            hostVal = json.dumps(hostNameVal)
-                            hostVal = hostVal.replace("REPLACE", hostname)
-                            if n["name"] in ipMap:
-                                print ("Replacing IPADDR with " + ipMap[n["name"]] + " for " + hostVal)
-                                hostVal = hostVal.replace("IPADDR", ipMap[n["name"]])
+                            #hostVal = json.dumps(hostNameVal)
+                            #hostVal = hostVal.replace("REPLACE", hostname)
+                            #if n["name"] in ipMap:
+                            #    print ("Replacing IPADDR with " + ipMap[n["name"]] + " for " + hostVal)
+                            #    hostVal = hostVal.replace("IPADDR", ipMap[n["name"]])
                                 #if stitchdata["target"] == n["name"] :
                                 #    print ("Replacing IPADDR with " + stitchdata["stitchIP"])
                                 #    hostVal = hostVal.replace("IPADDR", stitchdata["stitchIP"])
-                            else:
-                                print ("Replacing IPADDR with empty string for" + hostVal)
-                                hostVal = hostVal.replace("IPADDR", "")
-                            val = json.loads(hostVal)
-                            response=comet.update_family(args.comethost, args.workflowId, hostname,
-                                    readToken, writeToken, "hostsall", val)
-                            print ("Received Response Status Code: " + str(response.status_code))
-                            print ("Received Response Message: " + response.json()["message"])
-                            print ("Received Response Status: " + response.json()["status"])
-                            if response.status_code == 200 :
-                                print ("Received Response Value: " + str(response.json()["value"]))
+                            #else:
+                            #    print ("Replacing IPADDR with empty string for" + hostVal)
+                            #    hostVal = hostVal.replace("IPADDR", "")
+                            #val = json.loads(hostVal)
+                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
+                            #        readToken, writeToken, "hostsall", val)
+                            #print ("Received Response Status Code: " + str(response.status_code))
+                            #print ("Received Response Message: " + response.json()["message"])
+                            #print ("Received Response Status: " + response.json()["status"])
+                            #if response.status_code == 200 :
+                            #    print ("Received Response Value: " + str(response.json()["value"]))
             if stitcVlanToChameleon is not None and args.exogenisite is not None:
                 while stitchNodeStatus != "Active" :
                     print ("Waiting for the " + stitchdata["target"] + " to become active")
@@ -481,7 +501,7 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
         return response
 
-def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip=None, exogeniSubnet=None):
+def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet):
     stdata = None
     st = datadir + "/storage.json"
     if os.path.exists(st):
@@ -598,6 +618,8 @@ def wait_for_network_to_be_active(mb, host, workflowId, site):
                 if site in req["site"] :
                     slices = req["slices"]
                     for s in slices:
+                        if "monitoring" in s["slice"]:
+                            continue
                         shouldSleep = True
                         nodes = s["nodes"]
                         for n in nodes :
@@ -611,7 +633,7 @@ def wait_for_network_to_be_active(mb, host, workflowId, site):
         else:
             break
 
-def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename=None, subnet=None, forwardIP=None):
+def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP):
     if "Exogeni" in site:
         wait_for_network_to_be_active(mb, host, workflowId, site)
     if mdata["hostNamePrefix"] is not None :
@@ -631,7 +653,7 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
     if mdata["postBootScript"] is not None:
         s=mdata["postBootScript"]
         s=s.replace("WORKFLOW", workflowId)
-        s=s.replace(oldnodename, nodename)
+        #s=s.replace(oldnodename, nodename)
         s=s.replace("SUBMIT", str(submitSubnet))
         print ("replacing " + oldnodename + " to " + nodename)
         if forwardIP is not None:
@@ -652,6 +674,34 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
         print("==========================================================")
     response=mb.create_compute(host, workflowId, mdata)
     return response, nodename
+
+def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost):
+    topics = []
+    response=mb.get_workflow(mobiushost, workflowId)
+    if response.json()["status"] == 200 :
+        status=json.loads(response.json()["value"])
+        requests = json.loads(status["workflowStatus"])
+        for req in requests:
+            slices = req["slices"]
+            for s in slices:
+                nodes = s["nodes"]
+                for n in nodes :
+                    if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
+                        hostname=n["name"] + ".novalocal"
+                    else :
+                        hostname=n["name"]
+                    if n["name"] == "cmnw" :
+                        continue
+                    topics.append(workflowId + hostname)
+    delete_kafka_topic(topics, kafkahost)
+
+def delete_kafka_topic(topics, kafkahost):
+    try:
+        print ("List of topics to be deleted " + str(topics))
+        a = KafkaAdminClient(bootstrap_servers=[kafkahost])
+        a.delete_topics(topics, timeout_ms=30)
+    except Exception as e:
+        print("Exception occured while deleting topics e=" + str(e))
 
 if __name__ == '__main__':
     main()

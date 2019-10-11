@@ -1,0 +1,16 @@
+{
+    "site":"Chameleon:CHI@UC",
+    "cpus":"2",
+    "gpus":"0",
+    "ramPerCpus":"4096",
+    "diskPerCpus":"5000",
+    "ipAddress":"192.158.100.4",
+    "hostNamePrefix":"master",
+    "imageName":"CC-CentOS7",
+    "networkType":"private",
+    "physicalNetwork":"exogeni",
+    "externalNetwork":"public",
+    "forceflavor":"compute_haswell",
+    "networkCidr":"192.158.100.0/24"    
+}
+

@@ -5,10 +5,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.net.InetAddresses;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.mobius.controllers.CloudContext;
-import org.renci.mobius.controllers.MobiusConfig;
-import org.renci.mobius.controllers.MobiusException;
-import org.renci.mobius.controllers.SliceNotFoundOrDeadException;
+import org.renci.mobius.controllers.*;
 import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
@@ -172,10 +169,10 @@ public class ExogeniContext extends CloudContext {
      *
      * @throws Exception in case of error
      *
-     * @return number representing index to be added for the instance name
+     * @return ComputeResponse
      */
     @Override
-    public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
+    public ComputeResponse processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("IN");
 
@@ -215,7 +212,7 @@ public class ExogeniContext extends CloudContext {
             }
 
             try {
-                Pair<Integer, Integer> r = context.processCompute(flavorList, nameIndex, spNameIndex, request);
+                ComputeResponse response = context.processCompute(flavorList, nameIndex, spNameIndex, request);
 
                 sliceName = context.getSliceName();
 
@@ -228,7 +225,7 @@ public class ExogeniContext extends CloudContext {
                         LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
                     }
                 }
-                return r;
+                return response;
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);

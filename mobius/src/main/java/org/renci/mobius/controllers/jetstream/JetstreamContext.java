@@ -6,6 +6,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.NetworkController;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
@@ -280,10 +281,10 @@ public class JetstreamContext extends CloudContext  {
      *
      * @throws Exception in case of error
      *
-     * @return number representing index to be added for the instance name
+     * @return ComputeResponse
      */
     @Override
-    public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
+    public ComputeResponse processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("IN request=" + request + " nameIndex=" + nameIndex + " spIndex=" + spNameIndex + " isFutureRequest=" + isFutureRequest);
             validateComputeRequest(request, isFutureRequest);
@@ -301,7 +302,7 @@ public class JetstreamContext extends CloudContext  {
             try {
                 Pair<String, String> nwIdSgName = setupNetwork(request);
                 // For jetstream; slice per request mechanism is followed
-                nameIndex = context.provisionNode( flavorList, nameIndex, request.getImageName(),
+                ComputeResponse response = context.provisionNode( flavorList, nameIndex, request.getImageName(),
                         request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
                         null, nwIdSgName.getFirst(), request.getIpAddress(), nwIdSgName.getSecond());
                 LOGGER.debug("Created new context=" + sliceName);
@@ -309,8 +310,8 @@ public class JetstreamContext extends CloudContext  {
                 sliceName = context.getSliceName();
                 stackContextHashMap.put(sliceName, context);
                 LOGGER.debug("Added " + sliceName);
-
-                return Pair.of(nameIndex, spNameIndex);
+                response.setStitchCount(spNameIndex);
+                return response;
             } finally {
                 LOGGER.debug("OUT nameIndex=" + nameIndex + " spIndex=" + spNameIndex);
             }

@@ -59,6 +59,9 @@ public class MobiusConfig {
     public static final String chameleonTACCStitchPort = "mobius.chameleon.tacc.stitchport";
 
     public static final String cometHost = "mobius.comet.host";
+    public static final String cometCert = "mobius.comet.cert";
+    public static final String cometCaCert = "mobius.comet.cacert";
+    public static final String cometCertPwd = "mobius.comet.cert.pwd";
 
     public static final String jetStreamIuAuthUrl = "mobius.jetstream.iu.authUrl";
     public static final String jetStreamTaccAuthUrl = "mobius.jetstream.tacc.authUrl";
@@ -105,6 +108,12 @@ public class MobiusConfig {
     public String getJetStreamFloatingIpPool() { return properties.getProperty(jetStreamFloatingIpPool); }
 
     public String getCometHost() { return properties.getProperty(cometHost); }
+
+    public String getCometCert() { return properties.getProperty(cometCert); }
+
+    public String getCometCaCert() { return properties.getProperty(cometCaCert); }
+
+    public String getCometCertPwd() { return properties.getProperty(cometCertPwd); }
 
     public String getChameleonUCStitchPort() { return properties.getProperty(chameleonUCStitchPort); }
 

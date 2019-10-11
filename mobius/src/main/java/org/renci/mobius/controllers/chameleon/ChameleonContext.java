@@ -5,6 +5,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.NetworkController;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.ComputeRequest;
@@ -338,10 +339,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      *
      * @throws Exception in case of error
      *
-     * @return number representing index to be added for the instance name
+     * @return ComputeResponse
      */
     @Override
-    public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
+    public ComputeResponse processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception {
         synchronized (this) {
             LOGGER.debug("IN request=" + request.toString() + " nameIndex=" + nameIndex + " spNameIndex=" + spNameIndex + " isFutureRequest=" + isFutureRequest);
             validateComputeRequest(request, isFutureRequest);
@@ -362,7 +363,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 try {
                     String networkId = setupNetwork(request);
                     // For chameleon; slice per request mechanism is followed
-                    nameIndex = context.provisionNode(flavorList, nameIndex, request.getImageName(),
+                    ComputeResponse response = context.provisionNode(flavorList, nameIndex, request.getImageName(),
                             request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
                             metaData, networkId, request.getIpAddress());
                     LOGGER.debug("Created new context=" + sliceName);
@@ -370,8 +371,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     sliceName = context.getSliceName();
                     stackContextHashMap.put(sliceName, context);
                     LOGGER.debug("Added " + sliceName);
-
-                    return Pair.of(nameIndex, spNameIndex);
+                    response.setStitchCount(spNameIndex);
+                    return response;
                 } catch (LeaseException e) {
                     // Retry only when flavor is not forced
                     if(count+1 == retries || request.getForceflavor() != null) {
@@ -433,9 +434,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     }
 
                     String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
-                    nameIndex = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
+                    ComputeResponse response = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
                             prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId, null);
                     LOGGER.debug("Created new context=" + sliceName);
+                    nameIndex = response.getNodeCount();
 
                     sliceName = context.getSliceName();
                     stackContextHashMap.put(sliceName, context);

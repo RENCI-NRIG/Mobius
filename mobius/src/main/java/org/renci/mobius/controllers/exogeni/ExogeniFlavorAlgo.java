@@ -14,10 +14,10 @@ import java.util.List;
  *
  * @author kthare10
  */
-class ExogeniFlavorAlgo {
+public class ExogeniFlavorAlgo {
     private static final Logger LOGGER = LogManager.getLogger( ExogeniFlavorAlgo.class.getName() );
 
-    enum Flavor {
+    public enum Flavor {
         // cpus, diskspace, ram, name
         Small(1, 11264, 1024, "XO Small"),
         Medium(1, 26624, 3072, "XO Medium"),

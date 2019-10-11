@@ -8,6 +8,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
+import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.StorageRequest;
@@ -197,13 +198,13 @@ public class ReqContext {
      * @param ip - ip
      * @param sgName - sgName
      *
-     * @return name index
+     * @return ComputeResponse
      * @throws Exception in case of error
      *
      */
-    public int provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
-                             String leaseEnd, String hostNamePrefix, String postBootScript,
-                             Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
+    public ComputeResponse provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
+                                         String leaseEnd, String hostNamePrefix, String postBootScript,
+                                         Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
 
         LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
                 + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData + " networkId=" + networkId
@@ -216,6 +217,7 @@ public class ReqContext {
             String password = MobiusConfig.getInstance().getJetStreamUserPassword();
             String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
             String project = MobiusConfig.getInstance().getJetStreamProject();
+            ComputeResponse response = new ComputeResponse(0,0);
 
             // Instantiate Jclouds based Openstack Controller object
             computeController = new ComputeController(authUrl, user, password, userDomain, project);
@@ -251,6 +253,7 @@ public class ReqContext {
                         name = name + CloudContext.NodeName + nameIndex;
                     }
                     name = name.toLowerCase();
+                    response.addHost(name + ".novalocal", null);
                     LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
 
                     String instanceId = computeController.createInstance(region,
@@ -270,7 +273,8 @@ public class ReqContext {
                     ++nameIndex;
                 }
             }
-            return nameIndex;
+            response.setNodeCount(nameIndex);
+            return response;
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);

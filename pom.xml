@@ -7,6 +7,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
     <modules>
+        <module>comet</module>
         <module>openstack-nova</module>
         <module>jclouds-shaded</module>
         <module>notification</module>
@@ -52,17 +53,6 @@
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

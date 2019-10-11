@@ -145,9 +145,9 @@ abstract public class CloudContext {
      *
      * @throws Exception in case of error
      *
-     * @return number representing index to be added for the instance name
+     * @return ComputeResponse
      */
-    abstract public Pair<Integer, Integer> processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception;
+    abstract public ComputeResponse processCompute(ComputeRequest request, int nameIndex, int spNameIndex, boolean isFutureRequest) throws Exception;
 
     /*
      * @brief function to process storge request
