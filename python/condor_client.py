@@ -252,7 +252,7 @@ def main():
         response=mb.get_workflow(args.mobiushost, args.workflowId)
     elif args.operation == 'delete':
         print ("Deleting workflow")
-        cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost)
+        #cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost)
         #topics = ['merit-w1exomaster1','merit-w1merit-w1-chworker0.novalocal','merit-w1merit-w1-jetworker2.novalocal']
         #delete_kafka_topic(topics,args.kafkahost)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
