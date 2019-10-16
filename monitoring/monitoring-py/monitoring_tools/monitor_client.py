@@ -22,7 +22,10 @@ import subprocess
 import socket
 import psycopg2
 
-from mobius import *
+from monitoring_tools import CONFIG, LOGGER
+from daemon import runner
+from optparse import OptionParser
+from monitoring_tools.mobius import *
 from kafka import KafkaConsumer
 
 class MonitorDaemon:
@@ -134,125 +137,122 @@ class MonitorDaemon:
             time.sleep(600)
 
 def main():
-    parser = argparse.ArgumentParser(description='Python client to create monitor resources in workflows and request for additional resources based on configurations.')
+    usagestr = "Usage: monitoringd start|stop|restart options"
+    parser = OptionParser(usage=usagestr, description='Python client to monitor workflows and provision additional resources if required')
 
-    parser.add_argument(
-        '-dh',
+    parser.add_option(
+        '-t',
         '--dbhost',
         dest='dbhost',
         type = str,
         help='Database Host from which to read the Workflow Names',
-        default='database',
-        required=False
+        default='database'
     )
-    parser.add_argument(
+    parser.add_option(
         '-d',
         '--database',
         dest='database',
         type = str,
         help='Database Name',
-        default='mobius',
-        required=False
+        default='mobius'
     )
-    parser.add_argument(
+    parser.add_option(
         '-u',
         '--user',
         dest='user',
         type = str,
         help='Database User Name',
-        default='mobius',
-        required=False
+        default='mobius'
     )
-    parser.add_argument(
+    parser.add_option(
         '-p',
         '--password',
         dest='password',
         type = str,
         help='Database Password',
-        default='mobius',
-        required=False
+        default='mobius'
     )
-    parser.add_argument(
+    parser.add_option(
         '-k',
         '--kafkahost',
         dest='kafkahost',
         type = str,
-        help='Kafka Host',
-        required=False
+        help='Kafka Host'
     )
-    parser.add_argument(
+    parser.add_option(
         '-m',
         '--mobiushost',
         dest='mobiushost',
         type = str,
         help='Mobius Host e.g. http://localhost:8080/mobius',
-        required=False,
         default='http://localhost:8080/mobius'
     )
-    parser.add_argument(
-         '-tc',
+    parser.add_option(
+         '-c',
          '--cputhreshold',
          dest='cputhreshold',
          type = int,
          help='Threshold for idle cpu usage in percent; when idle cpu usage is less than the threshold, additional compute nodes are requested via Mobius',
-         required=False,
          default=15
      )
-    parser.add_argument(
-         '-td',
+    parser.add_option(
+         '-f',
          '--diskthreshold',
          dest='diskthreshold',
          type = int,
          help='Threshold for disk usage in percent; when disk usage exceeds the threshold, additional compute nodes are requested via Mobius',
-         required=False,
          default=85
      )
-    parser.add_argument(
-         '-tm',
+    parser.add_option(
+         '-r',
          '--memthreshold',
          dest='memthreshold',
          type = int,
          help='Threshold for memory usage in percent; when memory usage exceeds the threshold, additional compute nodes are requested via Mobius',
-         required=False,
          default=85
      )
-    parser.add_argument(
+    parser.add_option(
          '-b',
          '--bucketcount',
          dest='bucketcount',
          type = int,
          help='Number of buckets for which the threshold should be exceeded to trigger provisioning',
-         required=False,
          default=10
      )
-    parser.add_argument(
+    parser.add_option(
          '-l',
          '--leasedays',
          dest='leasedays',
          type = int,
          help='Number of days for which lease should be requested',
-         required=False,
          default=2
      )
 
-    args = parser.parse_args()
+    options, args = parser.parse_args()
 
-    initial_log_location = '/dev/tty'
-    try:
-    	logfd = open(initial_log_location, 'r')
-    except:
-        initial_log_location = '/dev/null'
+    if len(args) != 1:
+        parser.print_help()
+        sys.exit(1)
+
+    if args[0] == 'start':
+        sys.argv = [sys.argv[0], 'start']
+    elif args[0] == 'stop':
+        sys.argv = [sys.argv[0], 'stop']
+    elif args[0] == 'restart':
+        sys.argv = [sys.argv[0], 'restart']
     else:
-        logfd.close()
+        parser.print_help()
+        sys.exit(1)
 
+    initial_log_location = '/dev/null'
     log_format = '%(asctime)s - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename=initial_log_location)
     log = logging.getLogger(LOGGER)
     log.setLevel('DEBUG')
 
 
-    app = MonitorDaemon(args.dbhost, args.database, args.user, args.password, args.mobiushost, args.kafkahost,
-                        args.cputhreshold, args.diskthreshold, args.memthreshold, args.bucketcount, args.leasedays)
+    app = MonitorDaemon(options.dbhost, options.database, options.user, options.password, options.mobiushost, options.kafkahost,
+                        options.cputhreshold, options.diskthreshold, options.memthreshold, options.bucketcount, options.leasedays)
     daemon_runner = runner.DaemonRunner(app)
 
     try:
