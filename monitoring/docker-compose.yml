@@ -1,0 +1,10 @@
+version: '3.6'
+
+services:
+    monitoring:
+        container_name: monitoring 
+        hostname: monitoring 
+        image: monitoring
+        restart: always
+        environment:
+        - kafkahost=18.223.195.153:9092

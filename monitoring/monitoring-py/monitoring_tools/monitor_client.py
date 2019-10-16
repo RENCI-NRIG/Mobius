@@ -102,34 +102,36 @@ class MonitorDaemon:
                         if self.isThresholdExceeded(topicName) :
                             self.createComputeNode(workflowId, requestsMap[hostname])
 
-    def check_workflows(self):
-        """ query data from the workflow_entity table """
-        conn = None
-        try:
-            connection_parameters = {
-                'host': self._host,
-                'database': self._db,
-                'user': self._user,
-                'password': self._pwd
-            }
-            conn = psycopg2.connect(**connection_parameters)
-            cur = conn.cursor()
-            cur.execute("SELECT workflow_id, host_names_json FROM workflow_entity")
-            print("The number of workflows: ", cur.rowcount)
-            row = cur.fetchone()
-
-            while row is not None:
-                print("Processing workflow" + row[0])
-                requestsMap = json.loads(row[1])
-                self.process_workflow(row[0], requestsMap)
+    def run(self):
+        while True:
+            """ query data from the workflow_entity table """
+            conn = None
+            try:
+                connection_parameters = {
+                    'host': self._host,
+                    'database': self._db,
+                    'user': self._user,
+                    'password': self._pwd
+                }
+                conn = psycopg2.connect(**connection_parameters)
+                cur = conn.cursor()
+                cur.execute("SELECT workflow_id, host_names_json FROM workflow_entity")
+                print("The number of workflows: ", cur.rowcount)
                 row = cur.fetchone()
 
-            cur.close()
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-        finally:
-            if conn is not None:
-                conn.close()
+                while row is not None:
+                    print("Processing workflow" + row[0])
+                    requestsMap = json.loads(row[1])
+                    self.process_workflow(row[0], requestsMap)
+                    row = cur.fetchone()
+
+                cur.close()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+            finally:
+                if conn is not None:
+                    conn.close()
+            time.sleep(600)
 
 def main():
     parser = argparse.ArgumentParser(description='Python client to create monitor resources in workflows and request for additional resources based on configurations.')
@@ -235,10 +237,62 @@ def main():
 
     args = parser.parse_args()
 
-    mon = MonitorDaemon(args.dbhost, args.database, args.user, args.password, args.mobiushost, args.kafkahost,
-                        args.cputhreshold, args.diskthreshold, args.memthreshold, args.bucketcount, args.leasedays)
-    mon.check_workflows()
+    initial_log_location = '/dev/tty'
+    try:
+    	logfd = open(initial_log_location, 'r')
+    except:
+        initial_log_location = '/dev/null'
+    else:
+        logfd.close()
 
+    log_format = '%(asctime)s - %(levelname)s - %(message)s'
+    logging.basicConfig(format=log_format, filename=initial_log_location)
+    log = logging.getLogger(LOGGER)
+    log.setLevel('DEBUG')
+
+
+    app = MonitorDaemon(args.dbhost, args.database, args.user, args.password, args.mobiushost, args.kafkahost,
+                        args.cputhreshold, args.diskthreshold, args.memthreshold, args.bucketcount, args.leasedays)
+    daemon_runner = runner.DaemonRunner(app)
+
+    try:
+
+        log_dir = "/var/log/monitoring/"
+        log_level = "DEBUG"
+        log_file = "monitoring.log"
+        log_retain = 5
+        log_file_size = 5000000
+        log_level = 'DEBUG'
+
+        if not os.path.exists(log_dir):
+             os.makedirs(log_dir)
+
+        handler = logging.handlers.RotatingFileHandler(
+                 log_dir + '/' + log_file,
+                 backupCount=log_retain,
+                 maxBytes=log_file_size)
+        handler.setLevel(log_level)
+        formatter = logging.Formatter(log_format)
+        handler.setFormatter(formatter)
+
+        log.addHandler(handler)
+        log.propagate = False
+        log.info('Logging Started')
+
+        daemon_runner.daemon_context.files_preserve = [
+                 handler.stream,
+             ]
+
+        log.info('Administrative operation: %s' % args[0])
+        daemon_runner.do_action()
+        log.info('Administrative after action: %s' % args[0])
+
+    except runner.DaemonRunnerStopFailureError as drsfe:
+        log.propagate = True
+        log.error('Unable to stop service; reason was: %s' % str(drsfe))
+        log.error('Exiting...')
+        sys.exit(1)
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
