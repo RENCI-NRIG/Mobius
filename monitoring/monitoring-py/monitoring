@@ -1,5 +1,0 @@
-#!/bin/python
-
-from monitoring_tools.monitor_client import main
-
-main()

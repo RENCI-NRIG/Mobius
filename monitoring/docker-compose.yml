@@ -8,3 +8,13 @@ services:
         restart: always
         environment:
         - kafkahost=18.223.195.153:9092
+        - databasehost=database
+        - database=mobius
+        - user=mobius
+        - password=mobius
+        - mobiushost=mobius
+        - tc=15
+        - td=85
+        - tm=85
+        - bucketcount=10
+        - leasedays=2 
