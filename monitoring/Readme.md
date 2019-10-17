@@ -3,7 +3,7 @@
  - [Description](#descr)
  - [Installation](#install)
  - [Monitoring Client](#mclient)
-   - [Usage] (#usage)
+   - [Usage](#usage)
 # <a name="descr"></a>Description
 
 # <a name="install"></a>Installation
