@@ -45,6 +45,8 @@ The Monitoring and Control module is designed to transparently maintain the qual
 The Mobius controller orchestrates all the above components and processes the incoming REST requests to trigger appropriate Mobius components. 
 
 ## <a name="todo"></a>TODO List
-- Enable Mobius to pass HEAT Templates
+- Enable Shrinking of the resources in Monitoring client
+- Enable monitoring of network resources in Monitoring client
+
 ## <a name="docker"></a>How to use or launch Mobius?
 - Refer to [Docker](./docker/Readme.md) to launch Mobius
