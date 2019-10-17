@@ -2,36 +2,89 @@
 
  - [Description](#descr)
  - [Installation](#install)
-   - [Mobius Client](#mbclient)
-     - [Usage](#usage1)
-   - [Condor Client](#condorclient)
-     - [Usage](#usage2)   
-   - [Json Data](#json)
-   - [Certificates](#certs)
-   - [Mobius Client Examples](#mobius_client_examples)
-     - [Create a workflow](#createworkflow)
-     - [Create a compute node in a workflow](#createcompute)
-     - [Create a stitch port in a workflow](#createstitchport)
-     - [Get status of a workflow](#getworkflow)
-     - [Delete a workflow](#deleteworkflow)
-   - [Condor Client Examples](#condor_client_examples)
-     - [Create a condor cluster](#create)
-     - [Get status of condor cluster](#get)
-     - [Delete condor cluster](#delete)
- 
+ - [Monitoring Client](#mclient)
+   - [Usage] (#usage)
 # <a name="descr"></a>Description
-Python based clients
- - Mobius client to trigger Moobius REST commands.
- - Python client to create Condor clusters by invoking various supported Mobius REST commands.
 
 # <a name="install"></a>Installation
-`https://github.com/RENCI-NRIG/Mobius.git`
+Monitoring client run inside a docker container. It can be either brought up using the following docker-compose.yml file.
+Before bringing up the container, user is expected to modify the configurable parameters in docker-compose.yml.
 
-`cd Mobius/python/`
+Parameters are explained here:
+- kafkahost : IP Address of the server/container running the kafka where monitoring data is pushed by the workflow resources. Users are required to modify this value.
+- databasehost : hostname of the container running Postgres database where the workflow information is maintained. Default value of 'database' is configured.
+- database : Name of the Postgres database where the workflow information is maintained. Default value of 'mobius' is configured.
+- user : Postgres database user name. Default value of 'mobius' is configured.
+- password : Postgres database user password. Default value of 'mobius' is configured.
+- mobiushost : hostname of the container running Mobius. Default value of 'mobius' is configured.
+- tc : Idle CPU Threshold percentage which when deceeded for last n monitoring buckets below result in Monitoring client will trigger provisioning of a similar compute resource.
+- td : Disk usage threshold percentage which when exceeded for last n monitoring buckets below result in Monitoring client will trigger provisioning of a similar compute resource.
+- tm : RAM usage threshold percentage which when exceeded for last n monitoring buckets below result in Monitoring client will trigger provisioning of a similar compute resource.
+- bucketcount : Number of the monitoring buckets to check before the threshold crossed action is triggered.
+- leasedays : Number of the days for which the lease is requested for the resources provisioned by Monitoring client.
+```
+version: '3.6'
 
-You are now ready execute python client.
+services:
+    monitoring:
+        container_name: monitoring
+        hostname: monitoring
+        image: rencinrig/monitoring:latest
+        restart: always
+        environment:
+        - kafkahost=18.223.195.153:9092
+        - databasehost=database
+        - database=mobius
+        - user=mobius
+        - password=mobius
+        - mobiushost=mobius
+        - tc=15
+        - td=85
+        - tm=85
+        - bucketcount=10
+        - leasedays=2
+```
+# <a name="mclient"></a>Monitoring client
+Python based monitoring client which periodically checks all the workflows and their respective compute resources for CPU, RAM and Disk usage. If any of the CPU, Disk or RAM usage exceeds the configured thresholds, monitioring client provisions similar resources in the workflow by sending REST requests to Mobius.
 
-Pre-requisites: requires python 3 or above version and python requests package installed
+## <a name="usage"></a>Usage
+```
+usage: monitor_client.py [-h] [-t DBHOST] [-d DATABASE] [-u USER]
+                         [-p PASSWORD] -k KAFKAHOST [-m MOBIUSHOST]
+                         [-c CPUTHRESHOLD] [-f DISKTHRESHOLD]
+                         [-r MEMTHRESHOLD] [-b BUCKETCOUNT] [-l LEASEDAYS]
 
-## <a name="mbclient"></a>Mobius Client
-Mobius client to trigger Moobius REST commands.
+Python client to monitor workflows and provision additional resources if
+required
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t DBHOST, --dbhost DBHOST
+                        Database Host from which to read the Workflow Names
+  -d DATABASE, --database DATABASE
+                        Database Name
+  -u USER, --user USER  Database User Name
+  -p PASSWORD, --password PASSWORD
+                        Database Password
+  -k KAFKAHOST, --kafkahost KAFKAHOST
+                        Kafka Host
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -c CPUTHRESHOLD, --cputhreshold CPUTHRESHOLD
+                        Threshold for idle cpu usage in percent; when idle cpu
+                        usage is less than the threshold, additional compute
+                        nodes are requested via Mobius
+  -f DISKTHRESHOLD, --diskthreshold DISKTHRESHOLD
+                        Threshold for disk usage in percent; when disk usage
+                        exceeds the threshold, additional compute nodes are
+                        requested via Mobius
+  -r MEMTHRESHOLD, --memthreshold MEMTHRESHOLD
+                        Threshold for memory usage in percent; when memory
+                        usage exceeds the threshold, additional compute nodes
+                        are requested via Mobius
+  -b BUCKETCOUNT, --bucketcount BUCKETCOUNT
+                        Number of buckets for which the threshold should be
+                        exceeded to trigger provisioning
+  -l LEASEDAYS, --leasedays LEASEDAYS
+                        Number of days for which lease should be requested
+```
