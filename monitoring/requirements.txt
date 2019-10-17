@@ -1,0 +1,4 @@
+psutil
+Kafka-python
+psycopg2
+requests
