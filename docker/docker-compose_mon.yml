@@ -58,9 +58,19 @@ services:
         - EXCHANGE_NAME=notifications 
         - ROUTING_KEY=workflows 
     monitoring:
-        container_name: monitoring 
-        hostname: monitoring 
-        image: monitoring
+        container_name: monitoring
+        hostname: monitoring
+        image: rencinrig/monitoring:latest
         restart: always
         environment:
-        - kafkahist=18.223.195.153:9092
+        - kafkahost=18.223.195.153:9092
+        - databasehost=database
+        - database=mobius
+        - user=mobius
+        - password=mobius
+        - mobiushost=mobius
+        - tc=15
+        - td=85
+        - tm=85
+        - bucketcount=10
+        - leasedays=2

@@ -4,7 +4,7 @@ services:
     monitoring:
         container_name: monitoring 
         hostname: monitoring 
-        image: monitoring
+        image: rencinrig/monitoring:latest 
         restart: always
         environment:
         - kafkahost=18.223.195.153:9092

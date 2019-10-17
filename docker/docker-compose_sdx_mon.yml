@@ -70,3 +70,20 @@ services:
         - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
         - "~/.ssh/id_rsa:/code/ssh/id_rsa"
         - "./resources:/code/resources"          
+    monitoring:
+        container_name: monitoring
+        hostname: monitoring
+        image: rencinrig/monitoring:latest
+        restart: always
+        environment:
+        - kafkahost=18.223.195.153:9092
+        - databasehost=database
+        - database=mobius
+        - user=mobius
+        - password=mobius
+        - mobiushost=mobius
+        - tc=15
+        - td=85
+        - tm=85
+        - bucketcount=10
+        - leasedays=2
