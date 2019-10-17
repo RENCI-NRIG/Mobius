@@ -22,9 +22,6 @@ import subprocess
 import socket
 import psycopg2
 
-import logging
-import logging.handlers
-
 from optparse import OptionParser
 from mobius import *
 from kafka import KafkaConsumer
@@ -68,7 +65,7 @@ class MonitorDaemon:
         print ("Buckets: " + json.dumps(buckets))
         if buckets["cpu"] > self._bucketcount or buckets["disk"] > self._bucketcount or buckets["ram"] > self._bucketcount:
             retVal = True
-        return True
+        return retVal
 
     def createComputeNode(self, workflowId, request):
         print("Issuing req: " + request)
@@ -107,6 +104,7 @@ class MonitorDaemon:
                             self.createComputeNode(workflowId, requestsMap[hostname])
 
     def run(self):
+        print("Starting run loop ")
         while True:
             """ query data from the workflow_entity table """
             conn = None
@@ -135,7 +133,9 @@ class MonitorDaemon:
             finally:
                 if conn is not None:
                     conn.close()
+            print("Sleeping for 600 seconds")
             time.sleep(600)
+        print("Ending run loop ")
 
 def main():
     parser = argparse.ArgumentParser(description='Python client to monitor workflows and provision additional resources if required')
@@ -231,30 +231,17 @@ def main():
 
     args = parser.parse_args()
 
-    initial_log_location = '/dev/tty'
-    try:
-        logfd = open(initial_log_location, 'r')
-    except:
-        initial_log_location = '/dev/null'
-    else:
-        logfd.close()
-
-    log_format = '%(asctime)s - %(levelname)s - %(message)s'
-    logging.basicConfig(format=log_format, filename=initial_log_location)
-    log = logging.getLogger('monitoring_tools')
-    log.setLevel('DEBUG')
-
-
     app = MonitorDaemon(args.dbhost, args.database, args.user, args.password, args.mobiushost, args.kafkahost,
                         args.cputhreshold, args.diskthreshold, args.memthreshold, args.bucketcount, args.leasedays)
 
     try:
-
+        print('Starting monitoring ...')
         app.run()
+        print('Completed monitoring ...')
 
     except Exception as e:
-        log.error('Unable to run service; reason was: %s' % str(e))
-        log.error('Exiting...')
+        print('Unable to run service; reason was: %s' % str(e))
+        print('Exiting...')
         sys.exit(1)
     sys.exit(0)
 

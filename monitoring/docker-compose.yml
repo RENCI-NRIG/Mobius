@@ -8,7 +8,7 @@ services:
         restart: always
         environment:
         - kafkahost=18.223.195.153:9092
-        - databasehost=database
+        - databasehost=127.0.0.1
         - database=mobius
         - user=mobius
         - password=mobius
