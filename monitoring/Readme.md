@@ -45,7 +45,7 @@ services:
         - database=mobius
         - user=mobius
         - password=mobius
-        - mobiushost=mobius
+        - mobiushost=http://mobius:8080/mobius
         - tc=15
         - td=85
         - tm=85
