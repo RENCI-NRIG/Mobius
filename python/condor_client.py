@@ -252,7 +252,7 @@ def main():
         response=mb.get_workflow(args.mobiushost, args.workflowId)
     elif args.operation == 'delete':
         print ("Deleting workflow")
-        #cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost)
+        getresponse=mb.get_workflow(args.mobiushost, args.workflowId)
         #topics = ['merit-w1exomaster1','merit-w1merit-w1-chworker0.novalocal','merit-w1merit-w1-jetworker2.novalocal']
         #delete_kafka_topic(topics,args.kafkahost)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
@@ -262,6 +262,7 @@ def main():
         #    readToken=args.workflowId + "read"
         #    writeToken=args.workflowId + "write"
         #    response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
     elif args.operation == 'create':
         ipMap = dict()
         if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None) :
@@ -675,9 +676,8 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
     response=mb.create_compute(host, workflowId, mdata)
     return response, nodename
 
-def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost):
+def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost, response):
     topics = []
-    response=mb.get_workflow(mobiushost, workflowId)
     if response.json()["status"] == 200 :
         status=json.loads(response.json()["value"])
         requests = json.loads(status["workflowStatus"])
@@ -701,7 +701,8 @@ def delete_kafka_topic(topics, kafkahost):
         a = KafkaAdminClient(bootstrap_servers=[kafkahost])
         a.delete_topics(topics, timeout_ms=30)
     except Exception as e:
-        print("Exception occured while deleting topics e=" + str(e))
+        #print("Exception occured while deleting topics e=" + str(e))
+        print(" ")
 
 if __name__ == '__main__':
     main()
