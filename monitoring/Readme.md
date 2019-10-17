@@ -5,7 +5,14 @@
  - [Monitoring Client](#mclient)
    - [Usage](#usage)
 # <a name="descr"></a>Description
-The Monitoring and Control module is designed to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Based on policies and thresholds defined, the goal is to identify the appropriate actions to be taken to ensure the infrastructure QoS at all times. The actions include enabling compute, storage and network elasticity i.e. growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. This module is currently under development.
+The Monitoring and Control module is designed to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Based on policies and thresholds defined, the goal is to identify the appropriate actions to be taken to ensure the infrastructure QoS at all times. The actions include enabling compute, storage and network elasticity i.e. growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. 
+
+This module is currently under development. Its supports following features so far:
+- Growth of the compute pools when certain configured thresholds are crossed for configured number of monitoring buckets
+- Thresholds are:
+  - Idle CPU Usage Threshold (Default 15%)
+  - Disk Usage Threshold (Default 85%)
+  - RAM Usage Threshold (Default 85%)  
 
 # <a name="install"></a>Installation
 Monitoring client run inside a docker container. It can be either brought up using the following docker-compose.yml file.
