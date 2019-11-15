@@ -183,23 +183,30 @@ abstract public class CloudContext {
      * @param subnet2 - subnet2
      * @param action - action
      * @param destHostName - destHostName
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     abstract public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip,
                                                                      String subnet, NetworkRequest.ActionEnum action,
-                                                                     String destHostName) throws Exception;
+                                                                     String destHostName, String sdxStitchPortInterfaceIP) throws Exception;
 
     /*
      * @brief function to process a network request;
      *
      * @param hostname - hostname
+     * @param subnet1 - subnet1
+     * @param subnet2 - subnet2
+     * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
-    abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception;
+    abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth,
+                                                   String destinationIP, String sdxStitchPortInterfaceIP) throws Exception;
 
     /*
      * @brief function to check get status for the context

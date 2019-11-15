@@ -459,7 +459,7 @@ def main():
                             #print ("Received Response Status: " + response.json()["status"])
                             #if response.status_code == 200 :
                             #    print ("Received Response Value: " + str(response.json()["value"]))
-            if stitcVlanToChameleon is not None and args.exogenisite is not None:
+            if stitcVlanToChameleon is not None and args.exogenisite is not None and stitchdata is not None:
                 while stitchNodeStatus != "Active" :
                     print ("Waiting for the " + stitchdata["target"] + " to become active")
                     response=mb.get_workflow(args.mobiushost, args.workflowId)

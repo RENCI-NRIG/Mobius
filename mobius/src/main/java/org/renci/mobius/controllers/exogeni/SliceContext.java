@@ -750,11 +750,12 @@ public class SliceContext {
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth, String destinationIP) throws Exception{
         LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
         try {
             Slice slice = getSlice();
@@ -776,10 +777,7 @@ public class SliceContext {
             sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
 
             String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
-            String gateway2 = subnet2.substring(0, subnet2.indexOf("/"));
-            String startIP = gateway2.substring(0, gateway2.lastIndexOf("."));
-            startIP += ".2";
-            String command = String.format("ip route add %s/32 via %s", startIP, gateway1);
+            String command = String.format("ip route add %s/32 via %s", destinationIP, gateway1);
             RemoteCommand remoteCommand = new RemoteCommand(null, MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
             remoteCommand.runCmdByIP(command, ip,false);
         }

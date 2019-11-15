@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
-import sun.nio.ch.Net;
 
 /*
  * @brief class represents context for all resources on a specific region on chameleon. It maintains
@@ -585,6 +584,12 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 if (!object.isEmpty()) {
                     array.add(object);
                 }
+                for (String h : hostNameSet) {
+                    if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
+                        LOGGER.debug("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
+                        hostNameToSliceNameHashMap.put(h, context.getSliceName());
+                    }
+                }
             }
             if (!array.isEmpty()) {
                 retVal = new JSONObject();
@@ -666,15 +671,17 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      * @param subnet - subnet
      * @param action - action
      * @param destHostName - destHostName
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     @Override
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
-                                                            NetworkRequest.ActionEnum action, String destHostName) throws Exception {
+                                                            NetworkRequest.ActionEnum action, String destHostName,
+                                                            String sdxStitchPortInterfaceIP) throws Exception {
         synchronized (this) {
-            System.out.println("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
+            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
                     + " destHostName=" + destHostName + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
@@ -702,7 +709,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
 
             try {
-                context.processNetworkRequestSetupStitchingAndRoute(hostname, getNetworkVlanId(), subnet, action, destHostName);
+                context.processNetworkRequestSetupStitchingAndRoute(hostname, getNetworkVlanId(), subnet, action,
+                        destHostName, sdxStitchPortInterfaceIP);
             } finally {
                 LOGGER.debug("OUT");
             }
@@ -715,14 +723,17 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     @Override
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception {
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth,
+                                          String destinationIP, String sdxStitchPortInterfaceIP) throws Exception {
         synchronized (this) {
-            System.out.println("IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            LOGGER.debug("IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
                 throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
@@ -732,7 +743,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 throw new MobiusException("slice context not found");
             }
             try {
-                context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth);
+                context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth, destinationIP, sdxStitchPortInterfaceIP);
             }
             finally {
                 LOGGER.debug("OUT");

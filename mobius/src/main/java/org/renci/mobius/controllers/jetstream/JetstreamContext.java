@@ -440,6 +440,12 @@ public class JetstreamContext extends CloudContext  {
                 if (!object.isEmpty()) {
                     array.add(object);
                 }
+                for (String h : hostNameSet) {
+                    if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
+                        LOGGER.debug("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
+                        hostNameToSliceNameHashMap.put(h, context.getSliceName());
+                    }
+                }
             }
             if (!array.isEmpty()) {
                 retVal = new JSONObject();
@@ -531,13 +537,15 @@ public class JetstreamContext extends CloudContext  {
      * @param subnet - subnet
      * @param action - action
      * @param destHostName - destHostName
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     @Override
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
-                                                            NetworkRequest.ActionEnum action, String destHostName) throws Exception {
+                                                            NetworkRequest.ActionEnum action, String destHostName,
+                                                            String sdxStitchPortInterfaceIP) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
     }
     /*
@@ -547,12 +555,14 @@ public class JetstreamContext extends CloudContext  {
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     @Override
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception {
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth, String destinationIP, String sdxStitchPortInterfaceIP) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
     }
 }

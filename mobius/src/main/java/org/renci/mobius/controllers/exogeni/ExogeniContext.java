@@ -10,7 +10,6 @@ import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.StitchRequest;
 import org.renci.mobius.model.StorageRequest;
-import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -344,7 +343,7 @@ public class ExogeniContext extends CloudContext {
                 }
                 for (String h : hostNameSet) {
                     if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
-                        System.out.println("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
+                        LOGGER.debug("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
                         hostNameToSliceNameHashMap.put(h, context.getSliceName());
                     }
                 }
@@ -402,7 +401,7 @@ public class ExogeniContext extends CloudContext {
             SliceContext context = null;
             JSONObject retVal = null;
             JSONArray array = new JSONArray();
-            System.out.println("Clearing hostNameToSliceNameHashMap");
+            LOGGER.debug("Clearing hostNameToSliceNameHashMap");
             hostNameToSliceNameHashMap.clear();
             leaseEndTimeToSliceNameHashMap.clear();
             hostNameSet.clear();
@@ -422,7 +421,7 @@ public class ExogeniContext extends CloudContext {
                 hostNameSet.addAll(hostNames);
                 for (String h : hostNames) {
                     if (!hostNameToSliceNameHashMap.containsKey(h) && context.getSliceName() != null) {
-                        System.out.println("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
+                        LOGGER.debug("Adding " + h + "=>" + context.getSliceName() + " to hostNameToSliceNameHashMap");
                         hostNameToSliceNameHashMap.put(h, context.getSliceName());
                     }
                 }
@@ -525,14 +524,16 @@ public class ExogeniContext extends CloudContext {
      * @param subnet - subnet
      * @param action - action
      * @param destHostName - destHostName
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
-                                                            NetworkRequest.ActionEnum action, String destHostName) throws Exception{
+                                                            NetworkRequest.ActionEnum action, String destHostName,
+                                                            String sdxStitchPortInterfaceIP) throws Exception{
         synchronized (this) {
-            System.out.println("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
+            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
                     + " destHostName=" + destHostName + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
@@ -568,13 +569,17 @@ public class ExogeniContext extends CloudContext {
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth,
+                                          String destinationIP, String sdxStitchPortInterfaceIP) throws Exception{
         synchronized (this) {
-            System.out.println("IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            LOGGER.debug("IN: hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 +
+                    " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
                 throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
@@ -584,7 +589,7 @@ public class ExogeniContext extends CloudContext {
                 throw new MobiusException("slice context not found");
             }
             try {
-                context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth);
+                context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth, destinationIP);
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);

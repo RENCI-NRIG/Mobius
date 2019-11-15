@@ -28,7 +28,7 @@ class Workflow {
     private String workflowID;
     protected WorkflowOperationLock lock;
     private HashMap<String, CloudContext> siteToContextHashMap;
-    private HashMap<String, ComputeRequest> hostNameToComputeRequestMap;
+    private HashMap<String, String> hostNameToComputeRequestMap;
     private int nodeCount, storageCount, stitchCount;
     private FutureRequests futureRequests;
     private static final Logger LOGGER = LogManager.getLogger( Workflow.class.getName() );
@@ -66,6 +66,7 @@ class Workflow {
         lock = new WorkflowOperationLock();
         siteToContextHashMap = new HashMap<String, CloudContext>();
         futureRequests = new FutureRequests();
+        hostNameToComputeRequestMap = new HashMap<>();
 
         // process json to construct siteToContextHashMap
         if(workflow.getSiteContextJson() != null) {
@@ -93,20 +94,16 @@ class Workflow {
             }
         }
         if(workflow.getHostNamesJson() != null) {
-            // TODO populate the hostNameMap
             LOGGER.debug("HostNameContexts =" + workflow.getHostNamesJson());
-            JSONArray array = (JSONArray) JSONValue.parse(workflow.getHostNamesJson());
-            if(array != null) {
-                for (Object object : array) {
+            JSONObject object = (JSONObject) JSONValue.parse(workflow.getHostNamesJson());
+            if(object != null) {
+                Set<String> keySet = object.keySet();
+                for (String key : keySet) {
                     try {
-                        JSONObject c = (JSONObject) object;
-                        String hostname = (String) c.get("hostname");
-                        LOGGER.debug("hostname=" + hostname);
-                        String requestString = (String) c.get("request");
+                        LOGGER.debug("hostname=" + key);
+                        String requestString = (String) object.get(key);
                         LOGGER.debug("requestString=" + requestString);
-                        //ComputeRequest request = new ComputeRequest(requestString);
-                        ComputeRequest request = new ComputeRequest();
-                        hostNameToComputeRequestMap.put(hostname, request);
+                        hostNameToComputeRequestMap.put(key, requestString);
                     } catch (Exception e) {
                         LOGGER.error("Exception occured while loading context from database e= " + e);
                         e.printStackTrace();
@@ -159,11 +156,9 @@ class Workflow {
         }
         if(hostNameToComputeRequestMap != null && hostNameToComputeRequestMap.size() != 0) {
             JSONObject object = new JSONObject();
-            ComputeRequest request = null;
-            for (HashMap.Entry<String, ComputeRequest> e : hostNameToComputeRequestMap.entrySet()) {
-                request = e.getValue();
-                if(request != null) {
-                    object.put(e.getKey(), computeRequestToJsonString(request));
+            for (HashMap.Entry<String, String> e : hostNameToComputeRequestMap.entrySet()) {
+                if(e.getValue() != null) {
+                    object.put(e.getKey(), e.getValue());
                 }
             }
             hostJson = object.toJSONString();
@@ -316,7 +311,7 @@ class Workflow {
                     request.setSlicePolicy(ComputeRequest.SlicePolicyEnum.EXISTING);
                     request.setSliceName(host.getValue());
                 }
-                hostNameToComputeRequestMap.put(host.getKey(), request);
+                hostNameToComputeRequestMap.put(host.getKey(), computeRequestToJsonString(request));
             }
         }
     }
@@ -493,29 +488,32 @@ class Workflow {
             String site2 = context2.getSite();
             String destHostOrSite = request.getDestination();
             String sourceHostOrSite = request.getSource();
+            String sdxStitchPortInterfaceIP  = null;
             if(site1.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
                 destHostOrSite = site2.substring(site2.lastIndexOf(":") + 1);
+                sdxStitchPortInterfaceIP = request.getChameleonSdxControllerIP();
             }
             if(site2.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
                 sourceHostOrSite = site1.substring(site1.lastIndexOf(":") + 1);
+                sdxStitchPortInterfaceIP = request.getChameleonSdxControllerIP();
             }
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
-                    request.getSourceSubnet(), request.getAction(), destHostOrSite);
+                    request.getSourceSubnet(), request.getAction(), destHostOrSite, sdxStitchPortInterfaceIP);
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
-                    request.getDestinationSubnet(), request.getAction(), sourceHostOrSite);
+                    request.getDestinationSubnet(), request.getAction(), sourceHostOrSite, sdxStitchPortInterfaceIP);
 
             if(request.getAction() == NetworkRequest.ActionEnum.ADD) {
                 // Connect the prefix source - destination
                 context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
-                        request.getDestinationSubnet(), request.getLinkSpeed());
+                        request.getDestinationSubnet(), request.getLinkSpeed(), request.getDestinationIP(), sdxStitchPortInterfaceIP);
 
                 // Connect the prefix destination - source
                 context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
-                        request.getSourceSubnet(), request.getLinkSpeed());
+                        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(), sdxStitchPortInterfaceIP);
             }
         }
         finally {

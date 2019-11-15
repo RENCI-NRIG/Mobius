@@ -20,7 +20,6 @@ import org.springframework.http.HttpStatus;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Stream;
 
 /*
  * @brief class representing resources associated with a reservation; it represents all resources associated with
@@ -610,12 +609,14 @@ public class StackContext implements AutoCloseable{
      * @param subnet - subnet
      * @param action - action
      * @param destSite - destSite
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String vlan, String subnet,
-                                                            NetworkRequest.ActionEnum action, String destSite) throws Exception{
+                                                            NetworkRequest.ActionEnum action, String destSite,
+                                                            String sdxStitchPortInterfaceIP) throws Exception{
         LOGGER.debug("IN");
 
         try {
@@ -636,13 +637,13 @@ public class StackContext implements AutoCloseable{
                     else if(region.equalsIgnoreCase(RegionTACC)) {
                         stitchPort = MobiusConfig.getInstance().getChameleonTACCStitchPort();
                     }
-                    sdxClient.stitch(stitchPort, vlan, fixedIPs.get(0), subnet, destSite);
+                    sdxClient.stitch(stitchPort, vlan, fixedIPs.get(0), sdxStitchPortInterfaceIP, destSite);
                     sdxClient.prefix(sliceName, fixedIPs.get(0), subnet);
                 }
                 break;
                 case DELETE: {
                     // unstitch
-                    //sdxClient.unstitch();
+                    //sdxClient.unstitch(sliceName, null);
                     break;
                 }
                 default:
@@ -670,11 +671,13 @@ public class StackContext implements AutoCloseable{
      * @param subnet1 - subnet1
      * @param subnet2 - subnet2
      * @param bandwidth - bandwidth
+     * @param destinationIP - destinationIP
+     * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth) throws Exception{
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth, String destinationIP, String sdxStitchPortInterfaceIP) throws Exception{
         LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
         try {
 
@@ -691,12 +694,8 @@ public class StackContext implements AutoCloseable{
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
-
-            String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
-            String gateway2 = subnet2.substring(0, subnet2.indexOf("/"));
-            String startIP = gateway2.substring(0, gateway2.lastIndexOf("."));
-            startIP += ".2";
-            String command = String.format("sudo ip route add %s/32 via %s", startIP, gateway1);
+            sdxStitchPortInterfaceIP = sdxStitchPortInterfaceIP.split("/")[0];
+            String command = String.format("sudo ip route add %s/32 via %s", destinationIP, sdxStitchPortInterfaceIP);
             RemoteCommand remoteCommand = new RemoteCommand("cc", MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
             remoteCommand.runCmdByIP(command, ip,false);
         }

@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * NetworkRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-08-23T10:45:46.733-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-11-08T10:43:12.246-05:00[America/New_York]")
 
 public class NetworkRequest   {
   @JsonProperty("source")
@@ -43,6 +43,9 @@ public class NetworkRequest   {
 
   @JsonProperty("leaseEnd")
   private String leaseEnd = null;
+
+  @JsonProperty("chameleonSdxControllerIP")
+  private String chameleonSdxControllerIP = null;
 
   /**
    * Gets or Sets action
@@ -264,6 +267,26 @@ public class NetworkRequest   {
     this.leaseEnd = leaseEnd;
   }
 
+  public NetworkRequest chameleonSdxControllerIP(String chameleonSdxControllerIP) {
+    this.chameleonSdxControllerIP = chameleonSdxControllerIP;
+    return this;
+  }
+
+  /**
+   * IP address used by SDX controller for the new interface to Stitchport
+   * @return chameleonSdxControllerIP
+  **/
+  @ApiModelProperty(value = "IP address used by SDX controller for the new interface to Stitchport")
+
+
+  public String getChameleonSdxControllerIP() {
+    return chameleonSdxControllerIP;
+  }
+
+  public void setChameleonSdxControllerIP(String chameleonSdxControllerIP) {
+    this.chameleonSdxControllerIP = chameleonSdxControllerIP;
+  }
+
   public NetworkRequest action(ActionEnum action) {
     this.action = action;
     return this;
@@ -304,12 +327,13 @@ public class NetworkRequest   {
         Objects.equals(this.linkSpeed, networkRequest.linkSpeed) &&
         Objects.equals(this.leaseStart, networkRequest.leaseStart) &&
         Objects.equals(this.leaseEnd, networkRequest.leaseEnd) &&
+        Objects.equals(this.chameleonSdxControllerIP, networkRequest.chameleonSdxControllerIP) &&
         Objects.equals(this.action, networkRequest.action);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(source, sourceIP, sourceSubnet, destination, destinationIP, destinationSubnet, linkSpeed, leaseStart, leaseEnd, action);
+    return Objects.hash(source, sourceIP, sourceSubnet, destination, destinationIP, destinationSubnet, linkSpeed, leaseStart, leaseEnd, chameleonSdxControllerIP, action);
   }
 
   @Override
@@ -326,6 +350,7 @@ public class NetworkRequest   {
     sb.append("    linkSpeed: ").append(toIndentedString(linkSpeed)).append("\n");
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
     sb.append("    leaseEnd: ").append(toIndentedString(leaseEnd)).append("\n");
+    sb.append("    chameleonSdxControllerIP: ").append(toIndentedString(chameleonSdxControllerIP)).append("\n");
     sb.append("    action: ").append(toIndentedString(action)).append("\n");
     sb.append("}");
     return sb.toString();
