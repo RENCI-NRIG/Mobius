@@ -22,9 +22,9 @@ public class SdxClient {
         this.sdxUrl = sdxUrl;
     }
 
-    public void stitch(String stitchPort, String vlan, String ip, String subnet, String destinationSite) throws Exception {
+    public void stitchChameleon(String stitchPort, String vlan, String ip, String subnet, String destinationSite, String slicename) throws Exception {
         LOGGER.debug("IN stitchPort=" + stitchPort + " vlan=" + vlan
-                + " ip=" + ip + " subnet=" + subnet + " destinationSite=" + destinationSite);
+                + " ip=" + ip + " subnet=" + subnet + " destinationSite=" + destinationSite + " slicename=" + slicename);
         try {
             //post stitch request to SAFE
             JSONObject object = new JSONObject();
@@ -33,6 +33,8 @@ public class SdxClient {
             object.put("gateway", ip);
             object.put("ip", subnet);
             object.put("sdxsite", destinationSite);
+            object.put("ckeyhash", slicename);
+            object.put("creservid", slicename);
             String url =  sdxUrl + "sdx/stitchchameleon";
 
             LOGGER.debug("Sending stitch request to Sdx server: " + url + " body: " + object);

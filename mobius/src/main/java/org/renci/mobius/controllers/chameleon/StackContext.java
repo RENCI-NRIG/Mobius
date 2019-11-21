@@ -637,13 +637,13 @@ public class StackContext implements AutoCloseable{
                     else if(region.equalsIgnoreCase(RegionTACC)) {
                         stitchPort = MobiusConfig.getInstance().getChameleonTACCStitchPort();
                     }
-                    sdxClient.stitch(stitchPort, vlan, fixedIPs.get(0), sdxStitchPortInterfaceIP, destSite);
+                    sdxClient.stitchChameleon(stitchPort, vlan, fixedIPs.get(0), sdxStitchPortInterfaceIP, destSite, sliceName);
                     sdxClient.prefix(sliceName, fixedIPs.get(0), subnet);
                 }
                 break;
                 case DELETE: {
                     // unstitch
-                    //sdxClient.unstitch(sliceName, null);
+                    sdxClient.unstitch(sliceName, sliceName);
                     break;
                 }
                 default:
