@@ -73,12 +73,13 @@ Python client to create Condor clusters by invoking various supported Mobius RES
 ### <a name="usage2"></a>Usage
 ```
 usage: condor_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
-                        [-s3 JETSTREAMSITE] [-n1 EXOWORKERS] [-n2 CHWORKERS]
-                        [-n3 JTWORKERS] [-c COMETHOST] [-t CERT] [-k KEY]
-                        [-m MOBIUSHOST] -o OPERATION -w WORKFLOWID
-                        [-i1 EXOIPSTART] [-i2 CHIPSTART] [-i3 JTIPSTART]
+                        [-s3 JETSTREAMSITE] [-s4 MOSSITE] [-n1 EXOWORKERS]
+                        [-n2 CHWORKERS] [-n3 JTWORKERS] [-n4 MOSWORKERS]
+                        [-c COMETHOST] [-t CERT] [-k KEY] [-m MOBIUSHOST] -o
+                        OPERATION -w WORKFLOWID [-i1 EXOIPSTART]
+                        [-i2 CHIPSTART] [-i3 JTIPSTART] [-i4 MOSIPSTART]
                         [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
-                        [-d3 JTDATADIR]
+                        [-d3 JTDATADIR] [-d4 MOSDATADIR] [-kh KAFKAHOST]
 
 Python client to create Condor cluster using mobius. Uses master.json,
 submit.json and worker.json for compute requests present in data directory
@@ -98,6 +99,9 @@ optional arguments:
   -s3 JETSTREAMSITE, --jetstreamsite JETSTREAMSITE
                         Jetstream Site at which resources must be provisioned;
                         must be specified for create operation
+  -s4 MOSSITE, --mossite MOSSITE
+                        Mass Open Cloud Site at which resources must be
+                        provisioned; must be specified for create operation
   -n1 EXOWORKERS, --exoworkers EXOWORKERS
                         Number of workers to be provisioned on Exogeni; must
                         be specified for create operation
@@ -107,6 +111,9 @@ optional arguments:
   -n3 JTWORKERS, --jtworkers JTWORKERS
                         Number of workers to be provisioned on Jetstream; must
                         be specified for create operation
+  -n4 MOSWORKERS, --mosworkers MOSWORKERS
+                        Number of workers to be provisioned on Mass Open
+                        Cloud; must be specified for create operation
   -c COMETHOST, --comethost COMETHOST
                         Comet Host default(https://comet-
                         hn1.exogeni.net:8111/) used only for provisioning
@@ -138,6 +145,11 @@ optional arguments:
                         used for VMs; 1st IP is assigned to master and
                         subsequent IPs are assigned to submit node and
                         workers; can be specified for create operation
+  -i4 MOSIPSTART, --mosipStart MOSIPSTART
+                        Mass Open Cloud Start IP Address of the range of IPs
+                        to be used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
   -l LEASEEND, --leaseEnd LEASEEND
                         Lease End Time; can be specified for create operation
   -d1 EXODATADIR, --exodatadir EXODATADIR
@@ -151,7 +163,14 @@ optional arguments:
   -d3 JTDATADIR, --jtdatadir JTDATADIR
                         Jetstream Data directory where to look for
                         master.json, submit.json and worker.json; must be
-                        specified for create operation           
+                        specified for create operation
+  -d4 MOSDATADIR, --mosdatadir MOSDATADIR
+                        Mass Open Cloud Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -kh KAFKAHOST, --kafkahost KAFKAHOST
+                        Kafka Host - monitoring server; must be specified for
+                        delete operation    
 ```
 ### <a name="json"></a>JSON Data
 Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
@@ -239,11 +258,11 @@ python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybri
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
-##### Cluster spanning 3 clouds
+##### Cluster spanning 4 clouds
 - Master and submit node on Exogeni
-- Worker on Chameleon and Jetstream
+- Worker on Chameleon, Jetstream and Mass Open Cloud
 ```
-python2 condor_client.py -o create -w merit-w1 -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./merit/exogeni/ -s2 Chameleon:CHI@UC -d2 ./merit/chameleon/ -s3 'Jetstream:TACC' -d3 ./merit/jetstream/ -l `date -v +2d +%s` -n1 1 -n2 1 -n3 1
+python3 condor_client.py -o create -w merit-w1 -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./merit/exogeni/ -s2 Chameleon:CHI@UC -d2 ./merit/chameleon/ -s3 'Jetstream:TACC' -d3 ./merit/jetstream/ -s4 'Mos:moc-kzn' -d4 ./merit/mos/ -l `date -v +2d +%s` -n1 1 -n2 1 -n3 1 -n4 1
 ```
 #### <a name="get"></a>Get status of condor cluster
 ```
