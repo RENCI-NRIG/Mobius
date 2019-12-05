@@ -14,7 +14,7 @@
         <docker.image.prefix>rencinrig</docker.image.prefix>
         <docker.image.name>mobius</docker.image.name>
         <springfox-version>2.7.0</springfox-version>
-        <jclouds.version>2.1.2</jclouds.version>
+        <jclouds.version>2.2.0</jclouds.version>
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>

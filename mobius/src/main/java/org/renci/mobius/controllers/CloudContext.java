@@ -24,7 +24,7 @@ abstract public class CloudContext {
         Chameleon,
         Exogeni,
         Jetstream,
-        OSG,
+        Mos,
         Unknown
     }
     public static final String NetworkName = "cmnw";
@@ -64,7 +64,8 @@ abstract public class CloudContext {
      * @return random string
      */
     public static String generateSliceName(CloudType type, String user) {
-        return "Mobius-" + type.name() + "-" + user + "-" + generateRandomString();
+
+        return "Mobius-" + type.name() + "-" + user.split("@")[0] + "-" + generateRandomString();
     }
 
     private static final Logger LOGGER = LogManager.getLogger( CloudContext.class.getName() );

@@ -1,13 +1,13 @@
 {
-    "site":"Jetstream:tacc",
+    "site":"Mos:moc-kzn",
     "cpus":"2",
     "gpus":"0",
     "ramPerCpus":"3072",
-    "imageName":"JS-API-Featured-CentOS7-Intel-Developer-Nov-14-2019",
+    "imageName":"centos-7-x86_64",
     "diskPerCpus":"19200",
     "hostNamePrefix":"master",
     "networkType":"private",
-    "externalNetwork":"public",
+    "externalNetwork":"external",
     "networkCidr":"192.158.100.0/24"
 }
 

@@ -34,7 +34,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
     private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private final static TimeZone utc = TimeZone.getTimeZone("UTC");
     public final static String NetworkLeaseId = "networkLeaseId";
-    public final static String NetworkName = "networkName";
+
 
     private HashMap<String, StackContext> stackContextHashMap;
     private Map<String, String> workflowNetwork = null;
@@ -154,7 +154,6 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
-            workflowNetwork.put(NetworkName, networkName);
         }
         catch (Exception e){
             LOGGER.error("Exception occured while setting up network ");

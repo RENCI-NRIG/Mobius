@@ -3,6 +3,7 @@ package org.renci.mobius.controllers;
 import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.renci.mobius.controllers.jetstream.JetstreamContext;
+import org.renci.mobius.controllers.mos.MosContext;
 import org.springframework.http.HttpStatus;
 
 /*
@@ -42,8 +43,8 @@ public class CloudContextFactory {
             ChameleonContext chameleonContext = new ChameleonContext(CloudContext.CloudType.Chameleon, site, workflowId);
             return chameleonContext;
         }
-        else if(site.compareToIgnoreCase(CloudContext.CloudType.OSG.toString()) == 0) {
-            throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not Implemented");
+        else if(site.contains(CloudContext.CloudType.Mos.toString()) == true) {
+            return new MosContext(CloudContext.CloudType.Mos, site, workflowId);
         }
         else if(site.contains(CloudContext.CloudType.Exogeni.toString()) == true) {
             return new ExogeniContext(CloudContext.CloudType.Exogeni, site, workflowId);

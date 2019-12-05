@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.jetstream;
+package org.renci.mobius.controllers.mos;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,13 +19,13 @@ import org.springframework.http.HttpStatus;
 import java.util.*;
 
 /*
- * @brief class represents context for all resources on a specific region on jetstream. It maintains
+ * @brief class represents context for all resources on a specific region on mos. It maintains
  *        ReqContext per request received.
  *
  * @author kthare10
  */
-public class JetstreamContext extends CloudContext  {
-    private static final Logger LOGGER = LogManager.getLogger( JetstreamContext.class.getName() );
+public class MosContext extends CloudContext {
+    private static final Logger LOGGER = LogManager.getLogger( MosContext.class.getName() );
     private static final Long maxDiffInSeconds = 604800L;
 
     private HashMap<String, ReqContext> stackContextHashMap;
@@ -44,28 +44,19 @@ public class JetstreamContext extends CloudContext  {
      * @throws Exception in case region could not be determined from site
      *
      */
-    public JetstreamContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
+    public MosContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
         super(t, s, workflowId);
         stackContextHashMap = new HashMap<>();
         String[] arrOfStr = s.split(":");
         if (arrOfStr.length < 2 || arrOfStr.length > 2) {
             throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
         }
-        if(arrOfStr[1].compareToIgnoreCase("iu") == 0) {
-            authUrl = MobiusConfig.getInstance().getJetStreamIuAuthUrl();
-        }
-        else if(arrOfStr[1].compareToIgnoreCase("tacc") == 0) {
-            authUrl = MobiusConfig.getInstance().getJetStreamTaccAuthUrl();
-        }
-        else {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid Site name");
-        }
-
-        region = "RegionOne";
+        authUrl = MobiusConfig.getInstance().getMosAuthUrl();
+        region = "moc-kzn";
     }
 
     /*
-     * @brief setup private network for jetstream region; all instances are connected to each other via this
+     * @brief setup private network for mos region; all instances are connected to each other via this
      *        network;
      */
     private Pair<String, String> setupNetwork(ComputeRequest request) throws Exception {
@@ -74,12 +65,20 @@ public class JetstreamContext extends CloudContext  {
         String networkId = null, sgName = null;
         try {
 
-            String user = MobiusConfig.getInstance().getJetStreamUser();
-            String password = MobiusConfig.getInstance().getJetStreamUserPassword();
-            String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
-            String project = MobiusConfig.getInstance().getJetStreamProject();
+            String user = MobiusConfig.getInstance().getMosUser();
+            String password = MobiusConfig.getInstance().getMosUserPassword();
+            String userDomain = MobiusConfig.getInstance().getMosUserDomain();
+            String project = MobiusConfig.getInstance().getMosProject();
+            String accessEndPoint = MobiusConfig.getInstance().getMosAccessTokenEndpoint();
+            String federatedIdProvider = MobiusConfig.getInstance().getMosFederatedIdentityProvider();
+            String clientId = MobiusConfig.getInstance().getMosClientId();
+            String clientSecret = MobiusConfig.getInstance().getMosClientSecret();
+            String scope = MobiusConfig.getInstance().getMosAccessEndpointScope();
 
-            networkController = new NetworkController(authUrl, user, password, userDomain, project);
+            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
+            String federatedToken = ssoAuth.federatedToken();
+
+            networkController = new NetworkController(authUrl, federatedToken, userDomain, project);
 
             if (workflowNetwork != null &&
                     workflowNetwork.containsKey(NetworkController.NetworkId) &&
@@ -90,7 +89,7 @@ public class JetstreamContext extends CloudContext  {
 
             // If network type is default; throw exception
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                throw new MobiusException(HttpStatus.BAD_REQUEST, "Network Type is required and cannot be default for jetstream");
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "Network Type is required and cannot be default for mos");
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
@@ -119,10 +118,10 @@ public class JetstreamContext extends CloudContext  {
         return Pair.of(networkId, sgName);
     }
     /*
-     * @brief add cloud specific info to JSON Object representing JetstreamContext;
+     * @brief add cloud specific info to JSON Object representing MosContext;
      *        JSON Object is saved to database
      *
-     * @param object - json object representing JetstreamContext
+     * @param object - json object representing MosContext
      */
     @Override
     public JSONObject addCloudSpecificDataToJson(JSONObject object) {
@@ -154,9 +153,9 @@ public class JetstreamContext extends CloudContext  {
     }
 
     /*
-     * @brief function to load cloud specific data from JSON Object representing JetstreamContext
+     * @brief function to load cloud specific data from JSON Object representing MosContext
      *
-     * @param object - json object representing JetstreamContext
+     * @param object - json object representing MosContext
      */
     @Override
     public void loadCloudSpecificDataFromJson(JSONObject object) {
@@ -165,6 +164,7 @@ public class JetstreamContext extends CloudContext  {
         String routerId = (String) object.get(NetworkController.RouterId);
         String securityGroupId = (String) object.get(NetworkController.SecurityGroupId);
         String networkName = (String) object.get(NetworkController.NetworkName);
+
         if(networkId != null) {
             workflowNetwork = new HashMap<>();
             workflowNetwork.put(NetworkController.NetworkId, networkId);
@@ -195,17 +195,13 @@ public class JetstreamContext extends CloudContext  {
     protected void validateComputeRequest(ComputeRequest request, boolean isFutureRequest) throws Exception {
         LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
 
-        if(request.getCpus() == 0 ) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "No cpus are requested");
-        }
-
-        if(request.getGpus() != 0) {
-            throw new MobiusException(HttpStatus.BAD_REQUEST, "Gpus not supported");
+        if(request.getCpus() == 0 && request.getGpus() == 0) {
+            throw new MobiusException(HttpStatus.BAD_REQUEST, "No cpus/gpus are requested");
         }
 
         if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
             throw new MobiusException(HttpStatus.BAD_REQUEST,
-                        "Network type cannot be default for jetstream");
+                    "Network type cannot be default for mos");
         }
 
         if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.PRIVATE) {
@@ -301,7 +297,7 @@ public class JetstreamContext extends CloudContext  {
             LOGGER.debug("IN request=" + request + " nameIndex=" + nameIndex + " spIndex=" + spNameIndex + " isFutureRequest=" + isFutureRequest);
             validateComputeRequest(request, isFutureRequest);
 
-            Map<String, Integer> flavorList = JetstreamFlavorAlgo.determineFlavors(request.getCpus(),
+            Map<String, Integer> flavorList = MosFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
                     request.getRamPerCpus(), request.getDiskPerCpus());
 
             if (flavorList == null) {
@@ -313,7 +309,7 @@ public class JetstreamContext extends CloudContext  {
 
             try {
                 Pair<String, String> nwIdSgName = setupNetwork(request);
-                // For jetstream; slice per request mechanism is followed
+                // For mos; slice per request mechanism is followed
                 ComputeResponse response = context.provisionNode( flavorList, nameIndex, request.getImageName(),
                         request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
                         null, nwIdSgName.getFirst(), request.getIpAddress(), nwIdSgName.getSecond());
@@ -365,7 +361,7 @@ public class JetstreamContext extends CloudContext  {
                 }
                 case RENEW:
                 {
-                    
+
                     break;
                 }
             }
@@ -485,22 +481,35 @@ public class JetstreamContext extends CloudContext  {
     @Override
     public void stop() {
         synchronized (this) {
-            LOGGER.debug("IN");
-            ReqContext context = null;
-            for (HashMap.Entry<String, ReqContext> entry : stackContextHashMap.entrySet()) {
-                context = entry.getValue();
-                context.stop();
+            try {
+                LOGGER.debug("IN");
+                ReqContext context = null;
+                for (HashMap.Entry<String, ReqContext> entry : stackContextHashMap.entrySet()) {
+                    context = entry.getValue();
+                    context.stop();
+                }
+                stackContextHashMap.clear();
+
+                if (workflowNetwork != null) {
+                    String user = MobiusConfig.getInstance().getMosUser();
+                    String password = MobiusConfig.getInstance().getMosUserPassword();
+                    String userDomain = MobiusConfig.getInstance().getMosUserDomain();
+                    String project = MobiusConfig.getInstance().getMosProject();
+                    String accessEndPoint = MobiusConfig.getInstance().getMosAccessTokenEndpoint();
+                    String federatedIdProvider = MobiusConfig.getInstance().getMosFederatedIdentityProvider();
+                    String clientId = MobiusConfig.getInstance().getMosClientId();
+                    String clientSecret = MobiusConfig.getInstance().getMosClientSecret();
+                    String scope = MobiusConfig.getInstance().getMosAccessEndpointScope();
+
+                    OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
+                    String federatedToken = ssoAuth.federatedToken();
+
+                    NetworkController networkController = new NetworkController(authUrl, federatedToken, userDomain, project);
+                    networkController.deleteNetwork(region, workflowNetwork, 300);
+                }
             }
-            stackContextHashMap.clear();
-
-            if(workflowNetwork != null) {
-                String user = MobiusConfig.getInstance().getJetStreamUser();
-                String password = MobiusConfig.getInstance().getJetStreamUserPassword();
-                String userDomain = MobiusConfig.getInstance().getJetStreamUserDomain();
-                String project = MobiusConfig.getInstance().getJetStreamProject();
-
-                NetworkController networkController = new NetworkController(authUrl, user, password, userDomain, project);
-                networkController.deleteNetwork(region, workflowNetwork, 300);
+            catch (Exception e) {
+                LOGGER.error("Exception occured e= " + e);
             }
             LOGGER.debug("OUT");
         }
@@ -520,7 +529,7 @@ public class JetstreamContext extends CloudContext  {
      */
     @Override
     public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception {
-        throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetstream");
+        throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for mos");
     }
 
     /*
@@ -578,3 +587,4 @@ public class JetstreamContext extends CloudContext  {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
     }
 }
+

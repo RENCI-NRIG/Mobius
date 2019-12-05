@@ -11,7 +11,7 @@
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <jclouds.version>2.1.2</jclouds.version>
+        <jclouds.version>2.2.0</jclouds.version>
     </properties>
     <dependencies>
         <!--

@@ -10,6 +10,6 @@
     "imageName":"mb-centos-7",
     "imageHash":"1cb9bde255314761e10d8c9bde727c69bb2c1ca4",    
     "postBootScript":"",
-    "leaseEnd":"1574448847"
+    "leaseEnd":"1574956849"
 }
 

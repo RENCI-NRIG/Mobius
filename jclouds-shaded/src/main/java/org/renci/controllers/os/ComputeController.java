@@ -18,6 +18,7 @@ import org.jclouds.openstack.cinder.v1.domain.Volume;
 import org.jclouds.openstack.cinder.v1.features.VolumeApi;
 import org.jclouds.openstack.cinder.v1.options.CreateVolumeOptions;
 import org.jclouds.openstack.cinder.v1.predicates.VolumePredicates;
+import org.jclouds.openstack.keystone.auth.config.CredentialTypes;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
 import org.jclouds.openstack.nova.v2_0.NovaApi;
 import org.jclouds.openstack.nova.v2_0.NovaApiMetadata;
@@ -50,6 +51,7 @@ import static org.jclouds.scriptbuilder.domain.Statements.exec;
 public class ComputeController implements Closeable {
 
     private String authUrl;
+    private String token;
     private String user;
     private String password;
     private String domain;
@@ -103,6 +105,57 @@ public class ComputeController implements Closeable {
 
         ComputeServiceContext context = ContextBuilder.newBuilder("openstack-nova")
                 .credentials(identity, password)
+                .modules(modules)
+                .overrides(overrides)
+                .buildView(ComputeServiceContext.class);
+
+        computeService = context.getComputeService();
+    }
+
+    /*
+     * @brief constructor
+     *
+     * @param authUrl - auth url for cloud
+     * @parm token - federated identity token
+     * @param domain -  user domain
+     * @param project -  project Name
+     */
+    public ComputeController(String authUrl, String token, String domain, String project) {
+        this.authUrl = authUrl;
+        this.token = token;
+        this.domain = domain;
+        this.project = project;
+
+
+        Iterable<Module> modules = ImmutableSet.<Module>of(new SLF4JLoggingModule());
+
+        // Please refer to 'Keystone v2-v3 authentication' section for complete authentication use case
+        final Properties overrides = new Properties();
+        overrides.put(KeystoneProperties.KEYSTONE_VERSION, "3");
+        overrides.put(KeystoneProperties.CREDENTIAL_TYPE, CredentialTypes.TOKEN_CREDENTIALS);
+        overrides.put(KeystoneProperties.SCOPE, "project:" + project);
+        overrides.put(KeystoneProperties.PROJECT_DOMAIN_NAME, domain);
+
+
+        novaApi = ContextBuilder.newBuilder(new NovaApiMetadata())
+                .endpoint(authUrl)
+                .credentials(domain, token)
+                .overrides(overrides)
+                .modules(modules)
+                .buildApi(NovaApi.class);
+
+        regions = novaApi.getConfiguredRegions();
+
+        cinderApi = ContextBuilder.newBuilder(new CinderApiMetadata())
+                .endpoint(authUrl)
+                .credentials(domain, token)
+                .overrides(overrides)
+                .modules(modules)
+                .buildApi(CinderApi.class);
+
+
+        ComputeServiceContext context = ContextBuilder.newBuilder("openstack-nova")
+                .credentials(domain, token)
                 .modules(modules)
                 .overrides(overrides)
                 .buildView(ComputeServiceContext.class);

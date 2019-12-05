@@ -75,6 +75,60 @@ public class MobiusConfig {
     public static final String jetStreamDefaultImageName = "mobius.jetstream.defaultImageName";
     public static final String jetStreamFloatingIpPool = "mobius.jetstream.floatingIpPool";
 
+    public static final String mosAuthUrl = "mobius.mos.authUrl";
+    public static final String mosUser = "mobius.mos.user";
+    public static final String mosUserDomain = "mobius.mos.user.domain";
+    public static final String mosUserPassword = "mobius.mos.user.password";
+    public static final String mosProject = "mobius.mos.project";
+    public static final String mosProjectDomain = "mobius.mos.project.domain";
+    public static final String mosUserKeyPath = "mobius.mos.KeyPath";
+    public static final String mosUserSshKey = "mobius.mos.sshKeyFile";
+    public static final String mosDefaultImageName = "mobius.mos.defaultImageName";
+    public static final String mosFloatingIpPool = "mobius.mos.floatingIpPool";
+    public static final String mosAccessTokenEndpoint = "mobius.mos.access_token_endpoint";
+    public static final String mosFederatedIdentityProvider = "mobius.mos.federated_identity_provider";
+    public static final String mosClientId = "mobius.mos.client_id";
+    public static final String mosClientSecret = "mobius.mos.client_secret";
+    public static final String mosAccessEndpointScope = "mobius.mos.endpoint.scope";
+
+    public String getMosAuthUrl() { return properties.getProperty(mosAuthUrl); }
+
+    public String getMosUser() { return properties.getProperty(mosUser); }
+
+    public String getMosUserDomain() { return properties.getProperty(mosUserDomain); }
+
+    public String getMosUserPassword() { return properties.getProperty(mosUserPassword); }
+
+    public String getMosProject() { return properties.getProperty(mosProject); }
+
+    public String getMosProjectDomain() { return properties.getProperty(mosProjectDomain); }
+
+    public String getMosUserSshKey() {
+        String mobiusHome = getMobiusHome();
+        if(mobiusHome == null) {
+            return properties.getProperty(MobiusConfig.mosUserKeyPath) + "/" +
+                    properties.getProperty(MobiusConfig.mosUserSshKey);
+        }
+        else {
+            return mobiusHome + "/ssh/" +
+                    properties.getProperty(MobiusConfig.mosUserSshKey);
+        }
+    }
+
+    public String getMosAccessEndpointScope() { return properties.getProperty(mosAccessEndpointScope); }
+
+    public String getMosAccessTokenEndpoint() { return properties.getProperty(mosAccessTokenEndpoint); }
+
+    public String getMosFederatedIdentityProvider() { return properties.getProperty(mosFederatedIdentityProvider); }
+
+    public String getMosClientId() { return properties.getProperty(mosClientId); }
+
+    public String getMosClientSecret() { return properties.getProperty(mosClientSecret); }
+
+    public String getMosDefaultImageName() { return properties.getProperty(mosDefaultImageName); }
+
+    public String getMosFloatingIpPool() { return properties.getProperty(mosFloatingIpPool); }
+
     public String getMobiusSdxUrl() { return properties.getProperty(mobiusSdxUrl); }
 
     public String getJetStreamIuAuthUrl() { return properties.getProperty(jetStreamIuAuthUrl); }

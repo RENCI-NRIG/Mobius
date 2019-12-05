@@ -6,6 +6,7 @@ import com.google.common.io.Closeables;
 import com.google.inject.Module;
 import org.jclouds.ContextBuilder;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.jclouds.openstack.keystone.auth.config.CredentialTypes;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
 import org.jclouds.openstack.neutron.v2.NeutronApi;
 import org.jclouds.openstack.neutron.v2.NeutronApiMetadata;
@@ -27,12 +28,14 @@ import java.util.concurrent.TimeUnit;
  * @author kthare10
  */
 public class NetworkController implements Closeable {
+    public final static String NetworkName = "networkName";
     public final static String NetworkId = "networkId";
     public final static String SubnetId = "subnetId";
     public final static String RouterId = "routerId";
     public final static String SecurityGroupId = "securityGroupId";
 
     private String authUrl;
+    private String token;
     private String user;
     private String password;
     private String domain;
@@ -73,6 +76,38 @@ public class NetworkController implements Closeable {
     }
 
     /*
+     * @brief constructor
+     *
+     * @param authUrl - auth url for cloud
+     * @parm username -  user name
+     * @param password -  user password
+     * @param domain -  user domain
+     * @param project -  project Name
+     */
+    public NetworkController(String authUrl, String token, String domain, String project) {
+        this.authUrl = authUrl;
+        this.token = token;
+        this.domain = domain;
+        this.project = project;
+
+        Iterable<Module> modules = ImmutableSet.<Module>of(new SLF4JLoggingModule());
+
+        // Please refer to 'Keystone v2-v3 authentication' section for complete authentication use case
+        final Properties overrides = new Properties();
+        overrides.put(KeystoneProperties.KEYSTONE_VERSION, "3");
+        overrides.put(KeystoneProperties.CREDENTIAL_TYPE, CredentialTypes.TOKEN_CREDENTIALS);
+        overrides.put(KeystoneProperties.SCOPE, "project:" + project);
+        overrides.put(KeystoneProperties.PROJECT_DOMAIN_NAME, domain);
+
+        neutronApi = ContextBuilder.newBuilder(new NeutronApiMetadata())
+                .endpoint(authUrl)
+                .credentials(domain, token)
+                .overrides(overrides)
+                .modules(modules)
+                .buildApi(NeutronApi.class);
+    }
+
+    /*
      * @brief provision a network on openstack
      *
      * @param region - region
@@ -99,6 +134,7 @@ public class NetworkController implements Closeable {
 
 
             retVal = new HashMap<>();
+            retVal.put(NetworkName, networkName);
             retVal.put(NetworkId, netId);
             retVal.put(SubnetId, subnet.getId());
             retVal.put(RouterId, router.getId());
@@ -152,6 +188,7 @@ public class NetworkController implements Closeable {
                 securityGroup = createSecurityGroup(region, securityGroupName);
             }
             retVal = new HashMap<>();
+            retVal.put(NetworkName, name);
             retVal.put(NetworkId, net.getId());
             retVal.put(SubnetId, subnet.getId());
             retVal.put(RouterId, router.getId());
