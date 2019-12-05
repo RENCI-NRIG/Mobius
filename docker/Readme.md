@@ -18,16 +18,18 @@ cd ./Mobius/docker
 ```
 ### <a name="config"></a>User specific configuration
 Once images are ready, update configuration in docker as indicated below:
-1. Update docker/config/application.properties to specify user specific values for following properties
+1. Update docker/config/application.properties to specify user specific values for each cloud credentials (exogeni, chameleon, jetstream and mass open cloud) 
 ```
- mobius.exogeni.user=kthare10
- mobius.exogeni.certKeyFile=geni-kthare10.pem
- mobius.exogeni.sshKeyFile=id_rsa.pub
- mobius.chameleon.user=kthare10
- mobius.chameleon.user.password=
- mobius.chameleon.sshKeyFile=id_rsa.pub
- mobius.exogeni.sshPrivateKeyFile=id_rsa
- ```
+mobius.exogeni.user=kthare10
+mobius.exogeni.certKeyFile=geni-kthare10.pem
+mobius.chameleon.user=kthare10
+mobius.chameleon.user.password=
+mobius.jetstream.user.domain=tacc
+mobius.jetstream.user=tg857780
+mobius.jetstream.user.password=
+mobius.mos.user=kthare10@email.unc.edu
+mobius.mos.user.password=
+```
  2. Update docker/config/application.properties to specify exogeni/chameleon controller/auth url
 ```
  mobius.exogeni.controllerUrl=https://geni.renci.org:11443/orca/xmlrpc
