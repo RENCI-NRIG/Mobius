@@ -103,6 +103,14 @@ def main():
         required=False
     )
     parser.add_argument(
+        '-s4',
+        '--mossite',
+        dest='mossite',
+        type = str,
+        help='Mass Open Cloud Site at which resources must be provisioned; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
         '-n1',
         '--exoworkers',
         dest='exoworkers',
@@ -124,6 +132,14 @@ def main():
         dest='jtworkers',
         type = int,
         help='Number of workers to be provisioned on Jetstream; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
+        '-n4',
+        '--mosworkers',
+        dest='mosworkers',
+        type = int,
+        help='Number of workers to be provisioned on Mass Open Cloud; must be specified for create operation',
         required=False
     )
     parser.add_argument(
@@ -199,7 +215,15 @@ def main():
          '--jtipStart',
          dest='jtipStart',
          type = str,
-         help='Jetstream Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers;   can be specified for create operation',
+         help='Jetstream Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
+         required=False
+    )
+    parser.add_argument(
+         '-i4',
+         '--mosipStart',
+         dest='mosipStart',
+         type = str,
+         help='Mass Open Cloud Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
          required=False
     )
     parser.add_argument(
@@ -235,6 +259,14 @@ def main():
         required=False
     )
     parser.add_argument(
+        '-d4',
+        '--mosdatadir',
+        dest='mosdatadir',
+        type = str,
+        help='Mass Open Cloud Data directory where to look for master.json, submit.json and worker.json; must be specified for create operation',
+        required=False
+    )
+    parser.add_argument(
         '-kh',
         '--kafkahost',
         dest='kafkahost',
@@ -265,7 +297,7 @@ def main():
         cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
     elif args.operation == 'create':
         ipMap = dict()
-        if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None) :
+        if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None and args.mossite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None and args.mosworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None and args.mosdatadir is None) :
             print ("ERROR: site name, number of workers and data directory must be specified for create operation")
             parser.print_help()
             sys.exit(1)
@@ -296,6 +328,15 @@ def main():
                 print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
                 parser.print_help()
                 sys.exit(1)
+        if args.mosipStart is not None:
+            if is_valid_ipv4_address(args.mosipStart) == False :
+                print ("ERROR: Invalid start ip address specified")
+                parser.print_help()
+                sys.exit(1)
+            if can_ip_satisfy_range(args.mosipStart, args.mosworkers + 1) == False:
+                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+                parser.print_help()
+                sys.exit(1)
         if args.comethost is not None:
             if args.cert is None or args.key is None:
                 print ("ERROR: comet certificate and key must be specified when comethost is indicated")
@@ -313,6 +354,11 @@ def main():
                 sys.exit(1)
         if args.jetstreamsite is not None :
             if "Jetstream" not in args.jetstreamsite :
+                print ("ERROR: Invalid site specified")
+                parser.print_help()
+                sys.exit(1)
+        if args.mossite is not None :
+            if "Mos" not in args.mossite :
                 print ("ERROR: Invalid site specified")
                 parser.print_help()
                 sys.exit(1)
@@ -391,10 +437,15 @@ def main():
                     return
                 print ("ipMap after exogeni: "  + str(ipMap))
             if args.jetstreamsite is not None and args.jtdatadir is not None:
-                status, count = provision_condor_cluster(args, args.jtdatadir, args.jetstreamsite, ipMap, count, args.jtipStart, args.jtworkers, chstoragename, None, None, None)
+                status, count = provision_condor_cluster(args, args.jtdatadir, args.jetstreamsite, ipMap, count, args.jtipStart, args.jtworkers, None, None, None, None)
                 if status == False:
                     return
                 print ("ipMap after jetstream: "  + str(ipMap))
+            if args.mossite is not None and args.mosdatadir is not None:
+                status, count = provision_condor_cluster(args, args.mosdatadir, args.mossite, ipMap, count, args.mosipStart, args.mosworkers, None, None, None, None)
+                if status == False:
+                    return
+                print ("ipMap after mos: "  + str(ipMap))
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             stitcVlanToChameleon = None
             if response.json()["status"] == 200 and args.comethost is not None:
@@ -413,7 +464,7 @@ def main():
                     for s in slices:
                         nodes = s["nodes"]
                         for n in nodes :
-                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
+                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"] or "Mos" in s["slice"]:
                                 hostname=n["name"] + ".novalocal"
                             else :
                                 hostname=n["name"]
