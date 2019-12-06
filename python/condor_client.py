@@ -464,7 +464,7 @@ def main():
                     for s in slices:
                         nodes = s["nodes"]
                         for n in nodes :
-                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"] or "Mos" in s["slice"]:
+                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
                                 hostname=n["name"] + ".novalocal"
                             else :
                                 hostname=n["name"]

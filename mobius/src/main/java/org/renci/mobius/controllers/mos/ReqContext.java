@@ -271,7 +271,7 @@ public class ReqContext {
                         name = name + CloudContext.NodeName + nameIndex;
                     }
                     name = name.toLowerCase();
-                    response.addHost(name + ".novalocal", null);
+                    response.addHost(name, null);
                     LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
 
                     String instanceId = computeController.createInstance(region,
