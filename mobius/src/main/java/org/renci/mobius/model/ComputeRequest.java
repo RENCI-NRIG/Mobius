@@ -14,8 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-06-05T09:10:51.096-04:00[America/New_York]")
-
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-01-22T14:10:12.569-05:00[America/New_York]")
 public class ComputeRequest   {
   @JsonProperty("site")
   private String site = null;
@@ -73,7 +72,6 @@ public class ComputeRequest   {
       return null;
     }
   }
-
   @JsonProperty("slicePolicy")
   private SlicePolicyEnum slicePolicy = SlicePolicyEnum.DEFAULT;
 
@@ -119,7 +117,6 @@ public class ComputeRequest   {
       return null;
     }
   }
-
   @JsonProperty("networkType")
   private NetworkTypeEnum networkType = NetworkTypeEnum.DEFAULT;
 
@@ -131,6 +128,9 @@ public class ComputeRequest   {
 
   @JsonProperty("networkCidr")
   private String networkCidr = null;
+
+  @JsonProperty("vpcCidr")
+  private String vpcCidr = null;
 
   @JsonProperty("imageUrl")
   private String imageUrl = null;
@@ -169,10 +169,9 @@ public class ComputeRequest   {
    * @return site
   **/
   @ApiModelProperty(required = true, value = "execution site")
-  @NotNull
+      @NotNull
 
-
-  public String getSite() {
+    public String getSite() {
     return site;
   }
 
@@ -191,10 +190,9 @@ public class ComputeRequest   {
    * @return cpus
   **/
   @ApiModelProperty(required = true, value = "number of cpus")
-  @NotNull
+      @NotNull
 
-@Min(0)
-  public Integer getCpus() {
+  @Min(0)  public Integer getCpus() {
     return cpus;
   }
 
@@ -213,10 +211,9 @@ public class ComputeRequest   {
    * @return gpus
   **/
   @ApiModelProperty(required = true, value = "number of gpus")
-  @NotNull
+      @NotNull
 
-@Min(0)
-  public Integer getGpus() {
+  @Min(0)  public Integer getGpus() {
     return gpus;
   }
 
@@ -235,10 +232,9 @@ public class ComputeRequest   {
    * @return ramPerCpus
   **/
   @ApiModelProperty(required = true, value = "RAM per cpu in MB")
-  @NotNull
+      @NotNull
 
-@Min(0)
-  public Integer getRamPerCpus() {
+  @Min(0)  public Integer getRamPerCpus() {
     return ramPerCpus;
   }
 
@@ -257,10 +253,9 @@ public class ComputeRequest   {
    * @return diskPerCpus
   **/
   @ApiModelProperty(required = true, value = "Disk per cpu in MB")
-  @NotNull
+      @NotNull
 
-@Min(0)
-  public Integer getDiskPerCpus() {
+  @Min(0)  public Integer getDiskPerCpus() {
     return diskPerCpus;
   }
 
@@ -278,9 +273,8 @@ public class ComputeRequest   {
    * @return leaseStart
   **/
   @ApiModelProperty(value = "Least Start Time")
-
-
-  public String getLeaseStart() {
+  
+    public String getLeaseStart() {
     return leaseStart;
   }
 
@@ -298,9 +292,8 @@ public class ComputeRequest   {
    * @return leaseEnd
   **/
   @ApiModelProperty(value = "Least End Time")
-
-
-  public String getLeaseEnd() {
+  
+    public String getLeaseEnd() {
     return leaseEnd;
   }
 
@@ -318,10 +311,9 @@ public class ComputeRequest   {
    * @return coallocate
   **/
   @ApiModelProperty(required = true, value = "flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'")
-  @NotNull
+      @NotNull
 
-
-  public Boolean isCoallocate() {
+    public Boolean isCoallocate() {
     return coallocate;
   }
 
@@ -339,10 +331,9 @@ public class ComputeRequest   {
    * @return slicePolicy
   **/
   @ApiModelProperty(required = true, value = "Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'")
-  @NotNull
+      @NotNull
 
-
-  public SlicePolicyEnum getSlicePolicy() {
+    public SlicePolicyEnum getSlicePolicy() {
     return slicePolicy;
   }
 
@@ -360,9 +351,8 @@ public class ComputeRequest   {
    * @return sliceName
   **/
   @ApiModelProperty(value = "existing slice name to which compute resources should be added")
-
-
-  public String getSliceName() {
+  
+    public String getSliceName() {
     return sliceName;
   }
 
@@ -380,9 +370,8 @@ public class ComputeRequest   {
    * @return hostNamePrefix
   **/
   @ApiModelProperty(value = "prefix to be added to hostName")
-
-
-  public String getHostNamePrefix() {
+  
+    public String getHostNamePrefix() {
     return hostNamePrefix;
   }
 
@@ -400,9 +389,8 @@ public class ComputeRequest   {
    * @return ipAddress
   **/
   @ApiModelProperty(value = "ip address to assign. should be specified only if coallocate is set to 'true'.")
-
-
-  public String getIpAddress() {
+  
+    public String getIpAddress() {
     return ipAddress;
   }
 
@@ -420,9 +408,8 @@ public class ComputeRequest   {
    * @return bandwidth
   **/
   @ApiModelProperty(value = "bandwidth for subnet interface.")
-
-
-  public String getBandwidth() {
+  
+    public String getBandwidth() {
     return bandwidth;
   }
 
@@ -440,10 +427,9 @@ public class ComputeRequest   {
    * @return networkType
   **/
   @ApiModelProperty(required = true, value = "Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.")
-  @NotNull
+      @NotNull
 
-
-  public NetworkTypeEnum getNetworkType() {
+    public NetworkTypeEnum getNetworkType() {
     return networkType;
   }
 
@@ -461,9 +447,8 @@ public class ComputeRequest   {
    * @return physicalNetwork
   **/
   @ApiModelProperty(value = "physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'.")
-
-
-  public String getPhysicalNetwork() {
+  
+    public String getPhysicalNetwork() {
     return physicalNetwork;
   }
 
@@ -477,13 +462,12 @@ public class ComputeRequest   {
   }
 
   /**
-   * external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'.
+   * external network name/cidr over which would be used for routing to external world. Only needed for non exogeni requests when networkType is 'private'.
    * @return externalNetwork
   **/
-  @ApiModelProperty(value = "external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'.")
-
-
-  public String getExternalNetwork() {
+  @ApiModelProperty(value = "external network name/cidr over which would be used for routing to external world. Only needed for non exogeni requests when networkType is 'private'.")
+  
+    public String getExternalNetwork() {
     return externalNetwork;
   }
 
@@ -497,18 +481,36 @@ public class ComputeRequest   {
   }
 
   /**
-   * network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'.
+   * network cidr for the private network. Only needed for non exogeni requests when networkType is 'private'.
    * @return networkCidr
   **/
-  @ApiModelProperty(value = "network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'.")
-
-
-  public String getNetworkCidr() {
+  @ApiModelProperty(value = "network cidr for the private network. Only needed for non exogeni requests when networkType is 'private'.")
+  
+    public String getNetworkCidr() {
     return networkCidr;
   }
 
   public void setNetworkCidr(String networkCidr) {
     this.networkCidr = networkCidr;
+  }
+
+  public ComputeRequest vpcCidr(String vpcCidr) {
+    this.vpcCidr = vpcCidr;
+    return this;
+  }
+
+  /**
+   * network cidr for the AWS VPC. Only needed for VPC requests when networkType is 'private'.
+   * @return vpcCidr
+  **/
+  @ApiModelProperty(value = "network cidr for the AWS VPC. Only needed for VPC requests when networkType is 'private'.")
+  
+    public String getVpcCidr() {
+    return vpcCidr;
+  }
+
+  public void setVpcCidr(String vpcCidr) {
+    this.vpcCidr = vpcCidr;
   }
 
   public ComputeRequest imageUrl(String imageUrl) {
@@ -521,9 +523,8 @@ public class ComputeRequest   {
    * @return imageUrl
   **/
   @ApiModelProperty(value = "image url")
-
-
-  public String getImageUrl() {
+  
+    public String getImageUrl() {
     return imageUrl;
   }
 
@@ -541,9 +542,8 @@ public class ComputeRequest   {
    * @return imageHash
   **/
   @ApiModelProperty(value = "image hash")
-
-
-  public String getImageHash() {
+  
+    public String getImageHash() {
     return imageHash;
   }
 
@@ -561,9 +561,8 @@ public class ComputeRequest   {
    * @return imageName
   **/
   @ApiModelProperty(value = "image name")
-
-
-  public String getImageName() {
+  
+    public String getImageName() {
     return imageName;
   }
 
@@ -581,9 +580,8 @@ public class ComputeRequest   {
    * @return postBootScript
   **/
   @ApiModelProperty(value = "post boot script")
-
-
-  public String getPostBootScript() {
+  
+    public String getPostBootScript() {
     return postBootScript;
   }
 
@@ -601,9 +599,8 @@ public class ComputeRequest   {
    * @return stitchPortUrl
   **/
   @ApiModelProperty(value = "port url for the stitch port")
-
-
-  public String getStitchPortUrl() {
+  
+    public String getStitchPortUrl() {
     return stitchPortUrl;
   }
 
@@ -621,9 +618,8 @@ public class ComputeRequest   {
    * @return stitchTag
   **/
   @ApiModelProperty(value = "vlan tag for the stitch port")
-
-
-  public String getStitchTag() {
+  
+    public String getStitchTag() {
     return stitchTag;
   }
 
@@ -641,9 +637,8 @@ public class ComputeRequest   {
    * @return stitchIP
   **/
   @ApiModelProperty(value = "IP address for the StitchPort interface on VM")
-
-
-  public String getStitchIP() {
+  
+    public String getStitchIP() {
     return stitchIP;
   }
 
@@ -661,9 +656,8 @@ public class ComputeRequest   {
    * @return stitchBandwidth
   **/
   @ApiModelProperty(value = "Bandwidth for the StitchPort in bps")
-
-
-  public String getStitchBandwidth() {
+  
+    public String getStitchBandwidth() {
     return stitchBandwidth;
   }
 
@@ -681,9 +675,8 @@ public class ComputeRequest   {
    * @return forceflavor
   **/
   @ApiModelProperty(value = "force mobius to use the flavor indicated instead of the one determined by its algorithm")
-
-
-  public String getForceflavor() {
+  
+    public String getForceflavor() {
     return forceflavor;
   }
 
@@ -718,6 +711,7 @@ public class ComputeRequest   {
         Objects.equals(this.physicalNetwork, computeRequest.physicalNetwork) &&
         Objects.equals(this.externalNetwork, computeRequest.externalNetwork) &&
         Objects.equals(this.networkCidr, computeRequest.networkCidr) &&
+        Objects.equals(this.vpcCidr, computeRequest.vpcCidr) &&
         Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
         Objects.equals(this.imageHash, computeRequest.imageHash) &&
         Objects.equals(this.imageName, computeRequest.imageName) &&
@@ -731,7 +725,7 @@ public class ComputeRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, vpcCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor);
   }
 
   @Override
@@ -756,6 +750,7 @@ public class ComputeRequest   {
     sb.append("    physicalNetwork: ").append(toIndentedString(physicalNetwork)).append("\n");
     sb.append("    externalNetwork: ").append(toIndentedString(externalNetwork)).append("\n");
     sb.append("    networkCidr: ").append(toIndentedString(networkCidr)).append("\n");
+    sb.append("    vpcCidr: ").append(toIndentedString(vpcCidr)).append("\n");
     sb.append("    imageUrl: ").append(toIndentedString(imageUrl)).append("\n");
     sb.append("    imageHash: ").append(toIndentedString(imageHash)).append("\n");
     sb.append("    imageName: ").append(toIndentedString(imageName)).append("\n");
@@ -780,4 +775,3 @@ public class ComputeRequest   {
     return o.toString().replace("\n", "\n    ");
   }
 }
-

@@ -25,6 +25,7 @@ abstract public class CloudContext {
         Exogeni,
         Jetstream,
         Mos,
+        Aws,
         Unknown
     }
     public static final String NetworkName = "cmnw";
@@ -65,7 +66,12 @@ abstract public class CloudContext {
      */
     public static String generateSliceName(CloudType type, String user) {
 
-        return "Mobius-" + type.name() + "-" + user.split("@")[0] + "-" + generateRandomString();
+        if(user != null) {
+            return "Mobius-" + type.name() + "-" + user.split("@")[0] + "-" + generateRandomString();
+        }
+        else {
+            return "Mobius-" + type.name() + "-" + generateRandomString();
+        }
     }
 
     private static final Logger LOGGER = LogManager.getLogger( CloudContext.class.getName() );

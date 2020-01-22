@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers;
 
+import org.renci.mobius.controllers.aws.AwsContext;
 import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.renci.mobius.controllers.jetstream.JetstreamContext;
@@ -42,6 +43,9 @@ public class CloudContextFactory {
         if(site.contains(CloudContext.CloudType.Chameleon.toString()) == true) {
             ChameleonContext chameleonContext = new ChameleonContext(CloudContext.CloudType.Chameleon, site, workflowId);
             return chameleonContext;
+        }
+        else if(site.contains(CloudContext.CloudType.Aws.toString()) == true) {
+            return new AwsContext(CloudContext.CloudType.Aws, site, workflowId);
         }
         else if(site.contains(CloudContext.CloudType.Mos.toString()) == true) {
             return new MosContext(CloudContext.CloudType.Mos, site, workflowId);

@@ -91,6 +91,16 @@ public class MobiusConfig {
     public static final String mosClientSecret = "mobius.mos.client_secret";
     public static final String mosAccessEndpointScope = "mobius.mos.endpoint.scope";
 
+    public static final String awsAccessId = "mobius.aws.accessId";
+    public static final String awsSecreteKey = "mobius.aws.secretKey";
+    public static final String awsDefaultImage = "mobius.aws.defaultImage";
+
+    public String getAwsAccessId() { return properties.getProperty(awsAccessId); }
+
+    public String getAwsSecreteKey() { return properties.getProperty(awsSecreteKey); }
+
+    public String getAwsDefaultImage() { return properties.getProperty(awsDefaultImage); }
+
     public String getMosAuthUrl() { return properties.getProperty(mosAuthUrl); }
 
     public String getMosUser() { return properties.getProperty(mosUser); }

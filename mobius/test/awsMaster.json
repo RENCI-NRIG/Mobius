@@ -1,0 +1,14 @@
+{
+    "site":"Aws:us-east-2",
+    "cpus":"1",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "imageName":"ami-00bf61217e296b409",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"master",
+    "networkType":"private",
+    "vpcCidr":"192.158.0.0/16",
+    "externalNetwork":"192.158.1.0/24",
+    "networkCidr":"192.158.2.0/24"
+}
+
