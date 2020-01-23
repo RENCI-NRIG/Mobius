@@ -70,11 +70,10 @@ public class AwsContext extends CloudContext {
                 return;
             }
 
-            // TODO
-            String publicKey = "ssh-rsa ";
+            String publicKeyFile = MobiusConfig.getInstance().getAwsUserSshKey();
             String networkName = workflowId + CloudContext.generateRandomString();
             workflowNetwork = awsEc2Api.setupNetwork(networkName, request.getVpcCidr(),
-                    request.getExternalNetwork(), request.getNetworkCidr(), publicKey);
+                    request.getExternalNetwork(), request.getNetworkCidr(), publicKeyFile);
         }
         catch (Exception e){
             workflowNetwork = null;
@@ -307,7 +306,8 @@ public class AwsContext extends CloudContext {
                 ComputeResponse response = context.provisionNode( flavorList, nameIndex, request.getImageName(),
                         request.getHostNamePrefix(), request.getPostBootScript(), request.getIpAddress(),
                         workflowNetwork.get(AwsEc2Api.KeyPairId), workflowNetwork.get(AwsEc2Api.SecurityGroupId),
-                        workflowNetwork.get(AwsEc2Api.ExternalSubnetId), request.getLeaseEnd());
+                        workflowNetwork.get(AwsEc2Api.ExternalSubnetId), workflowNetwork.get(AwsEc2Api.InternalSubnetId),
+                        request.getLeaseEnd());
                 LOGGER.debug("Created new context=" + sliceName);
 
                 sliceName = context.getSliceName();

@@ -94,6 +94,20 @@ public class MobiusConfig {
     public static final String awsAccessId = "mobius.aws.accessId";
     public static final String awsSecreteKey = "mobius.aws.secretKey";
     public static final String awsDefaultImage = "mobius.aws.defaultImage";
+    public static final String awsUserKeyPath = "mobius.aws.KeyPath";
+    public static final String awsUserSshKey = "mobius.aws.sshKeyFile";
+
+    public String getAwsUserSshKey() {
+        String mobiusHome = getMobiusHome();
+        if(mobiusHome == null) {
+            return properties.getProperty(MobiusConfig.awsUserKeyPath) + "/" +
+                    properties.getProperty(MobiusConfig.awsUserSshKey);
+        }
+        else {
+            return mobiusHome + "/ssh/" +
+                    properties.getProperty(MobiusConfig.awsUserSshKey);
+        }
+    }
 
     public String getAwsAccessId() { return properties.getProperty(awsAccessId); }
 

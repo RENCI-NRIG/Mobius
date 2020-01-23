@@ -8,6 +8,8 @@ import com.amazonaws.services.ec2.model.*;
 
 import org.apache.http.HttpStatus;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -31,33 +33,42 @@ public class AwsEc2Api {
     }
 
     public Map<String, String> setupNetwork(String name, String vpcCidr, String externalCidr,
-                                            String internalCidr, String publicKey) throws Exception{
+                                            String internalCidr, String publicKeyFile) throws Exception{
         Map<String, String> networkMap = new HashMap<>();
         try {
             String vpcId = createVpc(name, vpcCidr);
+            System.out.println("vpcId=" + vpcId);
             networkMap.put(VpcId, vpcId);
 
             String externalSubnetId = createSubnet(vpcId, externalCidr);
+            System.out.println("externalSubnetId=" + externalSubnetId);
+
             networkMap.put(ExternalSubnetId, externalSubnetId);
 
             String routeTableId = createRouteTable(vpcId);
+            System.out.println("routeTableId=" + routeTableId);
             networkMap.put(RouteTableId, routeTableId);
 
             String associationId = associateRouteTableWithSubnet(routeTableId, externalSubnetId);
+            System.out.println("associationId=" + associationId);
             networkMap.put(AssociationId, associationId);
 
             String internetGatewayId = createInternetGateway(vpcId);
+            System.out.println("internetGatewayId=" + internetGatewayId);
             networkMap.put(InternetGatewayId, internetGatewayId);
 
             createRoute(routeTableId, internetGatewayId);
 
             String securityGroupId = createSecurityGroup(name, vpcId);
+            System.out.println("securityGroupId=" + securityGroupId);
             networkMap.put(SecurityGroupId, securityGroupId);
 
-            String keyPairId = createKeyPair(name, publicKey);
+            String keyPairId = createKeyPair(name, publicKeyFile);
+            System.out.println("keyPairId=" + keyPairId);
             networkMap.put(KeyPairId, keyPairId);
 
             String internalSubnetId = createSubnet(vpcId, internalCidr);
+            System.out.println("internalSubnetId=" + internalSubnetId);
             networkMap.put(InternalSubnetId, internalSubnetId);
             return networkMap;
         }
@@ -70,7 +81,7 @@ public class AwsEc2Api {
     public void tearNetwork(Map<String, String> networkMap) {
         if(networkMap.containsKey(InternalSubnetId)) {
             // TODO delete respective network interfaces on instance deletion
-            deleteSubnet(networkMap.get(ExternalSubnetId));
+            deleteSubnet(networkMap.get(InternalSubnetId));
         }
         if(networkMap.containsKey(KeyPairId)) {
             deleteKeyPair(networkMap.get(KeyPairId));
@@ -78,11 +89,11 @@ public class AwsEc2Api {
         if(networkMap.containsKey(SecurityGroupId)) {
             deleteSecurityGroup(networkMap.get(SecurityGroupId));
         }
-        if(networkMap.containsKey(InternetGatewayId)) {
-            deleteInternetGateway(networkMap.get(InternetGatewayId));
+        if(networkMap.containsKey(InternetGatewayId) && networkMap.containsKey(VpcId)) {
+            deleteInternetGateway(networkMap.get(VpcId), networkMap.get(InternetGatewayId));
         }
         if(networkMap.containsKey(AssociationId)) {
-            dissociateRouteTableFromSubnet(networkMap.get(AssociationId));
+            disassociateRouteTableFromSubnet(networkMap.get(AssociationId));
         }
         if(networkMap.containsKey(RouteTableId)) {
 
@@ -90,6 +101,9 @@ public class AwsEc2Api {
         }
         if(networkMap.containsKey(ExternalSubnetId)) {
             deleteSubnet(networkMap.get(ExternalSubnetId));
+        }
+        if(networkMap.containsKey(VpcId)) {
+            deleteVpc(networkMap.get(VpcId));
         }
     }
 
@@ -105,7 +119,8 @@ public class AwsEc2Api {
             if (statusCode != HttpStatus.SC_OK) {
                 throw new Exception("Failed to create Key Pair");
             }
-            return create_response.getGroupId();
+            String sgId =  create_response.getGroupId();
+            return sgId;
         }
         catch (Exception e) {
             System.out.println("Exception occured e=" + e);
@@ -116,6 +131,7 @@ public class AwsEc2Api {
 
     private  void deleteSecurityGroup(String groupid) {
         try {
+            System.out.println("Deleting Security Group = " + groupid);
             DeleteSecurityGroupRequest request = new DeleteSecurityGroupRequest().withGroupId(groupid);
             ec2.deleteSecurityGroup(request);
         }
@@ -126,8 +142,12 @@ public class AwsEc2Api {
     }
 
 
-    private  String createKeyPair(String name, String publicKey) throws Exception{
+    private  String createKeyPair(String name, String publicKeyFile) throws Exception{
         try {
+
+            byte[] encoded = Files.readAllBytes(Paths.get(publicKeyFile));
+            String publicKey = new String(encoded);
+
             ImportKeyPairRequest request = new ImportKeyPairRequest()
                     .withKeyName(name)
                     .withPublicKeyMaterial(publicKey);
@@ -154,6 +174,7 @@ public class AwsEc2Api {
 
     private  void deleteKeyPair(String keyname) {
         try {
+            System.out.println("Deleting Keypair = " + keyname);
             DeleteKeyPairRequest request = new DeleteKeyPairRequest()
                     .withKeyName(keyname);
 
@@ -291,6 +312,7 @@ public class AwsEc2Api {
 
     private void deleteVpc(String vpcId) {
         try {
+            System.out.println("Deleting VPC =" + vpcId);
             DeleteVpcRequest deleteVpcRequest = new DeleteVpcRequest().withVpcId(vpcId);
             ec2.deleteVpc(deleteVpcRequest);
         }
@@ -317,6 +339,7 @@ public class AwsEc2Api {
 
     private void deleteSubnet(String subnetId) {
         try {
+            System.out.println("Deleting subnet=" + subnetId);
             DeleteSubnetRequest subnetRequest = new DeleteSubnetRequest().withSubnetId(subnetId);
             ec2.deleteSubnet(subnetRequest);
         }
@@ -425,9 +448,9 @@ public class AwsEc2Api {
         }
     }
 
-    private void dissociateRouteTableFromSubnet(String associationId) {
+    private void disassociateRouteTableFromSubnet(String associationId) {
         try {
-
+            System.out.println("Disassociate route table from subnet associationId=" + associationId);
             DisassociateRouteTableRequest disassociateRouteTableRequest = new DisassociateRouteTableRequest()
                     .withAssociationId(associationId);
             ec2.disassociateRouteTable(disassociateRouteTableRequest);
@@ -439,7 +462,7 @@ public class AwsEc2Api {
     }
     private void deleteRouteTable(String routeTableId) {
         try {
-
+            System.out.println("Deleting Route table = " + routeTableId);
             DeleteRouteTableRequest deleteRouteTableRequest = new DeleteRouteTableRequest()
                     .withRouteTableId(routeTableId);
             ec2.deleteRouteTable(deleteRouteTableRequest);
@@ -450,8 +473,13 @@ public class AwsEc2Api {
             System.out.println(e);
         }
     }
-    private void deleteInternetGateway(String internetGateway) {
+    private void deleteInternetGateway(String vpcId, String internetGateway) {
         try {
+            System.out.println("Deleting Internet Gateway =" + internetGateway);
+            DetachInternetGatewayRequest detachInternetGatewayRequest = new DetachInternetGatewayRequest()
+                    .withInternetGatewayId(internetGateway)
+                    .withVpcId(vpcId);
+            ec2.detachInternetGateway(detachInternetGatewayRequest);
             DeleteInternetGatewayRequest request = new DeleteInternetGatewayRequest()
                     .withInternetGatewayId(internetGateway);
             ec2.deleteInternetGateway(request);

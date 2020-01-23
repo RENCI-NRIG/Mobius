@@ -1,20 +1,18 @@
 package org.renci.mobius.controllers.aws;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceState;
+import com.amazonaws.services.ec2.model.InstanceNetworkInterface;
 import com.amazonaws.services.ec2.model.InstanceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jclouds.openstack.nova.v2_0.domain.FloatingIP;
-import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.controllers.os.ComputeController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.model.StorageRequest;
+import org.springframework.data.util.Pair;
 
 import java.util.*;
 
@@ -28,7 +26,7 @@ public class ReqContext {
     private String sliceName;
     private String workflowId;
     private int activeOrFailedInstances;
-    private List<String> instanceIdList;
+    private List<Pair<String, String>> instanceIdList;
     private String leaseId;
     private String region;
     private String authUrl;
@@ -115,9 +113,9 @@ public class ReqContext {
             }
             if(instanceIdList.size() > 0) {
                 JSONArray ids = new JSONArray();
-                for (String instanceId : instanceIdList) {
+                for (Pair<String, String> instance : instanceIdList) {
                     JSONObject id = new JSONObject();
-                    id.put("id", instanceId);
+                    id.put("id", instance.getFirst() + "==" + instance.getSecond());
                     ids.add(id);
                 }
                 retVal.put("ids", ids);
@@ -141,7 +139,9 @@ public class ReqContext {
                 JSONArray ids = (JSONArray) object.get("ids");
                 for (Object id : ids) {
                     JSONObject instanceId = (JSONObject) id;
-                    instanceIdList.add((String) instanceId.get("id"));
+                    String instanceIdNetworkIdPair = (String) instanceId.get("id");
+                    String[] result = instanceIdNetworkIdPair.split("==");
+                    instanceIdList.add(Pair.of(result[0], result[1]));
                 }
             }
         }
@@ -158,9 +158,10 @@ public class ReqContext {
             LOGGER.debug("Successfully deleted slice " + sliceName);
 
             AwsEc2Api awsEc2Api = new AwsEc2Api(region, accessId, secretKey);
-            for(String instanceId : instanceIdList) {
+            for(Pair<String, String> instance : instanceIdList) {
                 try {
-                    awsEc2Api.deleteInstance(instanceId);
+                    awsEc2Api.deleteInstance(instance.getFirst());
+                    awsEc2Api.deleteNetworkInterface(instance.getSecond());
                 }
                 catch (Exception e) {
                     LOGGER.debug("Ignoring exception during destroy e=" + e);
@@ -197,14 +198,14 @@ public class ReqContext {
      */
     public ComputeResponse provisionNode(Map<InstanceType, Integer> flavorList, int nameIndex, String image,
                                          String hostNamePrefix, String postBootScript, String ip,
-                                         String keyPairId, String securityGroupId, String extSubnet,
+                                         String keyPairId, String securityGroupId, String extSubnet, String intSubnet,
                                          String leaseEnd) throws Exception {
 
         LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image
                 + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " ip=" + ip
-                + " keyPairId=" + keyPairId + " securityGroupId=" + securityGroupId + " extSubnet=" + extSubnet);
+                + " keyPairId=" + keyPairId + " securityGroupId=" + securityGroupId + " extSubnet=" + extSubnet
+                + " intSubnet=" + intSubnet + " leaseEnd=" + leaseEnd);
 
-        ComputeController computeController = null;
         try {
 
             AwsEc2Api awsEc2Api = new AwsEc2Api(region, accessId, secretKey);
@@ -251,7 +252,9 @@ public class ReqContext {
                     if (instanceId == null) {
                         throw new MobiusException("Failed to create instance");
                     }
-                    instanceIdList.add(instanceId);
+
+                    String networkInterfaceId = awsEc2Api. associateNetworkWithInstance(intSubnet, instanceId);
+                    instanceIdList.add(Pair.of(instanceId, networkInterfaceId));
                     ++nameIndex;
                 }
             }
@@ -273,10 +276,6 @@ public class ReqContext {
             throw new MobiusException("Failed to server compute request e=" + e.getMessage());
         }
         finally {
-            if(computeController != null) {
-                computeController.close();
-            }
-            // TODO clean any allocated CPUs, keys, leases
             LOGGER.debug("OUT");
         }
     }
@@ -293,7 +292,7 @@ public class ReqContext {
     private JSONObject nodeToJson(Instance server, String ip, List<String> fixedIPs){
         LOGGER.debug("IN server=" + server.toString() + " ip=" + ip);
         JSONObject object = new JSONObject();
-        object.put(CloudContext.JsonKeyName, server.getPublicDnsName());
+        object.put(CloudContext.JsonKeyName, server.getTags().get(0).getValue());
         object.put(CloudContext.JsonKeyState, server.getState().getName());
         if(ip != null) {
             object.put(CloudContext.JsonKeyPublicIP, ip);
@@ -320,29 +319,32 @@ public class ReqContext {
      */
     public JSONObject status(Set<String> hostNameSet) {
         LOGGER.debug("IN hostNameSet=" + hostNameSet);
-        ComputeController computeController = null;
         JSONObject returnValue = new JSONObject();
         try {
             AwsEc2Api awsEc2Api = new AwsEc2Api(region, accessId, secretKey);
             returnValue.put(CloudContext.JsonKeySlice, sliceName);
             JSONArray array = new JSONArray();
 
-            for(String instanceId : instanceIdList) {
+            for(Pair<String, String> instanceIdPair : instanceIdList) {
                 try {
 
-                    Instance instance = awsEc2Api.getInstance(instanceId);
+                    Instance instance = awsEc2Api.getInstance(instanceIdPair.getFirst());
                     if(instance != null) {
                         String ip = null;
-                        List<String> fixedIPs = null;
+                        List<String> fixedIPs = new LinkedList<>();
 
-                        if (!hostNameSet.contains(instance.getPublicDnsName())) {
-                            LOGGER.debug("Adding hostname: " + instance.getPublicDnsName());
-                            hostNameSet.add(instance.getPublicDnsName());
+                        if (!hostNameSet.contains(instance.getTags().get(0).getValue())) {
+                            LOGGER.debug("Adding hostname: " + instance.getTags().get(0).getValue());
+                            hostNameSet.add(instance.getTags().get(0).getValue());
                         }
 
                         if (instance.getState().getName().compareToIgnoreCase("running") == 0) {
                             ip = instance.getPublicIpAddress();
-                            /// TODO associate internal network
+                            for(InstanceNetworkInterface networkInterface: instance.getNetworkInterfaces()) {
+                                if(networkInterface.getNetworkInterfaceId().compareToIgnoreCase(instanceIdPair.getSecond()) == 0) {
+                                    fixedIPs.add(networkInterface.getPrivateIpAddress());
+                                }
+                            }
 
                         } else if (instance.getState().getName().compareToIgnoreCase("pending") != 0) {
                             activeOrFailedInstances++;
@@ -351,7 +353,7 @@ public class ReqContext {
                         array.add(object);
                     }
                     else {
-                        LOGGER.error("Instance not found for InstanceId=" + instanceId);
+                        LOGGER.error("Instance not found for InstanceId=" + instanceIdPair.getFirst());
                     }
                 }
                 catch (Exception e) {
