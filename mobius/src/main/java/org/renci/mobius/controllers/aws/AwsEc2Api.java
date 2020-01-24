@@ -108,6 +108,7 @@ public class AwsEc2Api {
     }
 
     private  String createSecurityGroup(String groupname, String vpcid) throws Exception {
+        String sgId = null;
         try {
             CreateSecurityGroupRequest create_request = new CreateSecurityGroupRequest()
                     .withGroupName(groupname)
@@ -119,10 +120,25 @@ public class AwsEc2Api {
             if (statusCode != HttpStatus.SC_OK) {
                 throw new Exception("Failed to create Key Pair");
             }
-            String sgId =  create_response.getGroupId();
+            sgId =  create_response.getGroupId();
+
+            IpRange ipRange1 = new IpRange().withCidrIp("0.0.0.0/0");
+            IpPermission ipPermission = new IpPermission()
+                    .withIpProtocol("-1")
+                    .withIpv4Ranges(Arrays.asList(new IpRange[] {ipRange1}));
+
+            AuthorizeSecurityGroupIngressRequest authorizeSecurityGroupIngressRequest =
+                    new AuthorizeSecurityGroupIngressRequest().withGroupId(sgId)
+                    .withIpPermissions(ipPermission);
+
+            System.out.println("AuthorizeSecurityGroupIngressRequest= " + authorizeSecurityGroupIngressRequest);
+            System.out.println(ec2.authorizeSecurityGroupIngress(authorizeSecurityGroupIngressRequest));
             return sgId;
         }
         catch (Exception e) {
+            if(sgId != null) {
+                deleteSecurityGroup(sgId);
+            }
             System.out.println("Exception occured e=" + e);
             throw e;
         }
