@@ -1,17 +1,16 @@
-package org.renci.mobius.controllers.jetstream;
+package org.renci.mobius.controllers.aws;
 
-/*
- * @brief class representing flavor for storage or compute nodes
- *
- * @author kthare10
- */
+import com.amazonaws.services.ec2.model.InstanceType;
+
 public class Flavor implements Comparable<Flavor> {
-    // cpus, diskspace, ram, name
-    public Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
+    // cpus, diskspace(MB), ram(MB), name
+    public Flavor(Integer cpus, Integer gpus, Integer diskSpace, Integer ram, Integer gpuram, InstanceType type) {
         this.cpus = cpus;
+        this.gpus = gpus;
         this.diskSpace = diskSpace;
         this.ram = ram;
-        this.name = name;
+        this.gpuram = gpuram;
+        this.type = type;
     }
 
     /*
@@ -27,6 +26,10 @@ public class Flavor implements Comparable<Flavor> {
         return cpus;
     }
 
+    public Integer getGpus() {
+        return gpus;
+    }
+
     public Integer getDiskSpace() {
         return diskSpace;
     }
@@ -39,17 +42,25 @@ public class Flavor implements Comparable<Flavor> {
         return ram / cpus;
     }
 
+    public Integer getGpuRam() {
+        return gpuram;
+    }
+
+    public Integer getGpuRamPerGpu() {
+        return gpuram / gpus;
+    }
+
     public Integer getDiskPerCpu() {
         return diskSpace / cpus;
     }
 
-    public String getName() {
-        return name;
-    }
+
+    public InstanceType getType() { return type; }
 
     private Integer cpus;
+    private Integer gpus;
     private Integer diskSpace;
     private Integer ram;
-    private String name;
+    private Integer gpuram;
+    private InstanceType type;
 }
-

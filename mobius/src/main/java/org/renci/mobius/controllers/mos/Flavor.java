@@ -1,5 +1,10 @@
 package org.renci.mobius.controllers.mos;
 
+/*
+ * @brief class representing flavor for storage or compute nodes
+ *
+ * @author kthare10
+ */
 public class Flavor implements Comparable<Flavor> {
     // cpus, diskspace(MB), ram(MB), name
     public Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
