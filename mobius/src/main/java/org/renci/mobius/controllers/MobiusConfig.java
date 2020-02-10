@@ -1,9 +1,16 @@
 package org.renci.mobius.controllers;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /*
  * @brief class implements singleton interface to load config info from applications.properties
@@ -57,6 +64,7 @@ public class MobiusConfig {
     public static final String chameleonLeaseRetry = "mobius.chameleon.leaseRetry";
     public static final String chameleonUCStitchPort = "mobius.chameleon.uc.stitchport";
     public static final String chameleonTACCStitchPort = "mobius.chameleon.tacc.stitchport";
+    public static final String chameleonDnsServers = "mobius.chameleon.dnsServers";
 
     public static final String cometHost = "mobius.comet.host";
     public static final String cometCert = "mobius.comet.cert";
@@ -97,6 +105,10 @@ public class MobiusConfig {
     public static final String awsUserKeyPath = "mobius.aws.KeyPath";
     public static final String awsUserSshKey = "mobius.aws.sshKeyFile";
 
+    public List<String> getChameleonDnsServers() {
+        String dnsServers = properties.getProperty(MobiusConfig.chameleonDnsServers);
+        return Arrays.asList(dnsServers.split(","));
+    }
     public String getAwsUserSshKey() {
         String mobiusHome = getMobiusHome();
         if(mobiusHome == null) {

@@ -1,5 +1,6 @@
 package org.renci.mobius.controllers.chameleon;
 
+import com.google.common.collect.ImmutableSet;
 import org.jclouds.openstack.neutron.v2.domain.Network;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -115,6 +116,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             String networkName = workflowId + CloudContext.generateRandomString();
             LOGGER.debug("Setting up Network for " + region + " network=" + networkName);
 
+            List<String> dnsServers = MobiusConfig.getInstance().getChameleonDnsServers();
+            String gatewayIp = request.getNetworkCidr();
+            gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
+
             if(request.getPhysicalNetwork().compareToIgnoreCase(stitchablePhysicalNetwork) == 0) {
                 sdf.setTimeZone(utc);
                 Date endTime = new Date();
@@ -144,13 +149,14 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 }
 
                 String leaseId = result.getFirst();
-                workflowNetwork = networkController.updateNetwork(region, networkName, externalNetworkId, request.getNetworkCidr());
+                workflowNetwork = networkController.updateNetwork(region, networkName, externalNetworkId,
+                        request.getNetworkCidr(), gatewayIp, dnsServers);
                 workflowNetwork.put(NetworkLeaseId, leaseId);
             }
             else {
                 // Workflow network for region does not exist create workflow private network
                 workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
-                        externalNetworkId, false, request.getNetworkCidr(), networkName, false);
+                        externalNetworkId, false, request.getNetworkCidr(), gatewayIp, dnsServers, networkName, false);
             }
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);

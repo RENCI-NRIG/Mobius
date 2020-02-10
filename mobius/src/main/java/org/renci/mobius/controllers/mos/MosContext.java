@@ -98,7 +98,7 @@ public class MosContext extends CloudContext {
 
             // Workflow network for region does not exist create workflow private network
             workflowNetwork = networkController.createNetwork(region, null,
-                    externalNetworkId, false, request.getNetworkCidr(), networkName, true);
+                    externalNetworkId, false, request.getNetworkCidr(), null, null, networkName, true);
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
             sgName = networkController.getSecurityGroupName(region, workflowNetwork.get(NetworkController.SecurityGroupId));

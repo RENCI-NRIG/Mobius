@@ -18,6 +18,7 @@ import org.jclouds.openstack.neutron.v2.features.SubnetApi;
 
 import java.io.Closeable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -120,14 +121,14 @@ public class NetworkController implements Closeable {
      * @throws exception in case of error
      */
     public Map<String, String> updateNetwork(String region, String networkName,
-                                             String  externalNetworkId, String cidr) throws Exception{
+                                             String  externalNetworkId, String cidr, String gatewayIp, List<String> dnsServers) throws Exception{
         String netId = null;
         Map<String, String> retVal = null;
         try {
             netId = getNetworkId(region, networkName);
 
             String subnetName = networkName + "subnet";
-            Subnet subnet = createSubnet(region, netId, true, 4, cidr, subnetName);
+            Subnet subnet = createSubnet(region, netId, true, 4, cidr, gatewayIp, dnsServers, subnetName);
             String routerName = networkName + "router";
             Router router = createRouter(region, externalNetworkId, routerName);
             attachSubnet(region, router.getId(), subnet.getId());
@@ -163,7 +164,7 @@ public class NetworkController implements Closeable {
      */
     public Map<String, String> createNetwork(String region, String physicalNetworkName,
                                              String externalNetworkId, boolean shared,
-                                             String cidr, String name, boolean createSecurityGroup) throws Exception{
+                                             String cidr, String gateway, List<String> dnsServers, String name, boolean createSecurityGroup) throws Exception{
         NetworkApi networkApi = neutronApi.getNetworkApi(region);
         Network net = null;
         Map<String, String> retVal = null;
@@ -177,7 +178,7 @@ public class NetworkController implements Closeable {
             }
             net = networkApi.create(createBuilder.build());
             String subnetName = name + "subnet";
-            Subnet subnet = createSubnet(region, net.getId(), true, 4, cidr, subnetName);
+            Subnet subnet = createSubnet(region, net.getId(), true, 4, cidr, gateway, dnsServers, subnetName);
             String routerName = name + "router";
             Router router = createRouter(region, externalNetworkId, routerName);
             attachSubnet(region, router.getId(), subnet.getId());
@@ -215,6 +216,7 @@ public class NetworkController implements Closeable {
      * @param enableDhcp - enableDhcp
      * @param ipVersion - ipVersion
      * @param cidr - network cidr
+     * @param dnsServers - dnsServers
      * @param name - name
      *
      * @return subnetId
@@ -222,16 +224,26 @@ public class NetworkController implements Closeable {
      * @throws exception in case of error
      */
     private Subnet createSubnet(String region, String netId, boolean enableDhcp, Integer ipVersion,
-                                String cidr, String name) throws Exception {
+                                String cidr, String gateway, List<String> dnsServers, String name) throws Exception {
         SubnetApi subnetApi = neutronApi.getSubnetApi(region);
         Subnet subnet = null;
         try {
-
-            subnet = subnetApi.create(Subnet.createBuilder(netId, cidr)
-                    .ipVersion(ipVersion)
-                    .enableDhcp(enableDhcp)
-                    .name(name)
-                    .build());
+            if(gateway != null && dnsServers != null) {
+                subnet = subnetApi.create(Subnet.createBuilder(netId, cidr)
+                        .ipVersion(ipVersion)
+                        .enableDhcp(enableDhcp)
+                        .dnsNameServers(ImmutableSet.<String>builder().addAll(dnsServers).build())
+                        .gatewayIp(gateway)
+                        .name(name)
+                        .build());
+            }
+            else {
+                subnet = subnetApi.create(Subnet.createBuilder(netId, cidr)
+                        .ipVersion(ipVersion)
+                        .enableDhcp(enableDhcp)
+                        .name(name)
+                        .build());
+            }
         } catch (Exception e){
             if(subnet != null) {
                 subnetApi.delete(subnet.getId());
