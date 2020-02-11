@@ -64,7 +64,8 @@ public class MobiusConfig {
     public static final String chameleonLeaseRetry = "mobius.chameleon.leaseRetry";
     public static final String chameleonUCStitchPort = "mobius.chameleon.uc.stitchport";
     public static final String chameleonTACCStitchPort = "mobius.chameleon.tacc.stitchport";
-    public static final String chameleonDnsServers = "mobius.chameleon.dnsServers";
+    public static final String ucchameleonDnsServers = "mobius.chameleon.uc.dnsServers";
+    public static final String taccchameleonDnsServers = "mobius.chameleon.tacc.dnsServers";
 
     public static final String cometHost = "mobius.comet.host";
     public static final String cometCert = "mobius.comet.cert";
@@ -105,8 +106,12 @@ public class MobiusConfig {
     public static final String awsUserKeyPath = "mobius.aws.KeyPath";
     public static final String awsUserSshKey = "mobius.aws.sshKeyFile";
 
-    public List<String> getChameleonDnsServers() {
-        String dnsServers = properties.getProperty(MobiusConfig.chameleonDnsServers);
+    public List<String> getUcChameleonDnsServers() {
+        String dnsServers = properties.getProperty(MobiusConfig.ucchameleonDnsServers);
+        return Arrays.asList(dnsServers.split(","));
+    }
+    public List<String> getTaccChameleonDnsServers() {
+        String dnsServers = properties.getProperty(MobiusConfig.taccchameleonDnsServers);
         return Arrays.asList(dnsServers.split(","));
     }
     public String getAwsUserSshKey() {

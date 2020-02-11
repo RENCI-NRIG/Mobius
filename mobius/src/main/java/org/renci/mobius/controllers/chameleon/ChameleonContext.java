@@ -116,7 +116,13 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             String networkName = workflowId + CloudContext.generateRandomString();
             LOGGER.debug("Setting up Network for " + region + " network=" + networkName);
 
-            List<String> dnsServers = MobiusConfig.getInstance().getChameleonDnsServers();
+            List<String> dnsServers = null;
+            if(region.compareToIgnoreCase(StackContext.RegionUC) == 0) {
+                dnsServers= MobiusConfig.getInstance().getUcChameleonDnsServers();
+            }
+            else {
+                dnsServers= MobiusConfig.getInstance().getTaccChameleonDnsServers();
+            }
             String gatewayIp = request.getNetworkCidr();
             gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
 
