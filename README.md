@@ -30,7 +30,7 @@ At this layer, Mobius translates application requests to native cloud specific r
 is a collection of graph-based Java libraries designed to allow applications to control, modify and manage the state of ExoGENI slices. The native request and resource representation used by ExoGENI is based on declarative representations using NDL-OWL. Ahab includes libndl, which provides a graph-based abstraction for interacting with ExoGENI slices. It primary handles the conversion of an abstract topology graph consisting of ComputeNodes, networks, stitchports, storage, etc. into NDL-OWL resource requests, which are then sent to ExoGENI using another library called libtransport. The Mobius Ahab adapter leverages the Ahab library functionalities to instantiate compute resources on ExoGENI racks and to create network paths between stitchports, ExoGENI racks and other cloud providers like ChameleonCloud. 
 
 ## <a name="jclouds"></a> Apache Jclouds
-Apache jclouds is an open source multi-cloud toolkit for the Java platform that allows to create applications that are portable across different cloud providers while maintaining full control to use cloud-specific features. We have implemented a Mobius jclouds adapter for OpenStack to provision resources on Chameleon Cloud, XSEDE JetStream and Mass Open Cloud. We also plan to implement a Mobius jclouds adapter for Amazon EC2 to provision resources on Amazon AWS, which can then be used in conjunction with the stitchport for AWS DirectConnect to move data in and out of the EC2 provisioned resources.
+Apache jclouds is an open source multi-cloud toolkit for the Java platform that allows to create applications that are portable across different cloud providers while maintaining full control to use cloud-specific features. We have implemented a Mobius jclouds adapter for OpenStack to provision resources on Chameleon Cloud, XSEDE JetStream, Amazon AWS and Mass Open Cloud. We also plan to add support for AWS DirectConnect to move data in and out of the EC2 provisioned resources.
 
 ## <a name="db"></a> Workflow Database
 The information about all the resources provisioned for a workflow or an application on different clouds and the corresponding application request parameters is maintained in the  Workflow Database (PostgreSql hosted on a docker container).
@@ -40,6 +40,9 @@ The high level application requests can be represented as a Gantt chart of requi
 
 ## <a name="pm"></a> Monitoring and Control
 The Monitoring and Control module is designed to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Based on policies and thresholds defined, the goal is to identify the appropriate actions to be taken to ensure the infrastructure QoS at all times. The actions include enabling compute, storage and network elasticity i.e. growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. This module is currently under development. Details can be found [here](./monitoring/Readme.md)!
+
+## <a name="pm"></a> Virtual SDX
+Details ...  
 
 ## <a name="mc"></a> Mobius Controller
 The Mobius controller orchestrates all the above components and processes the incoming REST requests to trigger appropriate Mobius components. 
