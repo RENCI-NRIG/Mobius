@@ -76,7 +76,7 @@ services:
         image: rencinrig/monitoring:latest
         restart: always
         environment:
-        - kafkahost=18.223.195.153:9092
+        - kafkahost=dynamo-broker1.exogeni.net:9093
         - databasehost=database
         - database=mobius
         - user=mobius
