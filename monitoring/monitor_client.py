@@ -99,7 +99,7 @@ class MonitorDaemon:
                         if n["name"] == "cmnw" :
                             continue
                         print("Node= " + hostname)
-                        topicName = workflowId + hostname
+                        topicName = "mobius-" + workflowId + "-" + hostname
                         if self.isThresholdExceeded(topicName) :
                             self.createComputeNode(workflowId, requestsMap[hostname])
 

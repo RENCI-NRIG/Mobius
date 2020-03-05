@@ -705,6 +705,9 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
     if mdata["postBootScript"] is not None:
         s=mdata["postBootScript"]
         s=s.replace("WORKFLOW", workflowId)
+        # TODO add random string to it to make it unique
+        topicPrefix = "mobius-" + workflowId + "-"
+        s=s.replace("KAFKATOPIC", topicPrefix)
         #s=s.replace(oldnodename, nodename)
         s=s.replace("SUBMIT", str(submitSubnet))
         print ("replacing " + oldnodename + " to " + nodename)
