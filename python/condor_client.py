@@ -288,12 +288,12 @@ def main():
         #topics = ['merit-w1exomaster1','merit-w1merit-w1-chworker0.novalocal','merit-w1merit-w1-jetworker2.novalocal']
         #delete_kafka_topic(topics,args.kafkahost)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
-        #if args.comethost is not None:
-        #    print ("Cleaning up COMET context for workflow")
-        #    comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-        #    readToken=args.workflowId + "read"
-        #    writeToken=args.workflowId + "write"
-        #    response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        if args.comethost is not None:
+            print ("Cleaning up COMET context for workflow")
+            comet=CometInterface(args.comethost, None, args.cert, args.key, None)
+            readToken=args.workflowId + "read"
+            writeToken=args.workflowId + "write"
+            response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
         cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
     elif args.operation == 'create':
         ipMap = dict()
