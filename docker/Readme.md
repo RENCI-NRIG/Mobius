@@ -137,3 +137,7 @@ curl -X DELETE -i "localhost:8080/mobius/workflow?workflowID=abcd-5678" -H "acce
 ```
 
 Example json files available at [test](https://github.com/RENCI-NRIG/Mobius/tree/master/mobius/test) directory.
+- List workflows
+```
+curl -X GET -i "localhost:8080/mobius/listWorkflows"
+```
