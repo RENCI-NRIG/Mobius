@@ -183,7 +183,7 @@ def main():
        '--operation',
        dest='operation',
        type = str,
-       help='Operation allowed values: create|get|delete',
+       help='Operation allowed values: create|get|delete|list',
        required=True
     )
     parser.add_argument(
@@ -192,7 +192,7 @@ def main():
         dest='workflowId',
         type = str,
         help='workflowId',
-        required=True
+        required=False
     )
     parser.add_argument(
         '-i1',
@@ -282,6 +282,9 @@ def main():
     if args.operation == 'get':
         print ("Getting status of workflow")
         response=mb.get_workflow(args.mobiushost, args.workflowId)
+    elif args.operation == 'list':
+        print ("List workflows")
+        response=mb.list_workflows(args.mobiushost)
     elif args.operation == 'delete':
         print ("Deleting workflow")
         getresponse=mb.get_workflow(args.mobiushost, args.workflowId)

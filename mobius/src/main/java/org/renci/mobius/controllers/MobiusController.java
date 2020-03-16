@@ -1,4 +1,6 @@
 package org.renci.mobius.controllers;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.renci.comet.CometDataManager;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.ComputeRequest;
@@ -10,6 +12,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -106,6 +109,40 @@ public class MobiusController {
             throw e;
         }
 
+    }
+
+    /*
+     * @brief function responsible to return list of the workflows
+     *
+     *
+     * @throws exception in case of error
+     */
+    public JSONObject listWorkflows() throws Exception{
+        LOGGER.debug("IN");
+        if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+            LOGGER.debug("OUT");
+            throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
+        }
+        try {
+
+            JSONObject result = new JSONObject();
+            synchronized (this) {
+                JSONArray workflows = new JSONArray();
+                for(String workflowId : workflowHashMap.keySet()) {
+                    workflows.add(workflowId);
+                }
+                result.put("workflows", workflows);
+            }
+            return result;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            throw new MobiusException("Internal Server Error e=" + e);
+        }
+        finally {
+            LOGGER.debug("OUT");
+            PeriodicProcessingThread.releaseLock();
+        }
     }
 
     /*

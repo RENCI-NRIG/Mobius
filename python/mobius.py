@@ -17,6 +17,7 @@ import requests
 import urllib3
 import string
 import logging
+import json
 from random import shuffle
 
 class MobiusException(Exception):
@@ -48,6 +49,18 @@ class MobiusInterface:
         print ("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
             print ("Received Response Value: " + str(response.json()["value"]))
+        return response
+
+    @classmethod
+    def list_workflows(self, host):
+        response = requests.get(host + "/listWorkflows", verify=False)
+        print("Received Response Status:{}".format(response.status_code))
+        if response.status_code != 200:
+            if response.json() is not None:
+                print(json.dumps(response.json()))
+        else:
+            if response.json() is not None:
+                print(json.dumps(response.json()["value"]))
         return response
 
     @classmethod
