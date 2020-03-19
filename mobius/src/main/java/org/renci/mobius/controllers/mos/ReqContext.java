@@ -262,11 +262,7 @@ public class ReqContext {
                 for (int i = 0; i < entry.getValue(); ++i) {
                     String name = workflowId + "-";
                     if (hostNamePrefix != null) {
-                        if (hostNamePrefix.contains(workflowId)) {
                             name = hostNamePrefix + nameIndex;
-                        } else {
-                            name = name + hostNamePrefix + nameIndex;
-                        }
                     } else {
                         name = name + CloudContext.NodeName + nameIndex;
                     }
