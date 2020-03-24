@@ -691,7 +691,7 @@ def wait_for_network_to_be_active(mb, host, workflowId, site):
 def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP):
     if "Exogeni" in site:
         wait_for_network_to_be_active(mb, host, workflowId, site)
-    if mdata["hostNamePrefix"] is not None :
+    if 'hostNamePrefix' in mdata and mdata["hostNamePrefix"] is not None :
         if "Exogeni" in site:
             nodename = mdata["hostNamePrefix"] + str(count)
         else :
