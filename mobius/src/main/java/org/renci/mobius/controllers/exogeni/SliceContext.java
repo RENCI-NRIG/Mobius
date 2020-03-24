@@ -40,6 +40,7 @@ public class SliceContext {
     private boolean sendNotification;
     private NDLGenerator.SliceState state;
     private Date expiry;
+    private String workflowId;
 
     /*
      * @brief constructor
@@ -47,12 +48,13 @@ public class SliceContext {
      * @param sliceName - slice name
      *
      */
-    public SliceContext(String sliceName) {
+    public SliceContext(String sliceName, String workflowId) {
         this.sliceName = sliceName;
         this.lastRequest = null;
         sendNotification = false;
         state = NDLGenerator.SliceState.NULL;
         expiry = null;
+        this.workflowId = workflowId;
     }
 
     /*
@@ -394,7 +396,7 @@ public class SliceContext {
                     c = slice.addComputeNode(CloudContext.NodeName + nameIndex);
                 }
                 else {
-                    c = slice.addComputeNode(request.getHostNamePrefix() + nameIndex);
+                    c = slice.addComputeNode(workflowId + request.getHostNamePrefix() + nameIndex);
                 }
                 response.addHost(c.getName(), sliceName);
                 ++nameIndex;

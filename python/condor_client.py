@@ -708,9 +708,6 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, cou
     if mdata["postBootScript"] is not None:
         s=mdata["postBootScript"]
         s=s.replace("WORKFLOW", workflowId)
-        # TODO add random string to it to make it unique
-        topicPrefix = "mobius-" + workflowId + "-"
-        s=s.replace("KAFKATOPIC", topicPrefix)
         #s=s.replace(oldnodename, nodename)
         s=s.replace("SUBMIT", str(submitSubnet))
         print ("replacing " + oldnodename + " to " + nodename)
@@ -749,19 +746,23 @@ def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost, response):
                         hostname=n["name"]
                     if n["name"] == "cmnw" :
                         continue
-                    topics.append("mobius-" + workflowId + "-" + hostname)
-    delete_kafka_topic(topics, kafkahost)
+                    delete_prometheus_target(kafkahost, n["publicIP"])
 
-def delete_kafka_topic(topics, kafkahost):
+def delete_prometheus_target(kafkahost, ip):
     try:
-        print ("List of topics to be deleted " + str(topics))
+        topic_name = 'mobius-promeithus'
         context = _create_ssl_context(cafile="certs/DigiCertCA.crt", certfile="certs/inno-hn_exogeni_net.pem", keyfile="certs/inno-hn_exogeni_net.key")
         context.check_hostname = False
         context.verify_mode = False
-        a = KafkaAdminClient(bootstrap_servers=[kafkahost],
+        producer_instance = KafkaProducer(bootstrap_servers=[kafkahost],
                              security_protocol='SSL',
                              ssl_context=context)
-        a.delete_topics(topics, timeout_ms=30)
+        ip = ip + ":9100"
+        key = 'delete'
+        key_bytes = key.encode(encoding='utf-8')
+        value_bytes = ip.encode(encoding='utf-8')
+        producer_instance.send(topic_name, key=key_bytes, value=value_bytes)
+        producer_instance.flush()
     except Exception as e:
         print("Exception occured while deleting topics e=" + str(e))
         print(" ")

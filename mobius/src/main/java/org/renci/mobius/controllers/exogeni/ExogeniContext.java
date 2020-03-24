@@ -84,7 +84,7 @@ public class ExogeniContext extends CloudContext {
                     JSONObject slice = (JSONObject) object;
                     String sliceName = (String) slice.get("name");
                     LOGGER.debug("sliceName=" + sliceName);
-                    SliceContext sliceContext = new SliceContext(sliceName);
+                    SliceContext sliceContext = new SliceContext(sliceName, workflowId);
                     String expiry = (String) slice.get("expiry");
                     LOGGER.debug("expiry=" + expiry);
                     if (expiry != null) {
@@ -205,7 +205,7 @@ public class ExogeniContext extends CloudContext {
                 LOGGER.debug("Using existing context=" + sliceName);
                 context = sliceContextHashMap.get(sliceName);
             } else {
-                context = new SliceContext(sliceName);
+                context = new SliceContext(sliceName, workflowId);
                 addSliceToMaps = true;
                 LOGGER.debug("Created new context=" + sliceName);
             }

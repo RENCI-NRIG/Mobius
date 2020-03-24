@@ -360,7 +360,7 @@ public class StackContext implements AutoCloseable{
                 for (int i = 0; i < entry.getValue(); ++i) {
                     String name = workflowId + "-";
                     if (hostNamePrefix != null) {
-                        name = hostNamePrefix + nameIndex;
+                        name = workflowId + hostNamePrefix + nameIndex;
                     } else {
                         name = name + CloudContext.NodeName + nameIndex;
                     }
