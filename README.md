@@ -42,6 +42,10 @@ The high level application requests can be represented as a Gantt chart of requi
 The Monitoring and Control module is designed to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Based on policies and thresholds defined, the goal is to identify the appropriate actions to be taken to ensure the infrastructure QoS at all times. The actions include enabling compute, storage and network elasticity i.e. growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. 
 ![Monitoring Diagram](./mobius/plantuml/images/monitoring.png)
 
+### Example Monitoring Dashboard
+![Monitoring Dashboard](./mobius/plantuml/images/grafana.png)
+
+
 ## <a name="pm"></a> Virtual SDX
 Details ...  
 
