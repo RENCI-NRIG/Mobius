@@ -228,7 +228,7 @@ python3 mobius_client.py -o delete -w abcd-1234
 ```
 #### <a name="listworkflow"></a>List workflows
 ```
-python3 mobius_client.py -o list
+python3 mobius_client.py -o get
 ```
 
 ### <a name="condor_client_examples"></a>Condor Client Examples
