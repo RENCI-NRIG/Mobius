@@ -14,10 +14,12 @@
      - [Create a stitch port in a workflow](#createstitchport)
      - [Get status of a workflow](#getworkflow)
      - [Delete a workflow](#deleteworkflow)
+     - [List workflows](#listworkflow)
    - [Condor Client Examples](#condor_client_examples)
      - [Create a condor cluster](#create)
      - [Get status of condor cluster](#get)
      - [Delete condor cluster](#delete)
+     - [List workflows](#list)
  
 # <a name="descr"></a>Description
 Python based clients
@@ -224,6 +226,10 @@ python3 mobius_client.py -o get -w abcd-1234
 ```
 python3 mobius_client.py -o delete -w abcd-1234
 ```
+#### <a name="listworkflow"></a>List workflows
+```
+python3 mobius_client.py -o list
+```
 
 ### <a name="condor_client_examples"></a>Condor Client Examples
 #### <a name="create"></a>Create a condor cluster
@@ -235,25 +241,39 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ```
 python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
 ```
+##### Chameleon(with Monitoring):
+```
+python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon_mon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w ch-abcd-1114 -n2 1
+```
 
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
-##### Exogeni: For controller where COMET is not enabled (EXOSOM)
+##### Exogeni
 - Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
 - Stitch.json if present in the directory would be used to stitch
 ```
 python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
 ```
+##### Exogeni(with Monitoring)
+```
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./exogeni_mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
+```
+
 ##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
 - Storage node stitched to UNT and Chameleon
 - Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
 - Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
+###### Submit and Master node running together
 ```
 python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
-
+###### Separate submit node
 ```
 python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+```
+###### Submit and Master node running together with monitoring enabled
+```
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa-mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
@@ -272,4 +292,8 @@ python3 condor_client.py -o get -w abcd-1114
 #### <a name="delete"></a>Delete condor cluster
 ```
 python3 condor_client.py -o delete -w abcd-1114 
+```
+#### <a name="list"></a>List workflows
+```
+python3 condor_client.py -o list
 ```
