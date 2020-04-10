@@ -557,8 +557,20 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         return response
 
 def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet):
+    '''
+    Provisions storage on specific cloud
+    @params datadir: data directory from where to pick up storage.json
+    @params site: Site on the cloud where to provision the node
+    @params ipMap: IP MAP contains mapping of Hostname to IP Address
+    @params count: Current Node counter
+    @params ipStart: Starting IP Address
+    @params submitSubnet: Submit Node subnet added to the route
+    @params sip: Stitchport IP assigned to Exogeni Master
+    @params exogeniSubnet: Exogeni Subnet added to the route if provisioned on Chameleon
+    '''
     stdata = None
     st = datadir + "/storage.json"
+    # Update the site information
     if os.path.exists(st):
         print ("Using " + st + " file for compute storage data")
         st_f = open(st, 'r')
@@ -569,10 +581,12 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
     if stdata is None:
         return True, count, None
 
+    # Update the postboot script for storage node to use CIDR for IPs on Cloud where node is provisioned
     if stdata["postBootScript"] is not None :
         cidr=get_cidr_escape(ipStart)
         s=stdata["postBootScript"]
         s=s.replace("CIDR",cidr)
+        # Specify Stitch Port IP in storage.sh script when storage node is provisioned on exogeni
         if sip is not None:
             s=s.replace("SIP", str(sip))
         stdata["postBootScript"] = s
@@ -688,7 +702,27 @@ def wait_for_network_to_be_active(mb, host, workflowId, site):
         else:
             break
 
-def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId, mdata, count, ipMap, oldnodename, site, submitSubnet, storagename, subnet, forwardIP):
+def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId,
+                   mdata, count, ipMap, oldnodename, site,
+                   submitSubnet, storagename, subnet, forwardIP):
+    '''
+    Send Mobius Compute Request
+    @params mb: Mobius Interface object
+    @params host: Mobius Host
+    @params nodename: Node Name for the node being provisioned
+    @params ipStart: IP Assigned to Node
+    @params leaseEnd: lease end time
+    @params workflowId: workflow id
+    @params mdata: json containing compute request
+    @params count: Count indicating the number of the node being provisioned
+    @params ipMap: Map for IP Address to HostName mapping
+    @params oldnodename: Previous Node name
+    @params site: site at which node is being provisioned
+    @params submitSubnet: Submit node Subnet to added to the routes
+    @params storagename: Storage Node name to be replaces in workers to mount NFS
+    @params subnet:
+    @params forwardIP:
+    '''
     if "Exogeni" in site:
         wait_for_network_to_be_active(mb, host, workflowId, site)
     if 'hostNamePrefix' in mdata and mdata["hostNamePrefix"] is not None :

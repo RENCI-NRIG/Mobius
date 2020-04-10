@@ -184,7 +184,6 @@ def main():
          dest='workflowId',
          type = str,
          help='workflowId',
-         required=True
      )
      parser.add_argument(
          '-d',
@@ -224,7 +223,10 @@ def main():
 
      if args.operation == 'get':
         mb=MobiusInterface()
-        response=mb.get_workflow(args.mobiushost, args.workflowId)
+        if args.workflowId is None:
+            response=mb.list_workflows(args.mobiushost)
+        else:
+            response=mb.get_workflow(args.mobiushost, args.workflowId)
      elif args.operation == 'delete':
         mb=MobiusInterface()
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
