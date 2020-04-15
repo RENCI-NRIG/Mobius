@@ -11,6 +11,6 @@
     "externalNetwork":"public",
     "networkCidr":"192.168.10.0/24",
     "ipAddress":"192.168.10.5",
-    "forceflavor":"compute_skylake",
-    "postBootScript":"#!/bin/bash\nyum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up.sh -O /root/mobius_start_up.sh; sed -i s'/REPLACE/WORKFLOW/g' /root/mobius_start_up.sh; sed -i s'/readreplace/WORKFLOWread/g' /root/mobius_start_up.sh; sed -i s'/writereplace/WORKFLOWwrite/g' /root/mobius_start_up.sh;sh /root/mobius_start_up.sh;\necho 'SUBNET via IPADDR' >> /etc/sysconfig/network-scripts/route-eno1\n/etc/sysconfig/network-scripts/ifup-routes eno1\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/storage.sh /root/storage.sh\nsed -i 's/REPLACE/CIDR/g' /root/storage.sh\nsh /root/storage.sh"
+    "forceflavor":"compute_haswell",
+    "postBootScript":"#!/bin/bash\nyum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up_v1.1.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW;\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/storage.sh /root/storage.sh\nsed -i 's/REPLACE/CIDR/g' /root/storage.sh\nsh /root/storage.sh"
 }

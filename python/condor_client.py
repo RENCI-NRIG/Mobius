@@ -75,6 +75,18 @@ def get_next_ip(ip):
     print ("Next IP: " + '.'.join(octets))
     return '.'.join(octets)
 
+def get_cidr_subnet_sdx(ip):
+    octets = ip.split('.')
+    octets[3] = '1/24'
+    print ("SDX CIDR: " + '.'.join(octets))
+    return '.'.join(octets)
+
+def get_sdx_controller_ip(ip):
+    octets = ip.split('.')
+    octets[3] = str(int(octets[3]) - 1) + '/24'
+    print ("Chameleon Controller IP: " + '.'.join(octets))
+    return '.'.join(octets)
+
 def main():
     parser = argparse.ArgumentParser(description='Python client to create Condor cluster using mobius.\nUses master.json, submit.json and worker.json for compute requests present in data directory specified.\nCurrently only supports provisioning compute resources. Other resources can be provisioned via mobius_client.\nCreates COMET contexts for Chameleon resources and thus enables exchanging keys and hostnames within workflow')
 
@@ -288,15 +300,13 @@ def main():
     elif args.operation == 'delete':
         print ("Deleting workflow")
         getresponse=mb.get_workflow(args.mobiushost, args.workflowId)
-        #topics = ['merit-w1exomaster1','merit-w1merit-w1-chworker0.novalocal','merit-w1merit-w1-jetworker2.novalocal']
-        #delete_kafka_topic(topics,args.kafkahost)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
         if args.comethost is not None:
             print ("Cleaning up COMET context for workflow")
             comet=CometInterface(args.comethost, None, args.cert, args.key, None)
             readToken=args.workflowId + "read"
             writeToken=args.workflowId + "write"
-            response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
+            response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
         cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
     elif args.operation == 'create':
         ipMap = dict()
@@ -369,6 +379,7 @@ def main():
         print ("Creating workflow")
         response=mb.create_workflow(args.mobiushost, args.workflowId)
         count = 0
+        networkdata = None
         stitchdata = None
         chstoragename = None
         exostoragename = None
@@ -377,6 +388,11 @@ def main():
             sip=None
             # Determine Stitching IP for storage node to be used for configuring routes on chameleon
             if args.exogenisite is not None and args.exodatadir is not None:
+                d = args.exodatadir + "/network.json"
+                if os.path.exists(d) :
+                    d_f = open(d, 'r')
+                    networkdata = json.load(d_f)
+                    d_f.close()
                 d = args.exodatadir + "/stitch.json"
                 if os.path.exists(d) :
                     d_f = open(d, 'r')
@@ -394,11 +410,17 @@ def main():
                 exogeniSubnet = None
                 if args.exoipStart is not None:
                     exogeniSubnet = get_cidr(args.exoipStart)
-                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, None, exogeniSubnet)
+                set_up_network_data(args.chipStart, networkdata, None, args.exoipStart)
+                tempsip = None
+                if networkdata is not None:
+                    tempsip = networkdata["chameleonSdxControllerIP"]
+                    tempsip = tempsip.split("/",1)[0]
+                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, tempsip, exogeniSubnet)
                 if status == False:
                     return
                 if chstoragename is not None:
                     chstoragename = chstoragename + ".novalocal"
+                set_up_network_data(args.chipStart, networkdata, chstoragename, args.exoipStart)
             if args.exogenisite is not None and args.exodatadir is not None:
                 status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip, None)
                 if status == False :
@@ -410,6 +432,9 @@ def main():
                 forwardIP = None
                 if stitchdata is not None:
                     forwardIP = stitchdata["stitchIP"]
+                if networkdata is not None:
+                    forwardIP = networkdata["chameleonSdxControllerIP"]
+                    forwardIP = forwardIP.split("/",1)[0]
                 status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, forwardIP, submitSubnet)
                 if status == False:
                     return
@@ -476,6 +501,11 @@ def main():
                                         print ("Updating target in exogeni stitch request")
                                         stitchdata["target"]=n["name"]
                                         stitchNodeStatus = n["state"]
+                                if networkdata is not None:
+                                    if networkdata["source"] in n["name"]:
+                                        print ("Updating target in exogeni network request")
+                                        networkdata["source"] = n["name"]
+
                             if n["name"] == "cmnw" :
                                 continue
                             #print ("Create comet context for node " + n["name"])
@@ -513,9 +543,14 @@ def main():
                             #print ("Received Response Status: " + response.json()["status"])
                             #if response.status_code == 200 :
                             #    print ("Received Response Value: " + str(response.json()["value"]))
-            if stitcVlanToChameleon is not None and args.exogenisite is not None and stitchdata is not None:
+            if stitcVlanToChameleon is not None and args.exogenisite is not None and (stitchdata is not None or networkdata is not None):
+                target = None
+                if stitchdata is not None:
+                    target = stitchdata["target"]
+                if networkdata is not None:
+                    target = networkdata["source"]
                 while stitchNodeStatus != "Active" :
-                    print ("Waiting for the " + stitchdata["target"] + " to become active")
+                    print ("Waiting for the " + target + " to become active")
                     response=mb.get_workflow(args.mobiushost, args.workflowId)
                     if response.json()["status"] == 200 :
                         status=json.loads(response.json()["value"])
@@ -526,21 +561,58 @@ def main():
                                 for s in slices:
                                     nodes = s["nodes"]
                                     for n in nodes :
-                                        if stitchdata["target"] == n["name"] :
-                                            print ("Updating state of " + stitchdata["target"])
+                                        if target == n["name"] :
+                                            print ("Updating state of " + target)
                                             stitchNodeStatus = n["state"]
                     print ("Sleeping for 5 seconds")
                     time.sleep(5)
+                if networkdata is not None:
+                    chnode = networkdata["destination"]
+                    stitchNodeStatus = "TEMP"
+                    while stitchNodeStatus != "ACTIVE" :
+                        print ("Waiting for the " + chnode + " to become active")
+                        response=mb.get_workflow(args.mobiushost, args.workflowId)
+                        if response.json()["status"] == 200 :
+                            status=json.loads(response.json()["value"])
+                            requests = json.loads(status["workflowStatus"])
+                            for req in requests:
+                                if "Chameleon" in req["site"] :
+                                    slices = req["slices"]
+                                    for s in slices:
+                                        nodes = s["nodes"]
+                                        for n in nodes :
+                                            if chnode == n["name"] :
+                                                print ("Updating state of " + chnode)
+                                                stitchNodeStatus = n["state"]
+                        print ("Sleeping for 5 seconds")
+                        time.sleep(5)
+
                 time.sleep(60)
 
                 print ("stitcVlanToChameleon = " + stitcVlanToChameleon)
                 print ("perform stitching")
-                perform_stitch(mb, args, args.exodatadir, args.exogenisite, stitcVlanToChameleon, stitchdata)
+                if stitchdata is not None:
+                    perform_stitch(mb, args, args.exodatadir, args.exogenisite, stitcVlanToChameleon, stitchdata)
+                if networkdata is not None:
+                    perform_network_request(mb, args, args.exodatadir, args.exogenisite, networkdata)
     else:
         parser.print_help()
         sys.exit(1)
 
     sys.exit(0)
+
+def perform_network_request(mb, args, datadir, site, data):
+    if data is None :
+        d = datadir + "/network.json"
+        if os.path.exists(d):
+            print ("Using " + d + " file for stitch data")
+            d_f = open(d, 'r')
+            data = json.load(d_f)
+            d_f.close()
+    if data is not None:
+        print ("payload for network request" + str(data))
+        response=mb.create_network(args.mobiushost, args.workflowId, data)
+        return response
 
 def perform_stitch(mb, args, datadir, site, vlan, data):
     if data is None :
@@ -726,10 +798,7 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId,
     if "Exogeni" in site:
         wait_for_network_to_be_active(mb, host, workflowId, site)
     if 'hostNamePrefix' in mdata and mdata["hostNamePrefix"] is not None :
-        if "Exogeni" in site:
-            nodename = mdata["hostNamePrefix"] + str(count)
-        else :
-            nodename = workflowId + "-" + mdata["hostNamePrefix"] + str(count)
+        nodename = workflowId + mdata["hostNamePrefix"] + str(count)
     defIP = None
     if ipStart is not None :
         mdata["ipAddress"] = ipStart
@@ -764,8 +833,18 @@ def create_compute(mb, host, nodename, ipStart, leaseEnd, workflowId,
     response=mb.create_compute(host, workflowId, mdata)
     return response, nodename
 
+def set_up_network_data(ch_storage_node_ip, networkdata, ch_storage_node_name, exo_start_ip):
+    if networkdata is not None:
+        networkdata["destinationIP"] = ch_storage_node_ip
+        networkdata["destinationSubnet"] = get_cidr_subnet_sdx(ch_storage_node_ip)
+        networkdata["chameleonSdxControllerIP"] = get_sdx_controller_ip(ch_storage_node_ip)
+        if ch_storage_node_name is not None:
+            temp = ch_storage_node_name.replace('.novalocal','')
+            networkdata["destination"] = temp
+        networkdata["sourceLocalSubnet"] = get_cidr(exo_start_ip)
+        print("KOMAL--- debug {}".format(networkdata))
+
 def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost, response):
-    topics = []
     if response.json()["status"] == 200 :
         status=json.loads(response.json()["value"])
         requests = json.loads(status["workflowStatus"])

@@ -14,8 +14,7 @@ import javax.validation.constraints.*;
  * NetworkRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2019-11-08T10:43:12.246-05:00[America/New_York]")
-
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-04-14T10:07:05.150-04:00[America/New_York]")
 public class NetworkRequest   {
   @JsonProperty("source")
   private String source = null;
@@ -26,6 +25,9 @@ public class NetworkRequest   {
   @JsonProperty("sourceSubnet")
   private String sourceSubnet = null;
 
+  @JsonProperty("sourceLocalSubnet")
+  private String sourceLocalSubnet = null;
+
   @JsonProperty("destination")
   private String destination = null;
 
@@ -34,6 +36,9 @@ public class NetworkRequest   {
 
   @JsonProperty("destinationSubnet")
   private String destinationSubnet = null;
+
+  @JsonProperty("destLocalSubnet")
+  private String destLocalSubnet = null;
 
   @JsonProperty("linkSpeed")
   private String linkSpeed = "1000000000";
@@ -77,7 +82,6 @@ public class NetworkRequest   {
       return null;
     }
   }
-
   @JsonProperty("action")
   private ActionEnum action = null;
 
@@ -91,10 +95,9 @@ public class NetworkRequest   {
    * @return source
   **/
   @ApiModelProperty(required = true, value = "hostname of the source node")
-  @NotNull
+      @NotNull
 
-
-  public String getSource() {
+    public String getSource() {
     return source;
   }
 
@@ -112,10 +115,9 @@ public class NetworkRequest   {
    * @return sourceIP
   **/
   @ApiModelProperty(required = true, value = "ip of the source node")
-  @NotNull
+      @NotNull
 
-
-  public String getSourceIP() {
+    public String getSourceIP() {
     return sourceIP;
   }
 
@@ -133,15 +135,33 @@ public class NetworkRequest   {
    * @return sourceSubnet
   **/
   @ApiModelProperty(required = true, value = "subnet of the source node")
-  @NotNull
+      @NotNull
 
-
-  public String getSourceSubnet() {
+    public String getSourceSubnet() {
     return sourceSubnet;
   }
 
   public void setSourceSubnet(String sourceSubnet) {
     this.sourceSubnet = sourceSubnet;
+  }
+
+  public NetworkRequest sourceLocalSubnet(String sourceLocalSubnet) {
+    this.sourceLocalSubnet = sourceLocalSubnet;
+    return this;
+  }
+
+  /**
+   * Local subnet at the source to which traffic from source be routed
+   * @return sourceLocalSubnet
+  **/
+  @ApiModelProperty(value = "Local subnet at the source to which traffic from source be routed")
+  
+    public String getSourceLocalSubnet() {
+    return sourceLocalSubnet;
+  }
+
+  public void setSourceLocalSubnet(String sourceLocalSubnet) {
+    this.sourceLocalSubnet = sourceLocalSubnet;
   }
 
   public NetworkRequest destination(String destination) {
@@ -154,10 +174,9 @@ public class NetworkRequest   {
    * @return destination
   **/
   @ApiModelProperty(required = true, value = "hostname of the destination node")
-  @NotNull
+      @NotNull
 
-
-  public String getDestination() {
+    public String getDestination() {
     return destination;
   }
 
@@ -175,10 +194,9 @@ public class NetworkRequest   {
    * @return destinationIP
   **/
   @ApiModelProperty(required = true, value = "ip of the destination node")
-  @NotNull
+      @NotNull
 
-
-  public String getDestinationIP() {
+    public String getDestinationIP() {
     return destinationIP;
   }
 
@@ -196,15 +214,33 @@ public class NetworkRequest   {
    * @return destinationSubnet
   **/
   @ApiModelProperty(required = true, value = "subnet of the destination node")
-  @NotNull
+      @NotNull
 
-
-  public String getDestinationSubnet() {
+    public String getDestinationSubnet() {
     return destinationSubnet;
   }
 
   public void setDestinationSubnet(String destinationSubnet) {
     this.destinationSubnet = destinationSubnet;
+  }
+
+  public NetworkRequest destLocalSubnet(String destLocalSubnet) {
+    this.destLocalSubnet = destLocalSubnet;
+    return this;
+  }
+
+  /**
+   * Local subnet at the destination to which traffic from source be routed
+   * @return destLocalSubnet
+  **/
+  @ApiModelProperty(value = "Local subnet at the destination to which traffic from source be routed")
+  
+    public String getDestLocalSubnet() {
+    return destLocalSubnet;
+  }
+
+  public void setDestLocalSubnet(String destLocalSubnet) {
+    this.destLocalSubnet = destLocalSubnet;
   }
 
   public NetworkRequest linkSpeed(String linkSpeed) {
@@ -217,9 +253,8 @@ public class NetworkRequest   {
    * @return linkSpeed
   **/
   @ApiModelProperty(value = "Link speed")
-
-
-  public String getLinkSpeed() {
+  
+    public String getLinkSpeed() {
     return linkSpeed;
   }
 
@@ -237,9 +272,8 @@ public class NetworkRequest   {
    * @return leaseStart
   **/
   @ApiModelProperty(value = "Least Start Time")
-
-
-  public String getLeaseStart() {
+  
+    public String getLeaseStart() {
     return leaseStart;
   }
 
@@ -257,9 +291,8 @@ public class NetworkRequest   {
    * @return leaseEnd
   **/
   @ApiModelProperty(value = "Least End Time")
-
-
-  public String getLeaseEnd() {
+  
+    public String getLeaseEnd() {
     return leaseEnd;
   }
 
@@ -277,9 +310,8 @@ public class NetworkRequest   {
    * @return chameleonSdxControllerIP
   **/
   @ApiModelProperty(value = "IP address used by SDX controller for the new interface to Stitchport")
-
-
-  public String getChameleonSdxControllerIP() {
+  
+    public String getChameleonSdxControllerIP() {
     return chameleonSdxControllerIP;
   }
 
@@ -297,10 +329,9 @@ public class NetworkRequest   {
    * @return action
   **/
   @ApiModelProperty(required = true, value = "")
-  @NotNull
+      @NotNull
 
-
-  public ActionEnum getAction() {
+    public ActionEnum getAction() {
     return action;
   }
 
@@ -321,9 +352,11 @@ public class NetworkRequest   {
     return Objects.equals(this.source, networkRequest.source) &&
         Objects.equals(this.sourceIP, networkRequest.sourceIP) &&
         Objects.equals(this.sourceSubnet, networkRequest.sourceSubnet) &&
+        Objects.equals(this.sourceLocalSubnet, networkRequest.sourceLocalSubnet) &&
         Objects.equals(this.destination, networkRequest.destination) &&
         Objects.equals(this.destinationIP, networkRequest.destinationIP) &&
         Objects.equals(this.destinationSubnet, networkRequest.destinationSubnet) &&
+        Objects.equals(this.destLocalSubnet, networkRequest.destLocalSubnet) &&
         Objects.equals(this.linkSpeed, networkRequest.linkSpeed) &&
         Objects.equals(this.leaseStart, networkRequest.leaseStart) &&
         Objects.equals(this.leaseEnd, networkRequest.leaseEnd) &&
@@ -333,7 +366,7 @@ public class NetworkRequest   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(source, sourceIP, sourceSubnet, destination, destinationIP, destinationSubnet, linkSpeed, leaseStart, leaseEnd, chameleonSdxControllerIP, action);
+    return Objects.hash(source, sourceIP, sourceSubnet, sourceLocalSubnet, destination, destinationIP, destinationSubnet, destLocalSubnet, linkSpeed, leaseStart, leaseEnd, chameleonSdxControllerIP, action);
   }
 
   @Override
@@ -344,9 +377,11 @@ public class NetworkRequest   {
     sb.append("    source: ").append(toIndentedString(source)).append("\n");
     sb.append("    sourceIP: ").append(toIndentedString(sourceIP)).append("\n");
     sb.append("    sourceSubnet: ").append(toIndentedString(sourceSubnet)).append("\n");
+    sb.append("    sourceLocalSubnet: ").append(toIndentedString(sourceLocalSubnet)).append("\n");
     sb.append("    destination: ").append(toIndentedString(destination)).append("\n");
     sb.append("    destinationIP: ").append(toIndentedString(destinationIP)).append("\n");
     sb.append("    destinationSubnet: ").append(toIndentedString(destinationSubnet)).append("\n");
+    sb.append("    destLocalSubnet: ").append(toIndentedString(destLocalSubnet)).append("\n");
     sb.append("    linkSpeed: ").append(toIndentedString(linkSpeed)).append("\n");
     sb.append("    leaseStart: ").append(toIndentedString(leaseStart)).append("\n");
     sb.append("    leaseEnd: ").append(toIndentedString(leaseEnd)).append("\n");
@@ -367,4 +402,3 @@ public class NetworkRequest   {
     return o.toString().replace("\n", "\n    ");
   }
 }
-

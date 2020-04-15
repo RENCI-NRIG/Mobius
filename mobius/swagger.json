@@ -17,6 +17,52 @@
   "basePath" : "/mobius",
   "schemes" : [ "https" ],
   "paths" : {
+    "/listWorkflows" : {
+      "get" : {
+        "summary" : "returs list of workflows",
+        "description" : "Get the list of active workflows\n",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "403" : {
+            "description" : "Forbidden",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "500" : {
+            "description" : "Internal Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          },
+          "default" : {
+            "description" : "Unexpected Error",
+            "schema" : {
+              "$ref" : "#/definitions/mobiusResponse"
+            }
+          }
+        }
+      }
+    },
     "/workflow" : {
       "get" : {
         "summary" : "returs status of the workflow",
@@ -501,11 +547,15 @@
         },
         "externalNetwork" : {
           "type" : "string",
-          "description" : "external network name over which would be used for routing to external world. Only needed for Chameleon requests when networkType is 'private'."
+          "description" : "external network name/cidr over which would be used for routing to external world. Only needed for non exogeni requests when networkType is 'private'."
         },
         "networkCidr" : {
           "type" : "string",
-          "description" : "network cidr for the private network. Only needed for Chameleon requests when networkType is 'private'."
+          "description" : "network cidr for the private network. Only needed for non exogeni requests when networkType is 'private'."
+        },
+        "vpcCidr" : {
+          "type" : "string",
+          "description" : "network cidr for the AWS VPC. Only needed for VPC requests when networkType is 'private'."
         },
         "imageUrl" : {
           "type" : "string",
@@ -561,6 +611,10 @@
           "type" : "string",
           "description" : "subnet of the source node"
         },
+        "sourceLocalSubnet" : {
+          "type" : "string",
+          "description" : "Local subnet at the source to which traffic from source be routed"
+        },
         "destination" : {
           "type" : "string",
           "description" : "hostname of the destination node"
@@ -573,9 +627,14 @@
           "type" : "string",
           "description" : "subnet of the destination node"
         },
+        "destLocalSubnet" : {
+          "type" : "string",
+          "description" : "Local subnet at the destination to which traffic from source be routed"
+        },
         "linkSpeed" : {
-          "type" : "integer",
-          "description" : "Link speed"
+          "type" : "string",
+          "description" : "Link speed",
+          "default" : "1000000000"
         },
         "leaseStart" : {
           "type" : "string",
@@ -584,6 +643,10 @@
         "leaseEnd" : {
           "type" : "string",
           "description" : "Least End Time"
+        },
+        "chameleonSdxControllerIP" : {
+          "type" : "string",
+          "description" : "IP address used by SDX controller for the new interface to Stitchport"
         },
         "action" : {
           "type" : "string",

@@ -70,7 +70,7 @@ def main():
         comet=CometInterface(args.comethost, None, args.cert, args.key, None)
         readToken=args.workflowId + "read"
         writeToken=args.workflowId + "write"
-        response=comet.reset_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
     else:
         parser.print_help()
         sys.exit(1)

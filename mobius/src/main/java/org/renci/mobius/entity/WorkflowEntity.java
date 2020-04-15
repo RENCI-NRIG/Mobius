@@ -24,18 +24,23 @@ public class WorkflowEntity implements Serializable  {
     @Column(columnDefinition = "TEXT", nullable = true)
     private String hostNamesJson;
 
+    @Column(columnDefinition = "TEXT", nullable = true)
+    private String networkRequestsJson;
+
     protected WorkflowEntity() {
         // no-args constructor required by JPA spec
         // this one is protected since it shouldn't be used directly
     }
 
-    public WorkflowEntity(String workflowId, int nodeCount, int storageCount, int stitchCount, String siteContextJson, String hostNamesJson) {
+    public WorkflowEntity(String workflowId, int nodeCount, int storageCount, int stitchCount,
+                          String siteContextJson, String hostNamesJson, String networkRequestsJson) {
         this.workflowId = workflowId;
         this.nodeCount = nodeCount;
         this.storageCount = storageCount;
         this.stitchCount = stitchCount;
         this.siteContextJson = siteContextJson;
         this.hostNamesJson = hostNamesJson;
+        this.networkRequestsJson = networkRequestsJson;
     }
 
     public String getWorkflowId() {
@@ -53,4 +58,6 @@ public class WorkflowEntity implements Serializable  {
     public int getStitchCount() { return stitchCount; }
 
     public String getHostNamesJson() { return hostNamesJson; }
+
+    public String getNetworkRequestsJson() { return networkRequestsJson; }
 }
