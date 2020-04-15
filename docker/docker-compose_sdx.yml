@@ -42,6 +42,8 @@ services:
         - "~/.ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
         - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
         - "~/.ssh/id_rsa:/code/ssh/id_rsa"
+        - "../mobius/src/main/resources/DigiCertCA.der:/code/config/DigiCertCA.der"
+        - "../mobius/src/main/resources/client.jks:/code/config/client.jks"
     notification:
         container_name: notification 
         hostname: notification 

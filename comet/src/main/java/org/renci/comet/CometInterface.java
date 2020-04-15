@@ -376,4 +376,49 @@ public class CometInterface {
             LOGGER.debug("response null");
         }
     }
+
+    /*
+     * @brief funtion invokes readScope REST API to read meta data from Comet for a specific category
+     *
+     * @param contextId - Context Id(sliceId)
+     * @param readToken - Read Token (random generated string)
+     * @param family - Specifies category of the metadata
+     *
+     * @return true for success; false otherwise
+     *
+     */
+    public void deleteFamilies(String contextId, String readToken, String writeToken) {
+        CometResponse response = enumerateScopeGet(contextId, readToken, null);
+        if(response != null) {
+            if (response.getStatus() != HttpStatus.SC_OK) {
+                LOGGER.debug("Unable to enumerate families for context:" + contextId + " readToken:" + readToken + " writeToken:" + writeToken);
+                LOGGER.debug("Status: " + response.getStatus() + "Message: " + response.getMessage());
+            }
+            else {
+                String value = response.getValue();
+                if(value != null && !value.isEmpty()) {
+                    JSONObject object = (JSONObject) JSONValue.parse(value);
+                    if(object != null) {
+                        JSONArray enteries = (JSONArray) object.get(JsonKeyEnteries);
+                        if(enteries != null) {
+                            for (Object e : enteries) {
+                                JSONObject entry = (JSONObject) e;
+                                if(entry != null) {
+                                    String key = (String)entry.get(JsonKeyEnteryKey);
+                                    String family = (String) entry.get(JsonKeyFamily);
+                                    if(key!= null && family != null) {
+                                        LOGGER.debug("Resetting family " + family +  " for key " + key + " in context " + contextId);
+                                        deleteScopeDelete(contextId, key, readToken, writeToken, family);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            LOGGER.debug("response null");
+        }
+    }
 }

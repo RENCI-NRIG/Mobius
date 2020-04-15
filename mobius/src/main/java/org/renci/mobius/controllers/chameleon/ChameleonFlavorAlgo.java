@@ -19,6 +19,7 @@ public class ChameleonFlavorAlgo {
 
     enum Flavor {
         // cpus, diskspace, ram, name
+        Cascade(48, 250059, 131072, "compute_cascadelake"),
         Haswell(48, 250059, 131072, "compute_haswell"),
         InfiniBand(48, 250059, 131072, "compute_haswell_ib"),
         Skylake(48, 240057, 196608, "compute_skylake"),
@@ -65,6 +66,7 @@ public class ChameleonFlavorAlgo {
     public static final List<Flavor> computeflavors;
     static {
         List<Flavor> fv = new ArrayList<>();
+        fv.add(Flavor.Cascade);
         fv.add(Flavor.Haswell);
         fv.add(Flavor.InfiniBand);
         fv.add(Flavor.Skylake);
@@ -120,6 +122,9 @@ public class ChameleonFlavorAlgo {
             if(forceFlavor != null) {
                 if ( forceFlavor.compareToIgnoreCase(Flavor.Haswell.name) == 0) {
                     result.put(Flavor.Haswell.name, count);
+                }
+                else if ( forceFlavor.compareToIgnoreCase(Flavor.Cascade.name) == 0) {
+                    result.put(Flavor.Cascade.name, count);
                 }
                 else if (forceFlavor.compareToIgnoreCase(Flavor.InfiniBand.name) == 0 ) {
                     result.put(Flavor.InfiniBand.name, count);

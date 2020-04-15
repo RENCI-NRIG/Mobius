@@ -95,7 +95,8 @@ public class CometDataManager {
         LOGGER.debug("IN");
         try {
             CometInterface cometInterface = new CometInterface(cometHost, cometCaCert, cometCert, cometCertPwd);
-            cometInterface.resetFamilies(workflowId, getReadToken(workflowId), getWriteToken(workflowId));
+            //cometInterface.resetFamilies(workflowId, getReadToken(workflowId), getWriteToken(workflowId));
+            cometInterface.deleteFamilies(workflowId, getReadToken(workflowId), getWriteToken(workflowId));
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);

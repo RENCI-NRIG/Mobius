@@ -522,6 +522,7 @@ public class ExogeniContext extends CloudContext {
      * @param hostname - hostname
      * @param ip - ip
      * @param subnet - subnet
+     * @param localSubnet - localSubnet
      * @param action - action
      * @param destHostName - destHostName
      * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
@@ -530,11 +531,15 @@ public class ExogeniContext extends CloudContext {
      *
      */
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
+                                                            String localSubnet,
                                                             NetworkRequest.ActionEnum action, String destHostName,
                                                             String sdxStitchPortInterfaceIP) throws Exception{
         synchronized (this) {
-            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
-                    + " destHostName=" + destHostName + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet
+                    +  " localSubnet=" + localSubnet
+                    + " action=" + action
+                    + " destHostName=" + destHostName + " hostNameToSliceNameHashMap="
+                    + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
@@ -551,7 +556,7 @@ public class ExogeniContext extends CloudContext {
                 throw new MobiusException("slice context not found");
             }
             try {
-                context.processNetworkRequestSetupStitchingAndRoute(hostname, ip, subnet, action);
+                context.processNetworkRequestSetupStitchingAndRoute(hostname, ip, subnet, localSubnet, action);
             } catch (SliceNotFoundOrDeadException e) {
                 handSliceNotFoundException(context.getSliceName());
                 sliceContextHashMap.remove(context);

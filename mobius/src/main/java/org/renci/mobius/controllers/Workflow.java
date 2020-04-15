@@ -29,6 +29,7 @@ class Workflow {
     protected WorkflowOperationLock lock;
     private HashMap<String, CloudContext> siteToContextHashMap;
     private HashMap<String, String> hostNameToComputeRequestMap;
+    private HashMap<String, String> networkRequestToComputeRequestMap;
     private int nodeCount, storageCount, stitchCount;
     private FutureRequests futureRequests;
     private static final Logger LOGGER = LogManager.getLogger( Workflow.class.getName() );
@@ -43,6 +44,7 @@ class Workflow {
         lock = new WorkflowOperationLock();
         siteToContextHashMap = new HashMap<>();
         hostNameToComputeRequestMap = new HashMap<>();
+        networkRequestToComputeRequestMap = new HashMap<>();
         nodeCount = 0;
         storageCount = 0;
         stitchCount = 0;
@@ -67,6 +69,7 @@ class Workflow {
         siteToContextHashMap = new HashMap<String, CloudContext>();
         futureRequests = new FutureRequests();
         hostNameToComputeRequestMap = new HashMap<>();
+        networkRequestToComputeRequestMap = new HashMap<>();
 
         // process json to construct siteToContextHashMap
         if(workflow.getSiteContextJson() != null) {
@@ -114,6 +117,27 @@ class Workflow {
                 LOGGER.error("JSON parsing failed");
             }
         }
+        if(workflow.getNetworkRequestsJson() != null) {
+            LOGGER.debug("NetworkRequestJson =" + workflow.getNetworkRequestsJson());
+            JSONObject object = (JSONObject) JSONValue.parse(workflow.getNetworkRequestsJson());
+            if(object != null) {
+                Set<String> keySet = object.keySet();
+                for (String key : keySet) {
+                    try {
+                        LOGGER.debug("source+dest=" + key);
+                        String requestString = (String) object.get(key);
+                        LOGGER.debug("requestString=" + requestString);
+                        networkRequestToComputeRequestMap.put(key, requestString);
+                    } catch (Exception e) {
+                        LOGGER.error("Exception occured while loading context from database e= " + e);
+                        e.printStackTrace();
+                    }
+                }
+            }
+            else {
+                LOGGER.error("JSON parsing failed");
+            }
+        }
     }
 
     /*
@@ -133,6 +157,7 @@ class Workflow {
     public WorkflowEntity convert() {
         String siteJson = null;
         String hostJson = null;
+        String networkRequestJson = null;
 
         WorkflowEntity retVal = null;
 
@@ -164,7 +189,19 @@ class Workflow {
             hostJson = object.toJSONString();
             LOGGER.debug("hostJson=" + hostJson);
         }
-        retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, stitchCount, siteJson, hostJson);
+
+        if(networkRequestToComputeRequestMap != null && networkRequestToComputeRequestMap.size() != 0) {
+            JSONObject object = new JSONObject();
+            for (HashMap.Entry<String, String> e : networkRequestToComputeRequestMap.entrySet()) {
+                if(e.getValue() != null) {
+                    object.put(e.getKey(), e.getValue());
+                }
+            }
+            networkRequestJson = object.toJSONString();
+            LOGGER.debug("networkRequestJson=" + networkRequestJson);
+        }
+        retVal = new WorkflowEntity(this.workflowID, nodeCount, storageCount, stitchCount, siteJson,
+                hostJson, networkRequestJson);
 
         return retVal;
     }
@@ -239,6 +276,41 @@ class Workflow {
     public void stop() throws Exception {
         LOGGER.debug("IN");
         CloudContext context = null;
+        try {
+            for (HashMap.Entry<String, String> networkRequest : networkRequestToComputeRequestMap.entrySet()) {
+                LOGGER.debug("Key=" +  networkRequest.getKey());
+                LOGGER.debug("Value=" +  networkRequest.getValue());
+                JSONObject object = (JSONObject) JSONValue.parse(networkRequest.getValue());
+                LOGGER.debug("JSON=" + object);
+                LOGGER.debug("JSON=" + object.toString());
+
+                NetworkRequest request = new NetworkRequest();
+                request.setAction(NetworkRequest.ActionEnum.DELETE);
+                request.setSource((String) object.get("source"));
+                request.setSourceIP((String) object.get("sourceIP"));
+                request.setSourceSubnet((String) object.get("sourceSubnet"));
+                if (object.containsKey("sourceLocalSubnet")) {
+                    request.setSourceLocalSubnet((String) object.get("sourceLocalSubnet"));
+                }
+                request.setDestination((String) object.get("destination"));
+                request.setDestinationIP((String) object.get("destinationIP"));
+                request.setDestinationIP((String) object.get("destinationSubnet"));
+                if (object.containsKey("destLocalSubnet")) {
+                    request.setDestLocalSubnet((String) object.get("destLocalSubnet"));
+                }
+                request.setLinkSpeed((String) object.get("linkSpeed"));
+                if (object.containsKey("chameleonSdxControllerIP")) {
+                    request.setChameleonSdxControllerIP((String) object.get("chameleonSdxControllerIP"));
+                }
+                processNetworkRequest(request, false);
+
+            }
+        }
+        catch (Exception e) {
+            LOGGER.debug("Exception occured while doing network cleanup");
+            LOGGER.debug(e);
+            e.printStackTrace();
+        }
         for(HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
             context = e.getValue();
             context.stop();
@@ -500,20 +572,73 @@ class Workflow {
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
-                    request.getSourceSubnet(), request.getAction(), destHostOrSite, sdxStitchPortInterfaceIP);
+                    request.getSourceSubnet(), request.getSourceLocalSubnet(), request.getAction(),
+                    destHostOrSite, sdxStitchPortInterfaceIP);
 
             // Stitch to SDX and advertise the prefix or Unstitch
             context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
-                    request.getDestinationSubnet(), request.getAction(), sourceHostOrSite, sdxStitchPortInterfaceIP);
+                    request.getDestinationSubnet(), request.getDestLocalSubnet(), request.getAction(),
+                    sourceHostOrSite, sdxStitchPortInterfaceIP);
 
             if(request.getAction() == NetworkRequest.ActionEnum.ADD) {
                 // Connect the prefix source - destination
                 context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
-                        request.getDestinationSubnet(), request.getLinkSpeed(), request.getDestinationIP(), sdxStitchPortInterfaceIP);
+                        request.getDestinationSubnet(), request.getLinkSpeed(), request.getDestinationIP(),
+                        sdxStitchPortInterfaceIP);
 
                 // Connect the prefix destination - source
                 context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
-                        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(), sdxStitchPortInterfaceIP);
+                        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(),
+                        sdxStitchPortInterfaceIP);
+
+                if(request.getSourceLocalSubnet() != null) {
+                    // Connect the prefix source - destination
+                    context1.processNetworkRequestLink(request.getSource(), request.getSourceLocalSubnet(),
+                            request.getDestinationSubnet(), request.getLinkSpeed(), request.getDestinationIP(),
+                            sdxStitchPortInterfaceIP);
+
+                    // Connect the prefix destination - source
+                    context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
+                            request.getSourceLocalSubnet(), request.getLinkSpeed(), request.getSourceIP(),
+                            sdxStitchPortInterfaceIP);
+
+                }
+
+                if(request.getDestLocalSubnet() != null) {
+                    // Connect the prefix source - destination
+                    context1.processNetworkRequestLink(request.getSource(), request.getSourceSubnet(),
+                            request.getDestLocalSubnet(), request.getLinkSpeed(), request.getDestinationIP(),
+                            sdxStitchPortInterfaceIP);
+
+                    // Connect the prefix destination - source
+                    context2.processNetworkRequestLink(request.getDestination(), request.getDestLocalSubnet(),
+                            request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(), sdxStitchPortInterfaceIP);
+
+                }
+                String key = request.getSource() + "+" + request.getDestination();
+                JSONObject object = new JSONObject();
+                object.put("source", request.getSource());
+                object.put("sourceIP", request.getSourceIP());
+                object.put("sourceSubnet",request.getSourceSubnet());
+                if (request.getSourceLocalSubnet() != null) {
+                    object.put("sourceLocalSubnet", request.getSourceLocalSubnet());
+                }
+                object.put("destination",request.getDestination());
+                object.put("destinationIP",request.getDestinationIP());
+                object.put("destinationSubnet",request.getDestinationSubnet());
+                if (request.getDestLocalSubnet() != null) {
+                    object.put("destLocalSubnet", request.getDestLocalSubnet());
+                }
+                object.put("linkSpeed",request.getLinkSpeed());
+                if(request.getChameleonSdxControllerIP() != null) {
+                    object.put("chameleonSdxControllerIP", request.getChameleonSdxControllerIP());
+                }
+                LOGGER.debug("Adding " + key + " networkRequest=" + object.toString());
+                networkRequestToComputeRequestMap.put(key, object.toString());
+            }
+            else if(request.getAction() == NetworkRequest.ActionEnum.DELETE) {
+                String key = request.getSource() + "+" + request.getDestination();
+                networkRequestToComputeRequestMap.remove(key);
             }
         }
         finally {

@@ -183,11 +183,12 @@ abstract public class CloudContext {
     abstract public int processStitchRequest(StitchRequest request, int nameIndex, boolean isFutureRequest) throws Exception;
 
     /*
-     * @brief function to connect the link between source and destination subnet
+     * @brief function to stitch to sdx and advertise a prefix for add operation and unstitch in case of delete
      *
      * @param hostname - hostname
-     * @param subnet1 - subnet1
-     * @param subnet2 - subnet2
+     * @param ip - ip
+     * @param subnet - subnet
+     * @param localSubnet - localSubnet
      * @param action - action
      * @param destHostName - destHostName
      * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
@@ -196,8 +197,10 @@ abstract public class CloudContext {
      *
      */
     abstract public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip,
-                                                                     String subnet, NetworkRequest.ActionEnum action,
-                                                                     String destHostName, String sdxStitchPortInterfaceIP) throws Exception;
+                                                                     String subnet, String localSubnet,
+                                                                     NetworkRequest.ActionEnum action,
+                                                                     String destHostName,
+                                                                     String sdxStitchPortInterfaceIP) throws Exception;
 
     /*
      * @brief function to process a network request;

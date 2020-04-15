@@ -686,12 +686,17 @@ public class SliceContext {
      * @param hostName - hostName
      * @param ip - ip
      * @param subnet - subnet
+     * @param localSubnet - localSubnet
      * @param action - action
      *
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet, NetworkRequest.ActionEnum action) throws Exception{
+    public void processNetworkRequestSetupStitchingAndRoute(String hostname,
+                                                            String ip,
+                                                            String subnet,
+                                                            String localSubnet,
+                                                            NetworkRequest.ActionEnum action) throws Exception{
         LOGGER.debug("IN");
 
         try {
@@ -704,7 +709,6 @@ public class SliceContext {
             if (c == null) {
                 throw new MobiusException("Unable to load compute node");
             }
-            String sshfile = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             switch (action) {
@@ -713,6 +717,9 @@ public class SliceContext {
                     String secret = permitStitch(c.getStitchingGUID());
                     sdxClient.stitch(sliceName, c.getDomain(), c.getStitchingGUID(), ip, subnet, secret);
                     sdxClient.prefix(sliceName, ip, subnet);
+                    if (localSubnet != null) {
+                        sdxClient.prefix(sliceName, ip, localSubnet);
+                    }
                 }
                     break;
                 case DELETE: {
@@ -757,7 +764,8 @@ public class SliceContext {
      * @throws Exception in case of error
      *
      */
-    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth, String destinationIP) throws Exception{
+    public void processNetworkRequestLink(String hostname, String subnet1, String subnet2,
+                                          String bandwidth, String destinationIP) throws Exception{
         LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
         try {
             Slice slice = getSlice();
@@ -779,7 +787,8 @@ public class SliceContext {
             sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
 
             String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
-            String command = String.format("ip route add %s/32 via %s", destinationIP, gateway1);
+            String firstThree = destinationIP.replaceFirst("\\d+$", "");
+            String command = String.format("ip route add %s0/24 via %s", firstThree, gateway1);
             RemoteCommand remoteCommand = new RemoteCommand(null, MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
             remoteCommand.runCmdByIP(command, ip,false);
         }

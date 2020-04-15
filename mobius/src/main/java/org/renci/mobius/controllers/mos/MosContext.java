@@ -556,6 +556,7 @@ public class MosContext extends CloudContext {
      * @param hostname - hostname
      * @param ip - ip
      * @param subnet - subnet
+     * @param localSubnet - localSubnet
      * @param action - action
      * @param destHostName - destHostName
      * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
@@ -565,6 +566,7 @@ public class MosContext extends CloudContext {
      */
     @Override
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
+                                                            String localSubnet,
                                                             NetworkRequest.ActionEnum action, String destHostName,
                                                             String sdxStitchPortInterfaceIP) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");

@@ -407,7 +407,7 @@ public class MobiusController {
                         LOGGER.debug("invoking workflow processNetwork");
                         workflow.processNetworkRequest(request, false);
                         LOGGER.debug("workflow processNetwork completed successfully");
-                        //dbWrite(workflow, DbOperation.Update);
+                        dbWrite(workflow, DbOperation.Update);
                     } finally {
                         workflow.unlock();
                     }

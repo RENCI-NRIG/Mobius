@@ -680,6 +680,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      * @param hostname - hostname
      * @param ip - ip
      * @param subnet - subnet
+     * @param localSubnet - localSubnet
      * @param action - action
      * @param destHostName - destHostName
      * @param sdxStitchPortInterfaceIP - sdxStitchPortInterfaceIP (used only for chameleon)
@@ -689,15 +690,20 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      */
     @Override
     public void processNetworkRequestSetupStitchingAndRoute(String hostname, String ip, String subnet,
+                                                            String localSubnet,
                                                             NetworkRequest.ActionEnum action, String destHostName,
                                                             String sdxStitchPortInterfaceIP) throws Exception {
         synchronized (this) {
-            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet + " action=" + action
-                    + " destHostName=" + destHostName + " hostNameToSliceNameHashMap=" + hostNameToSliceNameHashMap.toString());
+            LOGGER.debug("IN hostname=" + hostname + " ip=" + ip + " subnet=" + subnet
+                    + " localSubnet=" + localSubnet
+                    + " action=" + action
+                    + " destHostName=" + destHostName + " hostNameToSliceNameHashMap="
+                    + hostNameToSliceNameHashMap.toString());
 
             String sliceName = hostNameToSliceNameHashMap.get(hostname);
             if (sliceName == null) {
-                throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap="
+                        + hostNameToSliceNameHashMap.toString());
             }
 
             StackContext context = stackContextHashMap.get(sliceName);
@@ -720,7 +726,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
 
             try {
-                context.processNetworkRequestSetupStitchingAndRoute(hostname, getNetworkVlanId(), subnet, action,
+                context.processNetworkRequestSetupStitchingAndRoute(hostname, getNetworkVlanId(), subnet, localSubnet,
+                        action,
                         destHostName, sdxStitchPortInterfaceIP);
             } finally {
                 LOGGER.debug("OUT");
