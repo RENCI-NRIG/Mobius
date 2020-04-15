@@ -50,7 +50,11 @@ The Monitoring and Control module is designed to transparently maintain the qual
 Mobius also leverages the Ahab adapter to instantiate virtual Software Defined Exchange (vSDX) slices on ExoGENI, which can be thought of as virtual interconnect points between multiple adjacent domains, e.g. instruments, compute resources, data/storage systems, etc. A controller application programmatically manages an ExoGENI vSDX slice using Ahab. Like a static SDX, a vSDX uses SDN within the exchange to enforce different network policies. An ExoGENI vSDX slice accepts connections from many different institutional domains and uses SDN to forward and manage network traffic between those domains. Mobius also uses the Ahab library to automate modifications to the infrastructure used by the vSDX.
 ![VSDX](./mobius/plantuml/images/vsdx.png)
 
+### Cross Test Bed Resources with Virtual SDX Example
 ![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-ex.png)
+
+### Cross Test Bed Resources without Virtual SDX Example
+![Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/novsdx-ex.png)
 
 ## <a name="mc"></a> Mobius Controller
 The Mobius controller orchestrates all the above components and processes the incoming REST requests to trigger appropriate Mobius components. 
