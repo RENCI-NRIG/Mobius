@@ -93,6 +93,7 @@ Update docker-compose_sdx.yml for sdxserver to point the below parameters to use
 ```
 
 ### <a name="run3"></a>Run Docker
+#### Mobius without SDX
 Run docker-compose up -d from Mobius/docker directory when running without SDX.
 
 ```
@@ -102,10 +103,10 @@ Creating rabbitmq ... done
 Creating mobius   ... done
 Creating notification ... done
 ```
-
+#### Mobius with SDX
 Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running without SDX.
 ```
-$ docker-compose up -d
+$ docker-compose -f docker-compose_sdx.yml up -d
 Creating database ... done
 Creating rabbitmq ... done
 Creating mobius   ... done
