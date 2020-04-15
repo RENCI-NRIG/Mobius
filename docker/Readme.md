@@ -104,7 +104,7 @@ Creating mobius   ... done
 Creating notification ... done
 ```
 #### Mobius with SDX
-Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running without SDX.
+Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running with SDX.
 ```
 $ docker-compose -f docker-compose_sdx.yml up -d
 Creating database ... done
@@ -131,6 +131,10 @@ curl -X POST -i "localhost:8080/mobius/compute?workflowID=abcd-5678" -H "accept:
 - Provision Storage node
 ```
 curl -X POST -i "localhost:8080/mobius/storage?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @storage.json
+```
+- Extablish a network link
+```
+curl -X POST -i "localhost:8080/mobius/network?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @network.json
 ```
 - Delete workflow
 ```
