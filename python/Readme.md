@@ -275,13 +275,14 @@ python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybri
 ```
 python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa-mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
 ```
+```
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon-casa-mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 0 -n2 1
+```
 ###### Submit and Master node running together with monitoring and sdx enabled
 ```
 python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon-sdx/ -s2  Chameleon:CHI@TACC -d2 ./hybrid/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2" -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
 ```
-```
-python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon-casa-mon/ -l `date -d "+2days" +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 0 -n2 1
-```
+
 NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
 NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
 
