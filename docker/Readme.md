@@ -93,6 +93,7 @@ Update docker-compose_sdx.yml for sdxserver to point the below parameters to use
 ```
 
 ### <a name="run3"></a>Run Docker
+#### Mobius without SDX
 Run docker-compose up -d from Mobius/docker directory when running without SDX.
 
 ```
@@ -102,10 +103,10 @@ Creating rabbitmq ... done
 Creating mobius   ... done
 Creating notification ... done
 ```
-
-Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running without SDX.
+#### Mobius with SDX
+Run docker-compose -f docker-compose_sdx.yml up -d from Mobius/docker directory when running with SDX.
 ```
-$ docker-compose up -d
+$ docker-compose -f docker-compose_sdx.yml up -d
 Creating database ... done
 Creating rabbitmq ... done
 Creating mobius   ... done
@@ -130,6 +131,10 @@ curl -X POST -i "localhost:8080/mobius/compute?workflowID=abcd-5678" -H "accept:
 - Provision Storage node
 ```
 curl -X POST -i "localhost:8080/mobius/storage?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @storage.json
+```
+- Extablish a network link
+```
+curl -X POST -i "localhost:8080/mobius/network?workflowID=abcd-5678" -H "accept: application/json" -H "Content-Type: application/json"  -d @network.json
 ```
 - Delete workflow
 ```
