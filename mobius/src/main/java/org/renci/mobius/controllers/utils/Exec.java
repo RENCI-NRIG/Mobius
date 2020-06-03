@@ -52,15 +52,13 @@ public class Exec {
                     session.connect();
                     return session;
                 } catch (Exception ex) {
+                    ex.printStackTrace();
                     LOGGER.debug(ex.getMessage());
                     LOGGER.debug(" wait 10s and retry");
                     if (times == RETRYTIMES) {
                         break;
                     }
-                    try {
-                        Thread.sleep(10000);
-                    } catch (Exception exc) {
-                    }
+                    Thread.sleep(10000);
                 }
             }
         } catch (Exception e) {
@@ -127,9 +125,11 @@ public class Exec {
         try {
             Session session = null;
             session = getSession(user, host, privkey);
-            while (session == null) {
+            int times = RETRYTIMES;
+            while (session == null && times > 0) {
                 session = getSession(user, host, privkey);
                 LOGGER.warn(String.format("Returned session is null: %s %s %s", user, host, privkey));
+                times--;
             }
             Channel channel = session.openChannel("exec");
             ((ChannelExec) channel).setCommand(command);

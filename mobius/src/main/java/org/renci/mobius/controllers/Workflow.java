@@ -525,6 +525,17 @@ class Workflow {
         return context;
     }
 
+    private boolean destinationAlreadyConnected(String siteName) {
+        boolean retVal = false;
+        for (String key: networkRequestToComputeRequestMap.keySet()) {
+            if (key.contains(siteName)) {
+                retVal = true;
+                break;
+            }
+        }
+        return retVal;
+    }
+
     /*
      * @brief function to process network request
      *
@@ -571,14 +582,18 @@ class Workflow {
             }
 
             // Stitch to SDX and advertise the prefix or Unstitch
-            context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
-                    request.getSourceSubnet(), request.getSourceLocalSubnet(), request.getAction(),
-                    destHostOrSite, sdxStitchPortInterfaceIP);
+            if(!destinationAlreadyConnected(request.getSource())) {
+                context1.processNetworkRequestSetupStitchingAndRoute(request.getSource(), request.getSourceIP(),
+                        request.getSourceSubnet(), request.getSourceLocalSubnet(), request.getAction(),
+                        destHostOrSite, sdxStitchPortInterfaceIP);
+            }
 
             // Stitch to SDX and advertise the prefix or Unstitch
-            context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
-                    request.getDestinationSubnet(), request.getDestLocalSubnet(), request.getAction(),
-                    sourceHostOrSite, sdxStitchPortInterfaceIP);
+            if(!destinationAlreadyConnected(request.getDestination())) {
+                context2.processNetworkRequestSetupStitchingAndRoute(request.getDestination(), request.getDestinationIP(),
+                        request.getDestinationSubnet(), request.getDestLocalSubnet(), request.getAction(),
+                        sourceHostOrSite, sdxStitchPortInterfaceIP);
+            }
 
             if(request.getAction() == NetworkRequest.ActionEnum.ADD) {
                 // Connect the prefix source - destination

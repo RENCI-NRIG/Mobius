@@ -164,14 +164,13 @@ public class SdxClient {
             LOGGER.debug("OUT");
         }
     }
-    public void connect(String sliceName, String sourceSubnet, String targetSubnet, String bandwidth) throws Exception {
-        LOGGER.debug("IN sliceName=" + sliceName + " sourceSubnet=" + sourceSubnet + " targetSubnet=" +
+    public void connect(String sourceSubnet, String targetSubnet, String bandwidth) throws Exception {
+        LOGGER.debug("IN sourceSubnet=" + sourceSubnet + " targetSubnet=" +
                 targetSubnet + " bandwidth=" + bandwidth);
         try {
             JSONObject object = new JSONObject();
             object.put("self_prefix", sourceSubnet);
             object.put("target_prefix", targetSubnet);
-            object.put("ckeyhash", sliceName);
             object.put("bandwidth", bandwidth);
             String url =  sdxUrl + "sdx/connectionrequest";
 

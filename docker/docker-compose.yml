@@ -24,7 +24,7 @@ services:
     mobius_server:
         container_name: mobius 
         hostname: mobius 
-        image: rencinrig/mobius:1.0.0-SNAPSHOT
+        image: rencinrig/mobius:latest
         restart: always
         depends_on:
         - rabbitmq_server

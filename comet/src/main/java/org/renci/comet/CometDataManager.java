@@ -13,8 +13,8 @@ public class CometDataManager {
     public static final String ReadTokenSuffix = "read";
     public static final String WriteTokenSuffix = "write";
 
-    public static final String PubkeysFamily = "pubkeysall";
-    public static final String HostsFamily = "hostsall";
+    public static final String PubkeysFamilyPrefix = "pubkeys";
+    public static final String HostsFamilyPrefix = "hosts";
 
     public final static String JsonKeyVal = "val_";
 
@@ -50,7 +50,7 @@ public class CometDataManager {
         this.cometCertPwd = cometCertPwd;
     }
 
-    public void createCometEntry(String workflowId, String ipAddress, Set<String> hostnames) {
+    public void createCometEntry(String workflowId, String ipAddress, Set<String> hostnames, String family) {
         LOGGER.debug("IN");
         try {
             CometInterface cometInterface = new CometInterface(cometHost, cometCaCert, cometCert, cometCertPwd);
@@ -64,7 +64,9 @@ public class CometDataManager {
                 object1.put(JsonKeyPublicKey, "");
                 array.add(object1);
                 object2.put(JsonKeyVal, array.toString());
-                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), PubkeysFamily, object2.toString());
+                String tempFamily = PubkeysFamilyPrefix + family;
+                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), tempFamily, object2.toString());
+
 
                 // Create comet entry for hostsall
                 array.clear();
@@ -78,7 +80,8 @@ public class CometDataManager {
                 }
                 array.add(object1);
                 object2.put(JsonKeyVal, array.toString());
-                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), HostsFamily, object2.toString());
+                tempFamily = HostsFamilyPrefix + family;
+                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), tempFamily, object2.toString());
             }
         }
         catch (Exception e) {

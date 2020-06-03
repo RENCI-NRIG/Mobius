@@ -697,7 +697,7 @@ public class StackContext implements AutoCloseable{
             // hack needed to remove .pub from filename as SDX code expects to not have file extension
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
-            sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
+            sdxClient.connect(subnet1, subnet2, bandwidth);
             sdxStitchPortInterfaceIP = sdxStitchPortInterfaceIP.split("/")[0];
             String firstThree = destinationIP.replaceFirst("\\d+$", "");
             String command = String.format("sudo ip route add %s0/24 via %s", firstThree, sdxStitchPortInterfaceIP);

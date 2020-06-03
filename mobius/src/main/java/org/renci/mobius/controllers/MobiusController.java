@@ -320,7 +320,7 @@ public class MobiusController {
 
                        if(cometHost != null && caCert != null && cert != null && certPwd != null) {
                             CometDataManager cometDataManager = new CometDataManager(cometHost, caCert, cert, certPwd);
-                            cometDataManager.createCometEntry(workflowId, request.getIpAddress(), response.getHostNames().keySet());
+                            cometDataManager.createCometEntry(workflowId, request.getIpAddress(), response.getHostNames().keySet(), request.getCometFamily());
                         }
                     } finally {
 

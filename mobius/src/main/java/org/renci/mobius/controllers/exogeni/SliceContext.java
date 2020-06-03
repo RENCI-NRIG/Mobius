@@ -784,7 +784,7 @@ public class SliceContext {
             // hack needed to remove .pub from filename as SDX code expects to not have file extension
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
-            sdxClient.connect(sliceName, subnet1, subnet2, bandwidth);
+            sdxClient.connect(subnet1, subnet2, bandwidth);
 
             String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
             String firstThree = destinationIP.replaceFirst("\\d+$", "");

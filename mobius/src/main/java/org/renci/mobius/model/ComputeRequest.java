@@ -14,7 +14,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-01-22T14:10:12.569-05:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-05-25T16:02:47.597-04:00[America/New_York]")
 public class ComputeRequest   {
   @JsonProperty("site")
   private String site = null;
@@ -158,6 +158,9 @@ public class ComputeRequest   {
 
   @JsonProperty("forceflavor")
   private String forceflavor = null;
+
+  @JsonProperty("cometFamily")
+  private String cometFamily = "all";
 
   public ComputeRequest site(String site) {
     this.site = site;
@@ -684,6 +687,25 @@ public class ComputeRequest   {
     this.forceflavor = forceflavor;
   }
 
+  public ComputeRequest cometFamily(String cometFamily) {
+    this.cometFamily = cometFamily;
+    return this;
+  }
+
+  /**
+   * family used to group compute nodes into different clusters using COMET within a single workflow
+   * @return cometFamily
+  **/
+  @ApiModelProperty(value = "family used to group compute nodes into different clusters using COMET within a single workflow")
+  
+    public String getCometFamily() {
+    return cometFamily;
+  }
+
+  public void setCometFamily(String cometFamily) {
+    this.cometFamily = cometFamily;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -720,12 +742,13 @@ public class ComputeRequest   {
         Objects.equals(this.stitchTag, computeRequest.stitchTag) &&
         Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
         Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth) &&
-        Objects.equals(this.forceflavor, computeRequest.forceflavor);
+        Objects.equals(this.forceflavor, computeRequest.forceflavor) &&
+        Objects.equals(this.cometFamily, computeRequest.cometFamily);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, vpcCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, vpcCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor, cometFamily);
   }
 
   @Override
@@ -760,6 +783,7 @@ public class ComputeRequest   {
     sb.append("    stitchIP: ").append(toIndentedString(stitchIP)).append("\n");
     sb.append("    stitchBandwidth: ").append(toIndentedString(stitchBandwidth)).append("\n");
     sb.append("    forceflavor: ").append(toIndentedString(forceflavor)).append("\n");
+    sb.append("    cometFamily: ").append(toIndentedString(cometFamily)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -87,7 +87,74 @@ def get_sdx_controller_ip(ip):
     print ("Chameleon Controller IP: " + '.'.join(octets))
     return '.'.join(octets)
 
-def main():
+def validate(args, parser):
+    if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None and args.mossite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None and args.mosworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None and args.mosdatadir is None) :
+        print ("ERROR: site name, number of workers and data directory must be specified for create operation")
+        parser.print_help()
+        sys.exit(1)
+    if args.exoipStart is not None:
+        if is_valid_ipv4_address(args.exoipStart) == False :
+            print ("ERROR: Invalid start ip address specified")
+            parser.print_help()
+            sys.exit(1)
+        if can_ip_satisfy_range(args.exoipStart, args.exoworkers + 1) == False:
+            print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+            parser.print_help()
+            sys.exit(1)
+    if args.chipStart is not None:
+        if is_valid_ipv4_address(args.chipStart) == False :
+            print ("ERROR: Invalid start ip address specified")
+            parser.print_help()
+            sys.exit(1)
+        if can_ip_satisfy_range(args.chipStart, args.chworkers + 1) == False:
+            print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+            parser.print_help()
+            sys.exit(1)
+    if args.jtipStart is not None:
+        if is_valid_ipv4_address(args.jtipStart) == False :
+            print ("ERROR: Invalid start ip address specified")
+            parser.print_help()
+            sys.exit(1)
+        if can_ip_satisfy_range(args.jtipStart, args.jtworkers + 1) == False:
+            print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+            parser.print_help()
+            sys.exit(1)
+    if args.mosipStart is not None:
+        if is_valid_ipv4_address(args.mosipStart) == False :
+            print ("ERROR: Invalid start ip address specified")
+            parser.print_help()
+            sys.exit(1)
+        if can_ip_satisfy_range(args.mosipStart, args.mosworkers + 1) == False:
+            print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
+            parser.print_help()
+            sys.exit(1)
+    if args.comethost is not None:
+        if args.cert is None or args.key is None:
+            print ("ERROR: comet certificate and key must be specified when comethost is indicated")
+            parser.print_help()
+            sys.exit(1)
+    if args.chameleonsite is not None :
+        if "Chameleon" not in args.chameleonsite :
+            print ("ERROR: Invalid site specified")
+            parser.print_help()
+            sys.exit(1)
+    if args.exogenisite is not None :
+        if "Exogeni" not in args.exogenisite :
+            print ("ERROR: Invalid site specified")
+            parser.print_help()
+            sys.exit(1)
+    if args.jetstreamsite is not None :
+        if "Jetstream" not in args.jetstreamsite :
+            print ("ERROR: Invalid site specified")
+            parser.print_help()
+            sys.exit(1)
+    if args.mossite is not None :
+        if "Mos" not in args.mossite :
+            print ("ERROR: Invalid site specified")
+            parser.print_help()
+            sys.exit(1)
+
+def set_up_parser():
     parser = argparse.ArgumentParser(description='Python client to create Condor cluster using mobius.\nUses master.json, submit.json and worker.json for compute requests present in data directory specified.\nCurrently only supports provisioning compute resources. Other resources can be provisioned via mobius_client.\nCreates COMET contexts for Chameleon resources and thus enables exchanging keys and hostnames within workflow')
 
     parser.add_argument(
@@ -191,12 +258,12 @@ def main():
         default='http://localhost:8080/mobius'
     )
     parser.add_argument(
-       '-o',
-       '--operation',
-       dest='operation',
-       type = str,
-       help='Operation allowed values: create|get|delete|list',
-       required=True
+        '-o',
+        '--operation',
+        dest='operation',
+        type = str,
+        help='Operation allowed values: create|get|delete|list|add',
+        required=True
     )
     parser.add_argument(
         '-w',
@@ -223,20 +290,20 @@ def main():
         required=False
     )
     parser.add_argument(
-         '-i3',
-         '--jtipStart',
-         dest='jtipStart',
-         type = str,
-         help='Jetstream Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
-         required=False
+        '-i3',
+        '--jtipStart',
+        dest='jtipStart',
+        type = str,
+        help='Jetstream Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
+        required=False
     )
     parser.add_argument(
-         '-i4',
-         '--mosipStart',
-         dest='mosipStart',
-         type = str,
-         help='Mass Open Cloud Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
-         required=False
+        '-i4',
+        '--mosipStart',
+        dest='mosipStart',
+        type = str,
+        help='Mass Open Cloud Start IP Address of the range of IPs to be used for VMs; 1st IP is assigned to master and subsequent IPs are assigned to submit node and workers; can be specified for create operation',
+        required=False
     )
     parser.add_argument(
         '-l',
@@ -287,7 +354,29 @@ def main():
         default='dynamo-broker1.exogeni.net:9093',
         required=False
     )
+    return parser
 
+def extract_exogeni_slice_name(response):
+    if response.json()["status"] != 200:
+        return None, 0
+    status=json.loads(response.json()["value"])
+    requests = json.loads(status["workflowStatus"])
+    slice_name = None
+    count = 0
+    for req in requests:
+        slices = req["slices"]
+        for s in slices:
+            if "Exogeni" in req["site"] and slice_name is None:
+                slice_name = s["slice"]
+            nodes = s["nodes"]
+            for n in nodes :
+                if n["name"] == "cmnw" :
+                   continue
+                count += 1
+    return slice_name, count
+
+def main():
+    parser = set_up_parser()
     args = parser.parse_args()
     mb=MobiusInterface()
 
@@ -308,77 +397,19 @@ def main():
             writeToken=args.workflowId + "write"
             response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
         cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
-    elif args.operation == 'create':
+    elif args.operation == 'create' or args.operation == 'add':
         ipMap = dict()
-        if (args.exogenisite is None and args.chameleonsite is None and args.jetstreamsite is None and args.mossite is None) or (args.exoworkers is None and args.chworkers is None and args.jtworkers is None and args.mosworkers is None)  or (args.exodatadir is None and args.chdatadir is None and args.jtdatadir is None and args.mosdatadir is None) :
-            print ("ERROR: site name, number of workers and data directory must be specified for create operation")
-            parser.print_help()
-            sys.exit(1)
-        if args.exoipStart is not None:
-            if is_valid_ipv4_address(args.exoipStart) == False :
-                print ("ERROR: Invalid start ip address specified")
-                parser.print_help()
-                sys.exit(1)
-            if can_ip_satisfy_range(args.exoipStart, args.exoworkers + 1) == False:
-                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
-                parser.print_help()
-                sys.exit(1)
-        if args.chipStart is not None:
-            if is_valid_ipv4_address(args.chipStart) == False :
-                print ("ERROR: Invalid start ip address specified")
-                parser.print_help()
-                sys.exit(1)
-            if can_ip_satisfy_range(args.chipStart, args.chworkers + 1) == False:
-                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
-                parser.print_help()
-                sys.exit(1)
-        if args.jtipStart is not None:
-            if is_valid_ipv4_address(args.jtipStart) == False :
-                print ("ERROR: Invalid start ip address specified")
-                parser.print_help()
-                sys.exit(1)
-            if can_ip_satisfy_range(args.jtipStart, args.jtworkers + 1) == False:
-                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
-                parser.print_help()
-                sys.exit(1)
-        if args.mosipStart is not None:
-            if is_valid_ipv4_address(args.mosipStart) == False :
-                print ("ERROR: Invalid start ip address specified")
-                parser.print_help()
-                sys.exit(1)
-            if can_ip_satisfy_range(args.mosipStart, args.mosworkers + 1) == False:
-                print ("ERROR: Invalid start ip address specified; cannot accomdate the ip for all nodes")
-                parser.print_help()
-                sys.exit(1)
-        if args.comethost is not None:
-            if args.cert is None or args.key is None:
-                print ("ERROR: comet certificate and key must be specified when comethost is indicated")
-                parser.print_help()
-                sys.exit(1)
-        if args.chameleonsite is not None :
-            if "Chameleon" not in args.chameleonsite :
-                print ("ERROR: Invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-        if args.exogenisite is not None :
-            if "Exogeni" not in args.exogenisite :
-                print ("ERROR: Invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-        if args.jetstreamsite is not None :
-            if "Jetstream" not in args.jetstreamsite :
-                print ("ERROR: Invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-        if args.mossite is not None :
-            if "Mos" not in args.mossite :
-                print ("ERROR: Invalid site specified")
-                parser.print_help()
-                sys.exit(1)
-
-        print ("Creating workflow")
-        response=mb.create_workflow(args.mobiushost, args.workflowId)
+        validate(args, parser)
+        response = None
+        exxogeni_slice_name = None
         count = 0
+        if args.operation == 'create':
+            print ("Creating workflow")
+            response=mb.create_workflow(args.mobiushost, args.workflowId)
+        else:
+            print ("Get workflow")
+            response=mb.get_workflow(args.mobiushost, args.workflowId)
+            exxogeni_slice_name, count = extract_exogeni_slice_name(response)
         networkdata = None
         stitchdata = None
         chstoragename = None
@@ -415,14 +446,14 @@ def main():
                 if networkdata is not None:
                     tempsip = networkdata["chameleonSdxControllerIP"]
                     tempsip = tempsip.split("/",1)[0]
-                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, tempsip, exogeniSubnet)
+                status, count, chstoragename = provision_storage(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, submitSubnet, tempsip, exogeniSubnet, None)
                 if status == False:
                     return
                 if chstoragename is not None:
                     chstoragename = chstoragename + ".novalocal"
                 set_up_network_data(args.chipStart, networkdata, chstoragename, args.exoipStart)
             if args.exogenisite is not None and args.exodatadir is not None:
-                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip, None)
+                status, count, exostoragename = provision_storage(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, submitSubnet, sip, None, None)
                 if status == False :
                     return
             if args.chameleonsite is not None and args.chdatadir is not None:
@@ -435,52 +466,34 @@ def main():
                 if networkdata is not None:
                     forwardIP = networkdata["chameleonSdxControllerIP"]
                     forwardIP = forwardIP.split("/",1)[0]
-                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, forwardIP, submitSubnet)
+                status, count = provision_condor_cluster(args, args.chdatadir, args.chameleonsite, ipMap, count, args.chipStart, args.chworkers, chstoragename, exogeniSubnet, forwardIP, submitSubnet, None)
                 if status == False:
                     return
                 print ("ipMap after chameleon: "  + str(ipMap))
             if args.exogenisite is not None and args.exodatadir is not None:
-                #d = args.exodatadir + "/stitch.json"
-                #if os.path.exists(d) and args.chipStart is not None:
-                #    print ("Using " + d + " file for stitch data under exogeni " + args.chipStart)
-                #    d_f = open(d, 'r')
-                #    stitchdata = json.load(d_f)
-                #    d_f.close()
-                    ### To be uncomented if needed
-                    #if args.chipStart is not None :
-                    #    i = 0
-                    #    sip = args.chipStart
-                    #    while i <= count :
-                    #        sip = get_next_ip(sip)
-                    #        i = i + 1
-                    #    stitchdata["stitchIP"] = sip
                 chSubnet = None
                 forwardIP = None
                 if args.chipStart is not None:
                     chSubnet = get_cidr(args.chipStart)
                 if exostoragename is not None:
                     forwardIP = ipMap[exostoragename]
-                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, args.exoworkers, exostoragename, chSubnet, forwardIP, submitSubnet)
+                status, count = provision_condor_cluster(args, args.exodatadir, args.exogenisite, ipMap, count, args.exoipStart, args.exoworkers, exostoragename, chSubnet, forwardIP, submitSubnet, exxogeni_slice_name)
                 if status == False :
                     return
                 print ("ipMap after exogeni: "  + str(ipMap))
             if args.jetstreamsite is not None and args.jtdatadir is not None:
-                status, count = provision_condor_cluster(args, args.jtdatadir, args.jetstreamsite, ipMap, count, args.jtipStart, args.jtworkers, None, None, None, None)
+                status, count = provision_condor_cluster(args, args.jtdatadir, args.jetstreamsite, ipMap, count, args.jtipStart, args.jtworkers, None, None, None, None, None)
                 if status == False:
                     return
                 print ("ipMap after jetstream: "  + str(ipMap))
             if args.mossite is not None and args.mosdatadir is not None:
-                status, count = provision_condor_cluster(args, args.mosdatadir, args.mossite, ipMap, count, args.mosipStart, args.mosworkers, None, None, None, None)
+                status, count = provision_condor_cluster(args, args.mosdatadir, args.mossite, ipMap, count, args.mosipStart, args.mosworkers, None, None, None, None, None)
                 if status == False:
                     return
                 print ("ipMap after mos: "  + str(ipMap))
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             stitcVlanToChameleon = None
             if response.json()["status"] == 200 and args.comethost is not None:
-                #print ("Setting up COMET for exchanging host names and keys")
-                #comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-                #readToken=args.workflowId + "read"
-                #writeToken=args.workflowId + "write"
                 status=json.loads(response.json()["value"])
                 requests = json.loads(status["workflowStatus"])
                 stitchNodeStatus = None
@@ -508,41 +521,6 @@ def main():
 
                             if n["name"] == "cmnw" :
                                 continue
-                            #print ("Create comet context for node " + n["name"])
-                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
-                            #        readToken, writeToken, "resourcesall", resourcesVal)
-                            #print ("Received Response Status Code: " + str(response.status_code))
-                            #print ("Received Response Message: " + response.json()["message"])
-                            #print ("Received Response Status: " + response.json()["status"])
-                            #if response.status_code == 200 :
-                            #    print ("Received Response Value: " + str(response.json()["value"]))
-                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
-                            #        readToken, writeToken, "pubkeysall", pubKeysVal)
-                            #print ("Received Response Status Code: " + str(response.status_code))
-                            #print ("Received Response Message: " + response.json()["message"])
-                            #print ("Received Response Status: " + response.json()["status"])
-                            #if response.status_code == 200 :
-                            #    print ("Received Response Value: " + str(response.json()["value"]))
-
-                            #hostVal = json.dumps(hostNameVal)
-                            #hostVal = hostVal.replace("REPLACE", hostname)
-                            #if n["name"] in ipMap:
-                            #    print ("Replacing IPADDR with " + ipMap[n["name"]] + " for " + hostVal)
-                            #    hostVal = hostVal.replace("IPADDR", ipMap[n["name"]])
-                                #if stitchdata["target"] == n["name"] :
-                                #    print ("Replacing IPADDR with " + stitchdata["stitchIP"])
-                                #    hostVal = hostVal.replace("IPADDR", stitchdata["stitchIP"])
-                            #else:
-                            #    print ("Replacing IPADDR with empty string for" + hostVal)
-                            #    hostVal = hostVal.replace("IPADDR", "")
-                            #val = json.loads(hostVal)
-                            #response=comet.update_family(args.comethost, args.workflowId, hostname,
-                            #        readToken, writeToken, "hostsall", val)
-                            #print ("Received Response Status Code: " + str(response.status_code))
-                            #print ("Received Response Message: " + response.json()["message"])
-                            #print ("Received Response Status: " + response.json()["status"])
-                            #if response.status_code == 200 :
-                            #    print ("Received Response Value: " + str(response.json()["value"]))
             if stitcVlanToChameleon is not None and args.exogenisite is not None and (stitchdata is not None or networkdata is not None):
                 target = None
                 if stitchdata is not None:
@@ -628,7 +606,7 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
         return response
 
-def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet):
+def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet, exxogeni_slice_name):
     '''
     Provisions storage on specific cloud
     @params datadir: data directory from where to pick up storage.json
@@ -652,6 +630,12 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
 
     if stdata is None:
         return True, count, None
+
+    if exxogeni_slice_name is not None:
+        stdata["slicePolicy"] = "existing"
+        stdata["sliceName"] = exxogeni_slice_name
+        print("Updated slicepolicy")
+        print(stdata)
 
     # Update the postboot script for storage node to use CIDR for IPs on Cloud where node is provisioned
     if stdata["postBootScript"] is not None :
@@ -677,7 +661,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
         count = count + 1
     return True, count, nodename
 
-def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers, storagename, subnet, forwardIP, submitSubnet):
+def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers, storagename, subnet, forwardIP, submitSubnet, exxogeni_slice_name):
     mdata = None
     sdata = None
     wdata = None
@@ -690,18 +674,33 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
         mdata = json.load(m_f)
         m_f.close()
         mdata["site"]=site
+        if exxogeni_slice_name is not None:
+            mdata["slicePolicy"] = "existing"
+            mdata["sliceName"] = exxogeni_slice_name
+            print("Updated slicepolicy")
+            print(mdata)
     if os.path.exists(s):
         print ("Using " + s + " file for submit data")
         s_f = open(s, 'r')
         sdata = json.load(s_f)
         s_f.close()
         sdata["site"]=site
+        if exxogeni_slice_name is not None:
+            sdata["slicePolicy"] = "existing"
+            sdata["sliceName"] = exxogeni_slice_name
+            print("Updated slicepolicy")
+            print(sdata)
     if os.path.exists(w):
         print ("Using " + w + " file for worker data")
         w_f = open(w, 'r')
         wdata = json.load(w_f)
         w_f.close()
         wdata["site"]=site
+        if exxogeni_slice_name is not None:
+            wdata["slicePolicy"] = "existing"
+            wdata["sliceName"] = exxogeni_slice_name
+            print("Updated slicepolicy")
+            print(wdata)
 
     mb=MobiusInterface()
     if mdata is not None :

@@ -24,7 +24,7 @@ services:
     mobius_server:
         container_name: mobius 
         hostname: mobius 
-        image: rencinrig/mobius:1.0.0-SNAPSHOT
+        image: rencinrig/mobius:latest
         restart: always
         depends_on:
         - rabbitmq_server
@@ -60,7 +60,7 @@ services:
     sdxserver:
         container_name: sdxserver
         hostname: sdxserver
-        image: rencinrig/sdxserver:0.1-SNAPSHOT
+        image: rencinrig/sdxserver:latest
         restart: always
         ports:
         - "8888:8888"
