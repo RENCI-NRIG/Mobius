@@ -1,0 +1,17 @@
+{
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"4096",
+    "diskPerCpus":"5000",
+    "coallocate":"true",
+    "hostNamePrefix":"worker",
+    "imageName":"CC-CentOS7",
+    "networkType":"private",
+    "physicalNetwork":"exogeni",
+    "externalNetwork":"public",
+    "networkCidr":"192.168.10.0/24",
+    "ipAddress":"192.168.10.6",
+    "forceflavor":"compute_haswell",
+    "cometFamily": "cluster2",
+    "postBootScript":"#!/bin/bash\necho 'net.ipv4.ip_forward=1'  >> /etc/sysctl.conf; sysctl -p\nyum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up_v1.2.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW cluster2;\necho '192.168.40.0/24 via 192.168.10.5' >> /etc/sysconfig/network-scripts/route-eno1\necho 'SUBNET via 192.168.10.5' >> /etc/sysconfig/network-scripts/route-eno1\n/etc/sysconfig/network-scripts/ifup-routes eno1\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/worker.sh /root/worker.sh\nsed -i 's/NETWORK_INTERFACE=/NETWORK_INTERFACE=REPLACEIP/g' /root/worker.sh\nsed -i 's/storage/STORAGENODE/g' /root/worker.sh\nsh /root/worker.sh"
+}
