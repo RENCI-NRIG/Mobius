@@ -848,4 +848,71 @@ public class SliceContext {
         }
         return null;
     }
+    public ComputeResponse processStitchToChamelon(int spNameIndex, String sourceStitchTag, String sourceStitchUrl,
+                                                   String sourceBandwidth, String destStitchTag, String destStitchUrl,
+                                                   String destBandwidth) throws Exception {
+        LOGGER.debug("IN");
+
+        try {
+            Slice slice = null;
+            String user = MobiusConfig.getInstance().getDefaultExogeniUser();
+            String certKey = MobiusConfig.getInstance().getDefaultExogeniUserCertKey();
+            String sshKey = MobiusConfig.getInstance().getDefaultExogeniUserSshKey();
+            ComputeResponse response = new ComputeResponse(0,0);
+
+            ISliceTransportAPIv1 sliceProxy  = getSliceProxy(certKey, MobiusConfig.getInstance().getDefaultExogeniControllerUrl());
+
+            //SSH context
+            SliceAccessContext<SSHAccessToken> sctx = new SliceAccessContext<>();
+            SSHAccessTokenFileFactory facRoot = new SSHAccessTokenFileFactory(sshKey, false);
+            SSHAccessToken tRoot = facRoot.getPopulatedToken();
+            sctx.addToken("root", "root", tRoot);
+            sctx.addToken("root", tRoot);
+            SSHAccessTokenFileFactory facUser = new SSHAccessTokenFileFactory(sshKey, true);
+            SSHAccessToken tUser = facUser.getPopulatedToken();
+            sctx.addToken(user, user, tUser);
+            sctx.addToken(user, tUser);
+
+            slice = Slice.create(sliceProxy, sctx, sliceName);
+            if(slice == null) {
+                throw new MobiusException("Slice could not be created or loaded");
+            }
+
+            long sbw = 10000000L;
+            sbw = Long.parseLong(sourceBandwidth);
+            long dbw = 10000000L;
+            dbw = Long.parseLong(destBandwidth);
+
+            StitchPort sp1 = slice.addStitchPort(CloudContext.StitchPortName + spNameIndex, sourceStitchTag, sourceStitchUrl, sbw);
+            ++spNameIndex;
+            StitchPort sp2 = slice.addStitchPort(CloudContext.StitchPortName + spNameIndex, destStitchTag, destStitchUrl, dbw);
+            ++spNameIndex;
+            sp1.stitch(sp2);
+            
+            slice.commit(MobiusConfig.getInstance().getDefaultExogeniCommitRetryCount(),
+                    MobiusConfig.getInstance().getDefaultExogeniCommitSleepInterval());
+
+            response.setStitchCount(spNameIndex);
+            return  response;
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") ||
+                            e.getMessage().contains("slice already closed"))) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server compute request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
 }

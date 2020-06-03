@@ -24,6 +24,7 @@ import java.util.*;
  * @author kthare10
  */
 public class ExogeniContext extends CloudContext {
+    public static final String ChameleonStitchPortSlice = "ChameleonStitchPortSlice";
     private static final Logger LOGGER = LogManager.getLogger( ExogeniContext.class.getName() );
     private HashMap<String, SliceContext> sliceContextHashMap;
     private Multimap<Date, String> leaseEndTimeToSliceNameHashMap;
@@ -602,6 +603,44 @@ public class ExogeniContext extends CloudContext {
             } finally {
                 LOGGER.debug("OUT");
             }
+        }
+    }
+
+    public void processStitchToChamelon(int spNameIndex, String sourceStitchTag, String sourceStitchUrl, String sourceBandwidth,
+                                        String destStitchTag, String destStitchUrl) throws Exception {
+        String sliceName = workflowId + "-" + ChameleonStitchPortSlice;
+        SliceContext context = null;
+        boolean addSliceToMaps = true;
+
+
+        LOGGER.debug("Looking for context=" + sliceName);
+        context = sliceContextHashMap.get(sliceName);
+        if (context == null) {
+            context = new SliceContext(sliceName, workflowId);
+            addSliceToMaps = true;
+            LOGGER.debug("Created new context=" + sliceName);
+        }
+
+        try {
+            context.processStitchToChamelon(spNameIndex, sourceStitchTag, sourceStitchUrl, sourceBandwidth,
+                    destStitchTag, destStitchUrl, sourceBandwidth);
+
+            sliceName = context.getSliceName();
+
+            if (addSliceToMaps) {
+                Date expiry = context.getExpiry();
+                sliceContextHashMap.put(sliceName, context);
+                if(expiry != null) {
+                    leaseEndTimeToSliceNameHashMap.put(expiry, sliceName);
+                    LOGGER.debug("Added " + sliceName + " with expiry= " + expiry + " ");
+                }
+            }
+        } catch (SliceNotFoundOrDeadException e) {
+            handSliceNotFoundException(context.getSliceName());
+            sliceContextHashMap.remove(context);
+            throw new MobiusException("Slice not found");
+        } finally {
+            LOGGER.debug("OUT");
         }
     }
 }

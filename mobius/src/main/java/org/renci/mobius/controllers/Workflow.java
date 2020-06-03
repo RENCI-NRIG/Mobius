@@ -4,6 +4,9 @@ package org.renci.mobius.controllers;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.renci.mobius.controllers.chameleon.ChameleonContext;
+import org.renci.mobius.controllers.chameleon.StackContext;
+import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.renci.mobius.controllers.exogeni.ExogeniFlavorAlgo;
 import org.renci.mobius.entity.WorkflowEntity;
 import org.renci.mobius.model.NetworkRequest;
@@ -437,6 +440,28 @@ class Workflow {
                 siteToContextHashMap.put(request.getSite(), context);
             }
             addToHostNameMap(computeResponse, request);
+            if (context instanceof ChameleonContext &&
+                    request.getStitchPortUrl() != null &&
+                    request.getStitchTag() != null) {
+
+                ChameleonContext chameleonContext = (ChameleonContext) context;
+                ExogeniContext stitchContext = (ExogeniContext) CloudContextFactory.getInstance().createCloudContext(CloudContext.CloudType.Exogeni.toString(), workflowID);
+
+                String destinationUrl = null;
+
+                if (context.getSite().contains(StackContext.RegionUC)) {
+                    destinationUrl = MobiusConfig.getInstance().getChameleonUCStitchPort();
+                }
+                else {
+                    destinationUrl = MobiusConfig.getInstance().getChameleonTACCStitchPort();
+                }
+
+                stitchContext.processStitchToChamelon(stitchCount, request.getStitchTag(), request.getStitchPortUrl(),
+                        request.getStitchBandwidth(), chameleonContext.getNetworkVlanId(), destinationUrl);
+                stitchCount = computeResponse.getStitchCount();
+                siteToContextHashMap.put(CloudContext.CloudType.Exogeni.toString(), stitchContext);
+            }
+
         }
         catch (FutureRequestException e) {
             futureRequests.add(request);

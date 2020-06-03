@@ -560,7 +560,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         }
     }
 
-    private String getNetworkVlanId() {
+    public String getNetworkVlanId() {
         LOGGER.debug("IN");
         String retVal = null;
         if(workflowNetwork != null) {
