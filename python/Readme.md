@@ -241,7 +241,7 @@ NOTE: Comet context for each node is created and neuca tools are also installed 
 ```
 python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
 ```
-##### Chameleon(with Monitoring):
+##### Chameleon(with Monitoring and Stitching to Exogeni):
 ```
 python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon_mon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w ch-abcd-1114 -n2 1
 ```
