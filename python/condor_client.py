@@ -631,7 +631,7 @@ def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, 
     if stdata is None:
         return True, count, None
 
-    if exxogeni_slice_name is not None:
+    if "slicePolicy" in stdata and stdata["slicePolicy"] == "existing" and exxogeni_slice_name is not None:
         stdata["slicePolicy"] = "existing"
         stdata["sliceName"] = exxogeni_slice_name
         print("Updated slicepolicy")
@@ -674,7 +674,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
         mdata = json.load(m_f)
         m_f.close()
         mdata["site"]=site
-        if exxogeni_slice_name is not None:
+        if "slicePolicy" in mdata and mdata["slicePolicy"] == "existing" and exxogeni_slice_name is not None:
             mdata["slicePolicy"] = "existing"
             mdata["sliceName"] = exxogeni_slice_name
             print("Updated slicepolicy")
@@ -685,7 +685,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
         sdata = json.load(s_f)
         s_f.close()
         sdata["site"]=site
-        if exxogeni_slice_name is not None:
+        if "slicePolicy" in sdata and sdata["slicePolicy"] == "existing" and exxogeni_slice_name is not None:
             sdata["slicePolicy"] = "existing"
             sdata["sliceName"] = exxogeni_slice_name
             print("Updated slicepolicy")
@@ -696,7 +696,7 @@ def provision_condor_cluster(args, datadir, site, ipMap, count, ipStart, workers
         wdata = json.load(w_f)
         w_f.close()
         wdata["site"]=site
-        if exxogeni_slice_name is not None:
+        if "slicePolicy" in wdata and wdata["slicePolicy"] == "existing" and exxogeni_slice_name is not None:
             wdata["slicePolicy"] = "existing"
             wdata["sliceName"] = exxogeni_slice_name
             print("Updated slicepolicy")
