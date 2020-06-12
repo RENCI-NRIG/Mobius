@@ -53,6 +53,9 @@ Mobius also leverages the Ahab adapter to instantiate virtual Software Defined E
 ### Cross Test Bed Resources with Virtual SDX Example
 ![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-ex.png)
 
+### Cross Test Bed Resources with Virtual SDX Example and Qos Rules applied
+![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-qos.png)
+
 ### Cross Test Bed Resources without Virtual SDX Example
 ![Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/novsdx-ex.png)
 
