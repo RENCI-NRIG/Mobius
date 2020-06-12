@@ -316,15 +316,21 @@ It doesn’t work on all Exogeni Sites. I have had it work on RENCI, TAMU, UH, T
 Routes between Master node and storage node may need to be verified manually. Example commands to use:
 # route -n
 Master node routes
-# ip route add 192.168.10.0/24 via 192.168.30.1 (Master2)
-# ip route add 192.168.10.0/24 via 192.168.40.1 (Master4)
- 
+Master2
+```
+ip route add 192.168.10.0/24 via 192.168.30.1
+```
+Master4
+```
+ip route add 192.168.10.0/24 via 192.168.40.1
+```
 Storage node routes
-# ip route add 192.168.30.0/24 via 192.168.10.5
-# ip route add 192.168.20.0/24 via 192.168.10.5
-# ip route add 192.168.40.0/24 via 192.168.10.5
-# ip route add 192.168.50.0/24 via 192.168.10.5
-
+```
+ip route add 192.168.30.0/24 via 192.168.10.5
+ip route add 192.168.20.0/24 via 192.168.10.5
+ip route add 192.168.40.0/24 via 192.168.10.5
+ip route add 192.168.50.0/24 via 192.168.10.5
+```
 Cluster will look like [this](../mobius/plantuml/images/vsdx-qos.png)
 #### <a name="get"></a>Get status of condor cluster
 ```
