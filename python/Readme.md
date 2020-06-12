@@ -292,6 +292,40 @@ NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon no
 ```
 python3 condor_client.py -o create -w merit-w1 -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./merit/exogeni/ -s2 Chameleon:CHI@UC -d2 ./merit/chameleon/ -s3 'Jetstream:TACC' -d3 ./merit/jetstream/ -s4 'Mos:moc-kzn' -d4 ./merit/mos/ -l `date -v +2d +%s` -n1 1 -n2 1 -n3 1 -n4 1
 ```
+##### Multiple Clusters in a single workflow spanning Exogeni and Chameleon with VSDX and Qos applied
+Mobius containers should be brought up using the following command:
+```
+docker-compose -f docker-compose_sdx.yml up -d
+```
+ 
+Note: Please update docker/docker-compose_sdx.yml and docker/config/sdx.conf to point to appropriate SSH files before bringing up the container. Mobius doesn’t control the lease of the sdx slice so it should be extended from the Flukes if it needs to stay up for more than 1 day.
+ 
+Such a configuration can be created by using the following two commands.
+ 
+###### Creating the 1st cluster
+```
+python3 condor_client.py -s1 'Exogeni:RENCI (Chapel Hill, NC USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster1/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2"  -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
+```
+###### Adding the 2nd cluster to the workflow
+```
+python3 condor_client.py -s1 'Exogeni:RENCI (Chapel Hill, NC USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster2/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.50.2"  -i2 "192.168.10.8" -o add -w abcd-1114 -n1 0 -n2 1
+```
+
+###### Few things to watch out and observations:
+It doesn’t work on all Exogeni Sites. I have had it work on RENCI, TAMU, UH, TAMU, SL, UFL or UNF
+Routes between Master node and storage node may need to be verified manually. Example commands to use:
+# route -n
+Master node routes
+# ip route add 192.168.10.0/24 via 192.168.30.1 (Master2)
+# ip route add 192.168.10.0/24 via 192.168.40.1 (Master4)
+ 
+Storage node routes
+# ip route add 192.168.30.0/24 via 192.168.10.5
+# ip route add 192.168.20.0/24 via 192.168.10.5
+# ip route add 192.168.40.0/24 via 192.168.10.5
+# ip route add 192.168.50.0/24 via 192.168.10.5
+
+Cluster will look like [this](../mobius/plantuml/images/vsdx-qos.png)
 #### <a name="get"></a>Get status of condor cluster
 ```
 python3 condor_client.py -o get -w abcd-1114
