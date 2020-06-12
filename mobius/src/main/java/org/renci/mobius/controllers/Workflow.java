@@ -627,9 +627,9 @@ class Workflow {
                         sdxStitchPortInterfaceIP);
 
                 // Connect the prefix destination - source
-                context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
-                        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(),
-                        sdxStitchPortInterfaceIP);
+                //context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
+                //        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(),
+                //        sdxStitchPortInterfaceIP);
 
                 if(request.getSourceLocalSubnet() != null) {
                     // Connect the prefix source - destination
@@ -638,9 +638,9 @@ class Workflow {
                             sdxStitchPortInterfaceIP);
 
                     // Connect the prefix destination - source
-                    context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
-                            request.getSourceLocalSubnet(), request.getLinkSpeed(), request.getSourceIP(),
-                            sdxStitchPortInterfaceIP);
+                    //context2.processNetworkRequestLink(request.getDestination(), request.getDestinationSubnet(),
+                    //        request.getSourceLocalSubnet(), request.getLinkSpeed(), request.getSourceIP(),
+                    //        sdxStitchPortInterfaceIP);
 
                 }
 
@@ -651,8 +651,8 @@ class Workflow {
                             sdxStitchPortInterfaceIP);
 
                     // Connect the prefix destination - source
-                    context2.processNetworkRequestLink(request.getDestination(), request.getDestLocalSubnet(),
-                            request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(), sdxStitchPortInterfaceIP);
+                    //context2.processNetworkRequestLink(request.getDestination(), request.getDestLocalSubnet(),
+                    //        request.getSourceSubnet(), request.getLinkSpeed(), request.getSourceIP(), sdxStitchPortInterfaceIP);
 
                 }
                 String key = request.getSource() + "+" + request.getDestination();

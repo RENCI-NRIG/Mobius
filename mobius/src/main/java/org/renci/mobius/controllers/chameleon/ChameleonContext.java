@@ -99,6 +99,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
      */
     private String setupNetwork(ComputeRequest request) throws Exception {
         LOGGER.debug("IN: request=" + request.toString());
+        LOGGER.debug("workflowNetwork=" + workflowNetwork);
         String networkId = null;
         try {
 
@@ -646,7 +647,6 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 networkController.deleteNetwork(region, workflowNetwork, 300);
                 if(workflowNetwork.containsKey(NetworkLeaseId)) {
                     try {
-                        String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
                         api.deleteLease(region, workflowNetwork.get(NetworkLeaseId));
                     }
                     catch (Exception e) {
