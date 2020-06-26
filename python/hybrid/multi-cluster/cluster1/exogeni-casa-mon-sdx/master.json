@@ -11,5 +11,9 @@
     "leaseEnd":"1557733832",
     "bandwidth":"1000000000",
     "cometFamily": "cluster1",
+     "stitchPortUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/UNT/Cisco/6509/TenGigabitEthernet/1/1/ethernet",
+     "stitchTag":"707",
+     "stitchIP": "10.7.7.41",
+     "stitchBandwidth": "20000000",    
     "postBootScript":"yum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up_v1.2.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW cluster1;git clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts; cp /root/Mobius-scripts/scripts/master_submit.sh /root/master_submit.sh;sed -i 's/NETWORK_INTERFACE=/NETWORK_INTERFACE=REPLACEIP/g' /root/master_submit.sh;echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf; sysctl -p;sh /root/master_submit.sh"
 }
