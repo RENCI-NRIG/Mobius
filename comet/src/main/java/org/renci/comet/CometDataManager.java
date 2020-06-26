@@ -25,6 +25,12 @@ public class CometDataManager {
     // Key fields
     public final static String JsonKeyPublicKey = "publicKey";
 
+    // Script fields
+    public final static String JsonKeyScriptName = "scriptName";
+    public final static String JsonKeyScriptBody = "scriptBody";
+
+
+
 
 
     private static final Logger LOGGER = LogManager.getLogger( CometDataManager.class.getName() );
@@ -83,6 +89,32 @@ public class CometDataManager {
                 tempFamily = HostsFamilyPrefix + family;
                 cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), tempFamily, object2.toString());
             }
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);
+            LOGGER.error("Exception e: " + e);
+            e.printStackTrace();
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
+    public void createScriptEntry(String workflowId, String host, String scriptName, String scriptBody) {
+        LOGGER.debug("IN");
+        try {
+            CometInterface cometInterface = new CometInterface(cometHost, cometCaCert, cometCert, cometCertPwd);
+
+            JSONObject object2 = new JSONObject();
+            JSONArray scripts = new JSONArray();
+            JSONObject script = new JSONObject();
+            script.put(JsonKeyScriptName, scriptName);
+            script.put(JsonKeyScriptBody, scriptBody);
+
+            scripts.add(script);
+            object2.put(JsonKeyVal, scripts.toString());
+
+            cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), "scripts", object2.toString());
         }
         catch (Exception e) {
             LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);

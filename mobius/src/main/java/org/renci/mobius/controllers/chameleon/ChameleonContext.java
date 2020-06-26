@@ -9,10 +9,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -764,6 +761,27 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 context.processNetworkRequestLink(hostname, subnet1, subnet2, bandwidth, destinationIP, sdxStitchPortInterfaceIP);
             }
             finally {
+                LOGGER.debug("OUT");
+            }
+        }
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
+        synchronized (this) {
+            String sliceName = hostNameToSliceNameHashMap.get(request.getSource());
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap="
+                        + hostNameToSliceNameHashMap.toString());
+            }
+
+            StackContext context = stackContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+
+            try {
+                context.processSdxPrefix(request);
+            } finally {
                 LOGGER.debug("OUT");
             }
         }

@@ -15,6 +15,7 @@ import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.NetworkRequest;
+import org.renci.mobius.model.SdxPrefix;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -698,11 +699,13 @@ public class StackContext implements AutoCloseable{
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
 
             sdxClient.connect(subnet1, subnet2, bandwidth);
+            /*
             sdxStitchPortInterfaceIP = sdxStitchPortInterfaceIP.split("/")[0];
             String firstThree = destinationIP.replaceFirst("\\d+$", "");
             String command = String.format("sudo ip route add %s0/24 via %s", firstThree, sdxStitchPortInterfaceIP);
             RemoteCommand remoteCommand = new RemoteCommand("cc", MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
             remoteCommand.runCmdByIP(command, ip,false);
+            */
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
@@ -713,6 +716,31 @@ public class StackContext implements AutoCloseable{
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw new MobiusException("Failed to server connect request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
+        LOGGER.debug("IN");
+
+        try {
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl());
+            sdxClient.prefix(sliceName, request.getGatewayIP(), request.getSourceSubnet());
+            if (request.getDestinationSubnet() != null) {
+                sdxClient.connect(request.getSourceSubnet(), request.getDestinationSubnet(), request.getBandwidth());
+            }
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
         }
         finally {
             LOGGER.debug("OUT");

@@ -3,10 +3,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.comet.CometDataManager;
 import org.renci.mobius.entity.WorkflowEntity;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 import org.renci.mobius.service.WorkflowService;
 import org.springframework.http.HttpStatus;
 
@@ -382,6 +379,48 @@ public class MobiusController {
     }
 
     /*
+     * @brief function responsible to push scripts to node in a workflow
+     *
+     * @param workflowID - worklfow id
+     * @param request - script request
+     *
+     * @throws exception in case of error
+     */
+    public void processScriptRequest(String workflowId, ScriptRequest request) throws Exception {
+        LOGGER.debug("IN workflowId=" + workflowId + " request=" + request);
+        try {
+            if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+                throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE,
+                        "system is busy, please try again in a few minutes");
+            }
+            if (workflowId != null) {
+                Workflow workflow = null;
+                synchronized (this) {
+                    workflow = workflowHashMap.get(workflowId);
+                }
+                if (workflow != null) {
+                    workflow.lock();
+                    try {
+                        workflow.processScriptRequest(request, false);
+                        dbWrite(workflow, DbOperation.Update);
+                    } finally {
+
+                        workflow.unlock();
+                    }
+                } else {
+                    throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
+                }
+            } else {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "WorkflowId is required");
+            }
+        }
+        finally {
+            LOGGER.debug("OUT");
+            PeriodicProcessingThread.releaseLock();
+        }
+    }
+
+    /*
      * @brief function responsible to provision network resources for a workflow
      *
      * @param workflowID - worklfow id
@@ -458,6 +497,40 @@ public class MobiusController {
             } else {
                 throw new MobiusException(HttpStatus.BAD_REQUEST, "WorkflowId is required");
             }
+        }
+        finally {
+            LOGGER.debug("OUT");
+            PeriodicProcessingThread.releaseLock();
+        }
+    }
+
+    public void processSdxPrefix(String workflowId, SdxPrefix request) throws Exception {
+        LOGGER.debug("IN workflowId=" + workflowId + " request=" + request);
+        try {
+            if (!PeriodicProcessingThread.tryLock(PeriodicProcessingThread.getWaitTime())) {
+                throw new MobiusException(HttpStatus.SERVICE_UNAVAILABLE, "system is busy, please try again in a few minutes");
+            }
+            if (workflowId != null) {
+                Workflow workflow = null;
+                synchronized (this) {
+                    workflow = workflowHashMap.get(workflowId);
+                }
+                if (workflow != null) {
+                    workflow.lock();
+                    try {
+                        workflow.processSdxPrefix(request);
+                        dbWrite(workflow, DbOperation.Update);
+                    } finally {
+
+                        workflow.unlock();
+                    }
+                } else {
+                    throw new MobiusException(HttpStatus.NOT_FOUND, "Workflow does not exist");
+                }
+            } else {
+                throw new MobiusException(HttpStatus.BAD_REQUEST, "WorkflowId is required");
+            }
+
         }
         finally {
             LOGGER.debug("OUT");

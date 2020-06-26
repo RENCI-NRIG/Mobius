@@ -9,10 +9,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -577,6 +574,10 @@ public class JetstreamContext extends CloudContext  {
      */
     @Override
     public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth, String destinationIP, String sdxStitchPortInterfaceIP) throws Exception {
+        throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
         throw new MobiusException(HttpStatus.NOT_IMPLEMENTED, "Not supported for jetsream");
     }
 }

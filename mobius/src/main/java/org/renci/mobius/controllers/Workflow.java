@@ -4,16 +4,14 @@ package org.renci.mobius.controllers;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.renci.comet.CometDataManager;
 import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.chameleon.StackContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.renci.mobius.controllers.exogeni.ExogeniFlavorAlgo;
 import org.renci.mobius.entity.WorkflowEntity;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
+import org.renci.mobius.model.*;
 import org.renci.mobius.notification.NotificationPublisher;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -719,6 +717,85 @@ class Workflow {
         }
         catch (FutureRequestException e) {
             futureRequests.add(request);
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
+    /*
+     * @brief function to process a Script request;
+     *
+     * @param request - Script request
+     * @param isFutureRequest - true in case this is a future request; false otherwise
+     *
+     * @throws Exception in case of error
+     *
+     *
+     */
+    public void processScriptRequest(ScriptRequest request, boolean isFutureRequest) throws Exception{
+        LOGGER.debug("IN request=" + request + " isFutureRequest=" + isFutureRequest);
+        try {
+            if (siteToContextHashMap.size() == 0) {
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+            CloudContext context = null;
+            for (HashMap.Entry<String, CloudContext> e : siteToContextHashMap.entrySet()) {
+                context = e.getValue();
+                if (context.containsHost(request.getTarget())) {
+                    LOGGER.debug("Context found to handle script request=" + context.getSite());
+
+                    String cometHost = MobiusConfig.getInstance().getCometHost();
+                    String caCert = MobiusConfig.getInstance().getCometCaCert();
+                    String cert = MobiusConfig.getInstance().getCometCert();
+                    String certPwd = MobiusConfig.getInstance().getCometCertPwd();
+
+                    String site = context.getSite();
+                    String target = request.getTarget();
+
+                    if(site.contains(CloudContext.CloudType.Chameleon.toString()) == true ||
+                            site.contains(CloudContext.CloudType.Jetstream.toString()) == true ||
+                            site.contains(CloudContext.CloudType.Mos.toString()) == true) {
+                        if (target.contains(".novalocal") == false) {
+                            target += ".novalocal";
+                        }
+
+                    }
+
+                    if(cometHost != null && caCert != null && cert != null && certPwd != null) {
+                        CometDataManager cometDataManager = new CometDataManager(cometHost, caCert, cert, certPwd);
+                        cometDataManager.createScriptEntry(workflowID, target, request.getName(), request.getScript());
+                    }
+                    break;
+                }else {
+                    context = null;
+                }
+            }
+            if(context == null) {
+                LOGGER.debug("OUT");
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
+        LOGGER.debug("IN request=" + request);
+        try {
+            if (siteToContextHashMap.size() == 0) {
+                throw new MobiusException(HttpStatus.NOT_FOUND, "target not found");
+            }
+
+            // lookup source and target nodes
+            CloudContext context1 = findContext(request.getSource());
+
+            if (context1 == null)
+                throw new MobiusException("conetxt for node: " + request.getSource() + " not found");
+
+
+            context1.processSdxPrefix(request);
         }
         finally {
             LOGGER.debug("OUT");

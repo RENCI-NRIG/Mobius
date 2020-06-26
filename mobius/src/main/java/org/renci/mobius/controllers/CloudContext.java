@@ -3,10 +3,7 @@ package org.renci.mobius.controllers;
 import org.apache.commons.lang.RandomStringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -217,6 +214,8 @@ abstract public class CloudContext {
      */
     abstract public void processNetworkRequestLink(String hostname, String subnet1, String subnet2, String bandwidth,
                                                    String destinationIP, String sdxStitchPortInterfaceIP) throws Exception;
+
+    abstract public void processSdxPrefix(SdxPrefix request) throws Exception;
 
     /*
      * @brief function to check get status for the context

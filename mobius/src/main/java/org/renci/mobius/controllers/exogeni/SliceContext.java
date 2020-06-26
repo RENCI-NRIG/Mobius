@@ -14,10 +14,7 @@ import org.renci.ahab.libtransport.xmlrpc.XMLRPCProxyFactory;
 import org.renci.mobius.controllers.*;
 import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.RemoteCommand;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -786,11 +783,13 @@ public class SliceContext {
 
             sdxClient.connect(subnet1, subnet2, bandwidth);
 
+            /*
             String gateway1 = subnet1.substring(0, subnet1.indexOf("/"));
             String firstThree = destinationIP.replaceFirst("\\d+$", "");
             String command = String.format("ip route add %s0/24 via %s", firstThree, gateway1);
             RemoteCommand remoteCommand = new RemoteCommand(null, MobiusConfig.getInstance().getDefaultExogeniUserSshPrivateKey());
             remoteCommand.runCmdByIP(command, ip,false);
+            */
         }
         catch (MobiusException e) {
             LOGGER.error("Exception occurred =" + e);
@@ -910,6 +909,36 @@ public class SliceContext {
             LOGGER.error("Exception occurred =" + e);
             e.printStackTrace();
             throw new MobiusException("Failed to server compute request = " + e.getLocalizedMessage());
+        }
+        finally {
+            LOGGER.debug("OUT");
+        }
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
+        LOGGER.debug("IN");
+
+        try {
+            SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl() );
+            sdxClient.prefix(sliceName, request.getGatewayIP(), request.getSourceSubnet());
+            if (request.getDestinationSubnet() != null) {
+                sdxClient.connect(request.getSourceSubnet(), request.getDestinationSubnet(), request.getBandwidth());
+            }
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw e;
+        }
+        catch (Exception e) {
+            if(e.getMessage() != null &&
+                    (e.getMessage().contains("unable to find slice") || e.getMessage().contains("slice already closed"))) {
+                // Slice not found
+                throw new SliceNotFoundOrDeadException("slice no longer exists");
+            }
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            throw new MobiusException("Failed to server stitch request = " + e.getLocalizedMessage());
         }
         finally {
             LOGGER.debug("OUT");

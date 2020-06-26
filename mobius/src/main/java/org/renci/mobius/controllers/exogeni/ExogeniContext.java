@@ -6,10 +6,7 @@ import com.google.common.net.InetAddresses;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.mobius.controllers.*;
-import org.renci.mobius.model.ComputeRequest;
-import org.renci.mobius.model.NetworkRequest;
-import org.renci.mobius.model.StitchRequest;
-import org.renci.mobius.model.StorageRequest;
+import org.renci.mobius.model.*;
 import org.springframework.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -641,6 +638,29 @@ public class ExogeniContext extends CloudContext {
             throw new MobiusException("Slice not found");
         } finally {
             LOGGER.debug("OUT");
+        }
+    }
+
+    public void processSdxPrefix(SdxPrefix request) throws Exception {
+        synchronized (this) {
+
+            String sliceName = hostNameToSliceNameHashMap.get(request.getSource());
+            if (sliceName == null) {
+                throw new MobiusException("hostName not found in hostNameToSliceHashMap=" + hostNameToSliceNameHashMap.toString());
+            }
+            SliceContext context = sliceContextHashMap.get(sliceName);
+            if (context == null) {
+                throw new MobiusException("slice context not found");
+            }
+            try {
+                context.processSdxPrefix(request);
+            } catch (SliceNotFoundOrDeadException e) {
+                handSliceNotFoundException(context.getSliceName());
+                sliceContextHashMap.remove(context);
+                throw new MobiusException("Slice not found");
+            } finally {
+                LOGGER.debug("OUT");
+            }
         }
     }
 }
