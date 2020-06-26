@@ -1,5 +1,5 @@
 {
-    "source":"abcd-1114master2",
+    "source":"master",
     "sourceSubnet":"10.7.7.0/24",
     "gatewayIP" : "192.168.30.3",
     "destinationSubnet":"192.168.10.0/24",
