@@ -20,6 +20,7 @@ import json
 import argparse
 import subprocess
 import socket
+import glob
 from ssl import create_default_context, Purpose
 
 from mobius import *
@@ -411,6 +412,7 @@ def main():
             response=mb.get_workflow(args.mobiushost, args.workflowId)
             exxogeni_slice_name, count = extract_exogeni_slice_name(response)
         networkdata = None
+        prefixdata = None
         stitchdata = None
         chstoragename = None
         exostoragename = None
@@ -423,6 +425,11 @@ def main():
                 if os.path.exists(d) :
                     d_f = open(d, 'r')
                     networkdata = json.load(d_f)
+                    d_f.close()
+                d = args.exodatadir + "/prefix.json"
+                if os.path.exists(d) :
+                    d_f = open(d, 'r')
+                    prefixdata = json.load(d_f)
                     d_f.close()
                 d = args.exodatadir + "/stitch.json"
                 if os.path.exists(d) :
@@ -505,7 +512,7 @@ def main():
                     for s in slices:
                         nodes = s["nodes"]
                         for n in nodes :
-                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
+                            if "Chameleon" in s["slice"] or "Jetstream" in s["slice"] or "mos" in s["slice"]:
                                 hostname=n["name"] + ".novalocal"
                             else :
                                 hostname=n["name"]
@@ -518,9 +525,13 @@ def main():
                                     if networkdata["source"] in n["name"]:
                                         print ("Updating target in exogeni network request")
                                         networkdata["source"] = n["name"]
+                                        if prefixdata is not None:
+                                            print ("Updating target in exogeni prefix request")
+                                            prefixdata["source"] = n["name"]
 
                             if n["name"] == "cmnw" :
                                 continue
+            requests = None
             if stitcVlanToChameleon is not None and args.exogenisite is not None and (stitchdata is not None or networkdata is not None):
                 target = None
                 if stitchdata is not None:
@@ -572,14 +583,26 @@ def main():
                 if stitchdata is not None:
                     perform_stitch(mb, args, args.exodatadir, args.exogenisite, stitcVlanToChameleon, stitchdata)
                 if networkdata is not None:
-                    perform_network_request(mb, args, args.exodatadir, args.exogenisite, networkdata)
+                    perform_network_request(mb, args, args.exodatadir, args.exogenisite, networkdata, prefixdata)
+
+                if args.exodatadir is not None:
+                    push_scripts(mb, args, args.exodatadir, requests, "Exogeni")
+
+                if args.chdatadir is not None:
+                    push_scripts(mb, args, args.chdatadir, requests, "Chameleon")
+
+                if args.jtdatadiris is not None:
+                    push_scripts(mb, args, args.jtdatadir, requests, "Jetstream")
+
+                if args.mosdatadir is not None:
+                    push_scripts(mb, args, args.mosdatadir, requests, "Mos")
     else:
         parser.print_help()
         sys.exit(1)
 
     sys.exit(0)
 
-def perform_network_request(mb, args, datadir, site, data):
+def perform_network_request(mb, args, datadir, site, data, pdata):
     if data is None :
         d = datadir + "/network.json"
         if os.path.exists(d):
@@ -590,7 +613,15 @@ def perform_network_request(mb, args, datadir, site, data):
     if data is not None:
         print ("payload for network request" + str(data))
         response=mb.create_network(args.mobiushost, args.workflowId, data)
-        return response
+    if pdata is None:
+        prefix = datadir + "/prefix.json"
+        if os.path.exists(prefix):
+            prefix_f = open(prefix, 'r')
+            pdata = json.load(prefix_f)
+            prefix.close()
+    if pdata is not None:
+        print ("payload for network request" + str(pdata))
+        response=mb.add_prefix(args.mobiushost, args.workflowId, pdata)
 
 def perform_stitch(mb, args, datadir, site, vlan, data):
     if data is None :
@@ -604,7 +635,28 @@ def perform_stitch(mb, args, datadir, site, vlan, data):
         data["tag"] = vlan
         print ("payload for stitch request" + str(data))
         response=mb.create_stitchport(args.mobiushost, args.workflowId, data)
-        return response
+
+def push_scripts(mb, args, datadir, requests, site):
+    path = datadir + "/script*.json"
+    for filepath in glob.iglob(path):
+        print ("Processing file: " + filepath)
+        d_f = open(filepath, 'r')
+        data = json.load(d_f)
+        d_f.close()
+        base_val = data["target"]
+        for req in requests:
+            slices = req["slices"]
+            for s in slices:
+                nodes = s["nodes"]
+                for n in nodes :
+                    if n["name"] == "cmnw" :
+                        continue
+                    if site in req["site"] :
+                        if base_val in n["name"]:
+                            data["target"] = n["name"]
+                            print ("payload for script request" + str(data))
+                            response=mb.push_script(args.mobiushost, args.workflowId, data)
+
 
 def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet, exxogeni_slice_name):
     '''
@@ -852,7 +904,7 @@ def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost, response):
             for s in slices:
                 nodes = s["nodes"]
                 for n in nodes :
-                    if "Chameleon" in s["slice"] or "Jetstream" in s["slice"]:
+                    if "Chameleon" in s["slice"] or "Jetstream" in s["slice"] or "Mos" in s["slice"]:
                         hostname=n["name"] + ".novalocal"
                     else :
                         hostname=n["name"]

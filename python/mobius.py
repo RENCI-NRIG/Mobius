@@ -134,3 +134,27 @@ class MobiusInterface:
         if response.json()["status"] == 200:
             print ("Received Response Value: " + str(response.json()["value"]))
         return response
+
+    @classmethod
+    def add_prefix(self, host, workflowId, data):
+        params = {
+            'workflowID':workflowId
+            }
+        response = requests.post((host + '/sdxPrefix'), headers=self._headers(), params=params, json=data, verify=False)
+        print ("Received Response Message: " + response.json()["message"])
+        print ("Received Response Status: " + str(response.json()["status"]))
+        if response.json()["status"] == 200:
+            print ("Received Response Value: " + str(response.json()["value"]))
+        return response
+
+    @classmethod
+    def push_script(self, host, workflowId, data):
+        params = {
+            'workflowID':workflowId
+            }
+        response = requests.post((host + '/script'), headers=self._headers(), params=params, json=data, verify=False)
+        print ("Received Response Message: " + response.json()["message"])
+        print ("Received Response Status: " + str(response.json()["status"]))
+        if response.json()["status"] == 200:
+            print ("Received Response Value: " + str(response.json()["value"]))
+        return response
