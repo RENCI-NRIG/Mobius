@@ -304,33 +304,13 @@ Such a configuration can be created by using the following two commands.
  
 ###### Creating the 1st cluster
 ```
-python3 condor_client.py -s1 'Exogeni:RENCI (Chapel Hill, NC USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster1/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2"  -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster1/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2"  -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
 ```
 ###### Adding the 2nd cluster to the workflow
 ```
-python3 condor_client.py -s1 'Exogeni:RENCI (Chapel Hill, NC USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster2/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.50.2"  -i2 "192.168.10.8" -o add -w abcd-1114 -n1 0 -n2 1
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster2/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.3"  -i2 "192.168.10.8" -o add -w abcd-1114 -n1 0 -n2 1
 ```
 
-###### Few things to watch out and observations:
-It doesn’t work on all Exogeni Sites. I have had it work on RENCI, TAMU, UH, TAMU, SL, UFL or UNF
-Routes between Master node and storage node may need to be verified manually. Example commands to use:
-# route -n
-Master node routes
-Master2
-```
-ip route add 192.168.10.0/24 via 192.168.30.1
-```
-Master4
-```
-ip route add 192.168.10.0/24 via 192.168.40.1
-```
-Storage node routes
-```
-ip route add 192.168.30.0/24 via 192.168.10.5
-ip route add 192.168.20.0/24 via 192.168.10.5
-ip route add 192.168.40.0/24 via 192.168.10.5
-ip route add 192.168.50.0/24 via 192.168.10.5
-```
 Cluster will look like ![this](../mobius/plantuml/images/vsdx-qos.png)
 #### <a name="get"></a>Get status of condor cluster
 ```
