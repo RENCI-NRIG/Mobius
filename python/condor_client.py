@@ -591,7 +591,7 @@ def main():
                 if args.chdatadir is not None:
                     push_scripts(mb, args, args.chdatadir, requests, "Chameleon")
 
-                if args.jtdatadiris is not None:
+                if args.jtdatadir is not None:
                     push_scripts(mb, args, args.jtdatadir, requests, "Jetstream")
 
                 if args.mosdatadir is not None:
