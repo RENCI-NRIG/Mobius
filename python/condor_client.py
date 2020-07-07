@@ -620,7 +620,7 @@ def perform_network_request(mb, args, datadir, site, data, pdata):
             pdata = json.load(prefix_f)
             prefix.close()
     if pdata is not None:
-        print ("payload for network request" + str(pdata))
+        print ("payload for prefix request" + str(pdata))
         response=mb.add_prefix(args.mobiushost, args.workflowId, pdata)
 
 def perform_stitch(mb, args, datadir, site, vlan, data):
