@@ -27,6 +27,7 @@ import org.springframework.http.HttpStatus;
  */
 public class ChameleonContext extends CloudContext implements AutoCloseable {
     private static final String stitchablePhysicalNetwork = "exogeni";
+    public final static String Subnets = "subnets";
     private static final Logger LOGGER = LogManager.getLogger( ChameleonContext.class.getName() );
     private static final Long maxDiffInSeconds = 604800L;
     private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -39,6 +40,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
     private Map<String, String> metaData = null;
     private String region = null;
     private  NetworkController networkController = null;
+    private Set<String> subnets = null;
     private OsReservationApi api = null;
     /*
      * @brief constructor
@@ -81,6 +83,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
         networkController = new NetworkController(authurl, user, password, userDomain, project);
         api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
+        subnets = new HashSet<>();
     }
 
     /*
@@ -99,10 +102,38 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         LOGGER.debug("workflowNetwork=" + workflowNetwork);
         String networkId = null;
         try {
+            String gatewayIp = request.getNetworkCidr();
+            gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
+
+            List<String> dnsServers = null;
+            if(region.compareToIgnoreCase(StackContext.RegionUC) == 0) {
+                dnsServers= MobiusConfig.getInstance().getUcChameleonDnsServers();
+            }
+            else {
+                dnsServers= MobiusConfig.getInstance().getTaccChameleonDnsServers();
+            }
 
             if (workflowNetwork != null && workflowNetwork.containsKey(NetworkController.NetworkId)) {
-                LOGGER.debug("Workflow network already exists - returning workflow network id");
-                return workflowNetwork.get(NetworkController.NetworkId);
+                networkId = workflowNetwork.get(NetworkController.NetworkId);
+                if (subnets.contains(request.getNetworkCidr())) {
+                    LOGGER.debug("Workflow network already exists - returning workflow network id");
+                    return networkId;
+                }
+                else {
+                    String routerId = workflowNetwork.get(NetworkController.RouterId);
+                    String subnetName = workflowId + CloudContext.generateRandomString() + "subnet";
+                    LOGGER.debug("Setting up Subnetwork=" + subnetName + "  for " + region + " network=" + networkId);
+
+                    String subnetId = networkController.addSubnet(region, networkId, routerId, subnetName,
+                            request.getNetworkCidr(), gatewayIp, dnsServers);
+                    String subnetString = workflowNetwork.get(NetworkController.SubnetId);
+                    subnetString += ",";
+                    subnetString += subnetId;
+                    workflowNetwork.replace(NetworkController.SubnetId, subnetString);
+                    subnets.add(request.getNetworkCidr());
+
+                    return networkId;
+                }
             }
 
             // If network type is default; use chameleon default network i.e. sharednet1
@@ -113,16 +144,6 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
             String networkName = workflowId + CloudContext.generateRandomString();
             LOGGER.debug("Setting up Network for " + region + " network=" + networkName);
-
-            List<String> dnsServers = null;
-            if(region.compareToIgnoreCase(StackContext.RegionUC) == 0) {
-                dnsServers= MobiusConfig.getInstance().getUcChameleonDnsServers();
-            }
-            else {
-                dnsServers= MobiusConfig.getInstance().getTaccChameleonDnsServers();
-            }
-            String gatewayIp = request.getNetworkCidr();
-            gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
 
             if(request.getPhysicalNetwork().compareToIgnoreCase(stitchablePhysicalNetwork) == 0) {
                 sdf.setTimeZone(utc);
@@ -162,6 +183,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
                         externalNetworkId, false, request.getNetworkCidr(), gatewayIp, dnsServers, networkName, false);
             }
+
+            subnets.add(request.getNetworkCidr());
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
         }
@@ -305,6 +328,17 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 object.put(NetworkName, networkName);
             }
         }
+        if(subnets != null) {
+            String subnetString = "";
+            for (String s : subnets) {
+                if(!subnetString.isEmpty())
+                    subnetString += ",";
+                subnetString += s;
+            }
+            if(!subnetString.isEmpty()) {
+                object.put(Subnets, subnetString);
+            }
+        }
         return object;
     }
 
@@ -335,6 +369,15 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         }
         if(networkName != null) {
             workflowNetwork.put(NetworkName, networkName);
+        }
+        String subnetsString = (String) object.get(Subnets);
+        if(subnetsString != null && !subnetsString.isEmpty()){
+            if(subnets == null) {
+                subnets = new HashSet<>();
+            }
+            for (String s: subnetsString.split(",")) {
+                subnets.add(s);
+            }
         }
     }
 

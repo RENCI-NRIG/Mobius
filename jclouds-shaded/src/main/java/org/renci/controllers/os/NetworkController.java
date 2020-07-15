@@ -108,6 +108,22 @@ public class NetworkController implements Closeable {
                 .buildApi(NeutronApi.class);
     }
 
+    public String addSubnet(String region, String networkId, String routerId, String subnetName, String cidr,
+                     String gatewayIp, List<String> dnsServers) throws Exception{
+        String retVal = null;
+        try {
+            Subnet subnet = createSubnet(region, networkId, true, 4, cidr, gatewayIp, dnsServers,
+                    subnetName);
+            attachSubnet(region, routerId, subnet.getId());
+            retVal = subnet.getId();
+        }
+        catch (Exception e){
+            System.out.println("Exception occured while adding subnet to network " + networkId + " e=" + e);
+            throw e;
+        }
+        return retVal;
+    }
+
     /*
      * @brief provision a network on openstack
      *
@@ -392,7 +408,10 @@ public class NetworkController implements Closeable {
                 try {
                     if (ids.containsKey(SubnetId) && ids.containsKey(RouterId)) {
                         System.out.println("Removing subnet: " + ids.get(SubnetId) + " from router: " + ids.get(RouterId));
-                        detachSubnet(region, ids.get(RouterId), ids.get(SubnetId));
+                        String subnets = ids.get(SubnetId);
+                        for (String s: subnets.split(",")) {
+                            detachSubnet(region, ids.get(RouterId), s);
+                        }
                     }
 
                     if (ids.containsKey(RouterId)) {
@@ -402,6 +421,10 @@ public class NetworkController implements Closeable {
 
                     if (ids.containsKey(SubnetId)) {
                         System.out.println("Deleting subnet: " + ids.get(SubnetId));
+                        String subnets = ids.get(SubnetId);
+                        for (String s: subnets.split(",")) {
+                            deleteSubnet(region, s);
+                        }
                         deleteSubnet(region, ids.get(SubnetId));
                     }
 
