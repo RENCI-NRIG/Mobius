@@ -10,7 +10,6 @@
      "imageHash":"93b4bf5c7e9b45cd1a24d13f228f5a93dfe40345",    
     "leaseEnd":"1557733832",
     "bandwidth":"1000000000",
-    "cometFamily": "cluster1",
      "stitchPortUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/UNT/Cisco/6509/TenGigabitEthernet/1/1/ethernet",
      "stitchTag":"707",
      "stitchIP": "10.7.7.41",
