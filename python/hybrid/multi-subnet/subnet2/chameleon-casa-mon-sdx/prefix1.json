@@ -1,0 +1,7 @@
+{
+    "source":"storage",
+    "sourceSubnet":"192.168.40.0/24",
+    "gatewayIP" : "192.168.30.6",
+    "destinationSubnet":"192.168.20.0/24",
+    "bandwidth":"300000000"
+}

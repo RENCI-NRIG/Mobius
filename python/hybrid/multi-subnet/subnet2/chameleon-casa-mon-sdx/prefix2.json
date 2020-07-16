@@ -1,0 +1,7 @@
+{
+    "source":"master",
+    "sourceSubnet":"192.168.10.0/24",
+    "gatewayIP" : "192.168.20.3",
+    "destinationSubnet":"192.168.40.0/24",
+    "bandwidth":"300000000"
+}
