@@ -1,5 +1,5 @@
 {
     "target":"worker",
     "name":"routes",
-    "script" : "ip route add 192.168.20.0/24 via 192.168.30.5"
+    "script" : "ip route add 192.168.20.0/24 via 192.168.30.5\nip route add 10.7.7.0/24 via 192.168.30.5"
 }

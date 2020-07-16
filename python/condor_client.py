@@ -584,17 +584,17 @@ def main():
 
             if args.exodatadir is not None:
                 push_prefix(mb, args, args.exodatadir, requests)
-                push_scripts(mb, args, args.exodatadir, requests, "Exogeni")
+                push_scripts(mb, args, args.exodatadir, requests)
 
             if args.chdatadir is not None:
                 push_prefix(mb, args, args.chdatadir, requests)
-                push_scripts(mb, args, args.chdatadir, requests, "Chameleon")
+                push_scripts(mb, args, args.chdatadir, requests)
 
             if args.jtdatadir is not None:
-                push_scripts(mb, args, args.jtdatadir, requests, "Jetstream")
+                push_scripts(mb, args, args.jtdatadir, requests)
 
             if args.mosdatadir is not None:
-                push_scripts(mb, args, args.mosdatadir, requests, "Mos")
+                push_scripts(mb, args, args.mosdatadir, requests)
     else:
         parser.print_help()
         sys.exit(1)
@@ -646,7 +646,7 @@ def push_prefix(mb, args, datadir, requests):
                         print ("payload for prefix request" + str(data))
                         response=mb.add_prefix(args.mobiushost, args.workflowId, data)
 
-def push_scripts(mb, args, datadir, requests, site):
+def push_scripts(mb, args, datadir, requests):
     path = datadir + "/script*.json"
     for filepath in glob.iglob(path):
         print ("Processing file: " + filepath)
@@ -661,11 +661,10 @@ def push_scripts(mb, args, datadir, requests, site):
                 for n in nodes :
                     if n["name"] == "cmnw" :
                         continue
-                    if site in req["site"] :
-                        if base_val in n["name"]:
-                            data["target"] = n["name"]
-                            print ("payload for script request" + str(data))
-                            response=mb.push_script(args.mobiushost, args.workflowId, data)
+                    if base_val in n["name"]:
+                        data["target"] = n["name"]
+                        print ("payload for script request" + str(data))
+                        response=mb.push_script(args.mobiushost, args.workflowId, data)
 
 
 def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet, exxogeni_slice_name):

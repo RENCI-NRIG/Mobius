@@ -12,5 +12,5 @@
     "networkCidr":"192.168.40.0/24",
     "ipAddress":"192.168.40.6",
     "forceflavor":"compute_haswell",
-    "postBootScript":"#!/bin/bash\necho 'net.ipv4.ip_forward=1'  >> /etc/sysctl.conf; sysctl -p\nyum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up_v1.2.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW cluster1;\necho 'SUBNET via SIP' >> /etc/sysconfig/network-scripts/route-eno1\n/etc/sysconfig/network-scripts/ifup-routes eno1\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/storage.sh /root/storage.sh\nsed -i 's/REPLACE/CIDR/g' /root/storage.sh\nsh /root/storage.sh"
+    "postBootScript":"#!/bin/bash\necho 'net.ipv4.ip_forward=1'  >> /etc/sysctl.conf; sysctl -p\nyum install -y wget;wget  http://geni-images.renci.org/images/kthare10/scripts/mobius_start_up_v1.2.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW all;\necho 'SUBNET via SIP' >> /etc/sysconfig/network-scripts/route-eno1\n/etc/sysconfig/network-scripts/ifup-routes eno1\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/storage.sh /root/storage.sh\nsed -i 's/REPLACE/CIDR/g' /root/storage.sh\nsh /root/storage.sh"
 }
