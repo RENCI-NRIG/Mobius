@@ -304,11 +304,11 @@ Such a configuration can be created by using the following two commands.
  
 ###### Creating the 1st cluster
 ```
-python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster1/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2"  -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
+python3 condor_client.py -s1 'Exogeni:UMass (UMass Amherst, MA, USA) XO Rack'  -d1 ./hybrid/multi-subnet/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.10.3"  -i2 "192.168.30.6" -o create -w abcd-1114 -n1 0 -n2 1
 ```
 ###### Adding the 2nd cluster to the workflow
 ```
-python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/multi-cluster/cluster2/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-cluster/cluster2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.3"  -i2 "192.168.10.8" -o add -w abcd-1114 -n1 0 -n2 1
+python3 condor_client.py -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i2 "192.168.40.6" -o add -w abcd-1114 -n2 1
 ```
 
 Cluster will look like ![this](../mobius/plantuml/images/vsdx-qos.png)
