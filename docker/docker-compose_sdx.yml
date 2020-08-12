@@ -60,7 +60,7 @@ services:
     sdxserver:
         container_name: sdxserver
         hostname: sdxserver
-        image: rencinrig/sdxserver:latest
+        image: rencinrig/sdxserver:1.0.0
         restart: always
         ports:
         - "8888:8888"
