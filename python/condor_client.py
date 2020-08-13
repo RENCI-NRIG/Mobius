@@ -391,12 +391,12 @@ def main():
         print ("Deleting workflow")
         getresponse=mb.get_workflow(args.mobiushost, args.workflowId)
         response=mb.delete_workflow(args.mobiushost, args.workflowId)
-        if args.comethost is not None:
-            print ("Cleaning up COMET context for workflow")
-            comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-            readToken=args.workflowId + "read"
-            writeToken=args.workflowId + "write"
-            response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        #if args.comethost is not None:
+        #    print ("Cleaning up COMET context for workflow")
+        #    comet=CometInterface(args.comethost, None, args.cert, args.key, None)
+        #    readToken=args.workflowId + "read"
+        #    writeToken=args.workflowId + "write"
+        #    response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
         cleanup_monitoring(mb, args.mobiushost, args.workflowId, args.kafkahost, getresponse)
     elif args.operation == 'create' or args.operation == 'add':
         ipMap = dict()
