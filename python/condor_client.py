@@ -236,18 +236,18 @@ def set_up_parser():
         '--cert',
         dest='cert',
         type = str,
-        help='Comet Certificate default(certs/inno-hn_exogeni_net.pem); used only for provisioning resources on chameleon',
+        help='Comet Certificate default(certs/client.pem); used only for provisioning resources on chameleon',
         required=False,
-        default='certs/inno-hn_exogeni_net.pem'
+        default='certs/client.pem'
     )
     parser.add_argument(
         '-k',
         '--key',
         dest='key',
         type = str,
-        help='Comet Certificate key default(certs/inno-hn_exogeni_net.key); used only for provisioning resources on chameleon',
+        help='Comet Certificate key default(certs/client.key); used only for provisioning resources on chameleon',
         required=False,
-        default='certs/inno-hn_exogeni_net.key'
+        default='certs/client.key'
     )
     parser.add_argument(
         '-m',
@@ -924,7 +924,7 @@ def cleanup_monitoring(mb, mobiushost, workflowId, kafkahost, response):
 def delete_prometheus_target(kafkahost, ip):
     try:
         topic_name = 'mobius-promeithus'
-        context = _create_ssl_context(cafile="certs/DigiCertCA.crt", certfile="certs/inno-hn_exogeni_net.pem", keyfile="certs/inno-hn_exogeni_net.key")
+        context = _create_ssl_context(cafile="certs/DigiCertCA.crt", certfile="certs/client.pem", keyfile="certs/client.key")
         context.check_hostname = False
         context.verify_mode = False
         producer_instance = KafkaProducer(bootstrap_servers=[kafkahost],
