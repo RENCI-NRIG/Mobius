@@ -40,9 +40,9 @@ User needs to modify the values before the colon to map to location on host mach
          - "./mobius-sync:/code/mobius-sync"
          - "./config/application.properties:/code/config/application.properties"
          - "./config/log4j.properties:/code/config/log4j.properties"
-         - "<./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
-         - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
-         - "./ssh/id_rsa:/code/ssh/id_rsa"
+         - "<Absolute Path of Exogeni Certficate File>:/code/ssh/<Exogeni Certificate File Name(geni-kthare10.pem)>"
+         - "<Absolute path to User public key>/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "<Absolute path to User private key>/id_rsa:/code/ssh/id_rsa"
 ```
 
 3. Using Mobius with SDX 
@@ -51,18 +51,7 @@ Update following fields docker/config/sdx.conf
   slicename="<Slice Name>"
   exogenipem="./ssh/<Exogeni Certificate File name(geni-kthare10.pem)"
 ```
-Update docker-compose_sdx.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
-```
-        # point to user specific keys below
-         volumes:
-         - "./logs:/code/logs"
-         - "./mobius-sync:/code/mobius-sync"
-         - "./config/application.properties:/code/config/application.properties"
-         - "./config/log4j.properties:/code/config/log4j.properties"
-         - "<Absolute Path of Exogeni Certficate File>:/code/ssh/<Exogeni Certificate File Name(geni-kthare10.pem)>"
-         - "<Absolute path to User public key>/id_rsa.pub:/code/ssh/id_rsa.pub"
-         - "<Absolute path to User private key>/id_rsa:/code/ssh/id_rsa"
-```
+
 Update docker-compose_sdx.yml for sdxserver to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
          # point to user specific keys below
