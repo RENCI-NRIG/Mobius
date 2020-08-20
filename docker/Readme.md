@@ -20,41 +20,19 @@ cd ./Mobius/docker
 Once images are ready, update configuration in docker as indicated below:
 1. Update docker/config/application.properties to specify user specific values for each cloud credentials (exogeni, chameleon, jetstream and mass open cloud) 
 ```
-mobius.exogeni.user=kthare10
-mobius.exogeni.certKeyFile=geni-kthare10.pem
-mobius.chameleon.user=kthare10
-mobius.chameleon.user.password=
-mobius.jetstream.user.domain=tacc
-mobius.jetstream.user=tg857780
-mobius.jetstream.user.password=
-mobius.mos.user=kthare10@email.unc.edu
-mobius.mos.user.password=
+mobius.exogeni.user=<User Name>
+mobius.exogeni.certKeyFile=<Exogeni Pem File Name(geni-kthare10.pem)>
+mobius.chameleon.user=<User Name>
+mobius.chameleon.user.password=<Password>
+mobius.jetstream.user.domain=<domain>
+mobius.jetstream.user=<User Name>
+mobius.jetstream.user.password=<Password>
+mobius.mos.user=<User Name>
+mobius.mos.user.password=<Password>
 ```
- 2. Update docker/config/application.properties to specify exogeni/chameleon controller/auth url
-```
- mobius.exogeni.controllerUrl=https://geni.renci.org:11443/orca/xmlrpc
- mobius.chameleon.authUrl=https://chi.tacc.chameleoncloud.org:5000/v3
-```
-3. If connecting to pegasus, specify amqp credentials. Alternatively, amqp notificationSink can be used as shown below. 
-No changes needed until pegasus to mobius integration is complete.
-```
- #mobius.amqp.server.host=panorama.isi.edu
- #mobius.amqp.server.port=5672
- #mobius.amqp.use.ssl=false
- #mobius.amqp.user.name=anirban
- #mobius.amqp.user.password=
- #mobius.amqp.virtual.host=panorama
- mobius.amqp.exchange.name=notifications
- mobius.amqp.exchange.routing.key=workflows
- mobius.amqp.server.host=localhost
- mobius.amqp.server.port=5672
- mobius.amqp.use.ssl=false
- mobius.amqp.user.name=
- mobius.amqp.user.password=
- mobius.amqp.virtual.host=
-```
-4. Using Mobius without SDX (network requests would not work in this case)
-Update docker-compose.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
+2. Using Mobius without SDX (network requests would not work in this case)
+Update docker-compose.yml for mobius_server to point the below parameters to user specific locations. 
+User needs to modify the values before the colon to map to location on host machine.
 ```
         # point to user specific keys below
          volumes:
@@ -62,12 +40,17 @@ Update docker-compose.yml for mobius_server to point the below parameters to use
          - "./mobius-sync:/code/mobius-sync"
          - "./config/application.properties:/code/config/application.properties"
          - "./config/log4j.properties:/code/config/log4j.properties"
-         - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+         - "<./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
          - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
          - "./ssh/id_rsa:/code/ssh/id_rsa"
 ```
 
-5. Using Mobius with SDX 
+3. Using Mobius with SDX 
+Update following fields docker/config/sdx.conf
+```
+  slicename="<Slice Name>"
+  exogenipem="./ssh/<Exogeni Certificate File name(geni-kthare10.pem)"
+```
 Update docker-compose_sdx.yml for mobius_server to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
         # point to user specific keys below
@@ -76,9 +59,9 @@ Update docker-compose_sdx.yml for mobius_server to point the below parameters to
          - "./mobius-sync:/code/mobius-sync"
          - "./config/application.properties:/code/config/application.properties"
          - "./config/log4j.properties:/code/config/log4j.properties"
-         - "./ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
-         - "./ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
-         - "./ssh/id_rsa:/code/ssh/id_rsa"
+         - "<Absolute Path of Exogeni Certficate File>:/code/ssh/<Exogeni Certificate File Name(geni-kthare10.pem)>"
+         - "<Absolute path to User public key>/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "<Absolute path to User private key>/id_rsa:/code/ssh/id_rsa"
 ```
 Update docker-compose_sdx.yml for sdxserver to point the below parameters to user specific locations. User needs to modify the values before the colon to map to location on host machine.
 ```
@@ -86,9 +69,9 @@ Update docker-compose_sdx.yml for sdxserver to point the below parameters to use
          volumes:
          - "./sdxlog:/code/log"
          - "./config/sdx.conf:/code/config/sdx.conf"
-         - "~/.ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
-         - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
-         - "~/.ssh/id_rsa:/code/ssh/id_rsa"
+         - "<Absolute Path of Exogeni Certficate File>:/code/ssh/<Exogeni Certificate File Name>"
+         - "<Absolute path to User public key>/id_rsa.pub:/code/ssh/id_rsa.pub"
+         - "<Absolute path to User private key>/id_rsa:/code/ssh/id_rsa"
          - "./resources:/code/resources"
 ```
 
