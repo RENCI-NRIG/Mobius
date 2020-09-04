@@ -12,7 +12,7 @@
   - [To do list](#todo)
   - [How to use or launch Mobius?](#docker)
 # <a name="Mobius"></a>DyNamo Network-centric Platform: Mobius
-A network-centric platform called Mobius includes (a) support for integrated, multi-cloud resource provisioning and high-performance science data flows across diverse infrastructures, and (b) enhanced mechanisms for interacting with higher level application and workflow management systems and transforming high-level resource requests to low-level provisioning actions, thereby bridging the abstraction gap between data-driven science applications and resource provisioning systems, and (c) transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control.
+A network-centric platform called Mobius includes (a) support for integrated, multi-cloud resource provisioning and for high-performance science data flows across diverse infrastructures, and (b) enhanced mechanisms for interacting with higher level application and workflow management systems and transforming high-level resource requests to low-level provisioning actions, thereby bridging the abstraction gap between data-driven science applications and resource provisioning systems, and (c) transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Mobius has been enhanced to support the provisioning of network connections between compute resources across sites/clouds and modulating the bandwidth on these network connections.
 
 The  Mobius  platform  has  been  implemented  as  a  Springframework  based  REST  server  and  exposes  a  REST  API  forautomated provisioning of network and compute resources. Itconsumes high level application-aware resource requests fromscientists or from workflow systems managing the applicationson  behalf  of  scientists  and  automatically  provisions  computeresources and network paths using the native APIs of differentresource  providers.  The  structure  of  the  different  high-levelprovisioning  requests  for  compute,  storage  and  network  re-sources are documented in the Mobius github repository [Design](./mobius/Readme.md). Es-sentially, the applications can specify to Mobius their resourcerequirements over time in the form of a Gantt chart. Scientists can easily set up application-specific environments by invokingthe Mobius REST API. 
 
@@ -50,8 +50,8 @@ The Monitoring and Control module is designed to transparently maintain the qual
 Mobius also leverages the Ahab adapter to instantiate virtual Software Defined Exchange (vSDX) slices on ExoGENI, which can be thought of as virtual interconnect points between multiple adjacent domains, e.g. instruments, compute resources, data/storage systems, etc. A controller application programmatically manages an ExoGENI vSDX slice using Ahab. Like a static SDX, a vSDX uses SDN within the exchange to enforce different network policies. An ExoGENI vSDX slice accepts connections from many different institutional domains and uses SDN to forward and manage network traffic between those domains. Mobius also uses the Ahab library to automate modifications to the infrastructure used by the vSDX.
 ![VSDX](./mobius/plantuml/images/vsdx.png)
 
-### Cross Test Bed Resources with Virtual SDX Example
-![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-ex.png)
+### Exoplex vSDX
+![Exoplex vSDX](./mobius/plantuml/images/exoplex.png)
 
 ### Cross Test Bed Resources with Virtual SDX Example and Qos Rules applied
 ![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-qos.png)
