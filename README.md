@@ -39,14 +39,11 @@ The information about all the resources provisioned for a workflow or an applica
 The high level application requests can be represented as a Gantt chart of required resources for a particular application or workflow. The periodic processor triggers the provisioning of the resources scheduled to be provisioned at a particular time. It also monitors the provisioning status of all the resources instantiated for various application workflows and triggers notifications to applications/workflow management system via an AMQP based messaging space.
 
 ## <a name="pm"></a> Monitoring and Control
-The Monitoring and Control module is designed to transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Based on policies and thresholds defined, the goal is to identify the appropriate actions to be taken to ensure the infrastructure QoS at all times. The actions include enabling compute, storage and network elasticity i.e. growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. 
+The Prometheus monitoring system has been added to the DyNamo ecosystem. Mobius automatically configures the Prometheus node exporter on each compute node to push system metrics to a Prometheus server hosted at RENCI. The metrics collected by Prometheus enable us to dynamically take actions to ensure the infrastructure QoS. The actions include enabling compute, storage and network elasticity, i.e., growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. To visualize the collected data in a comprehensive and easy to understand way, an instance of Grafana has been configured to pull the metric data from Prometheus and plot various graphs on a dashboard depicted in Figure.
 
 ![Monitoring Diagram](./mobius/plantuml/images/monitoring.png)
 
-### Prometheus Monitoring
-The Prometheus monitoring system has been added to the DyNamo ecosystem. Mobius automatically configures the Prometheus node exporter on each compute node to push system metrics to a Prometheus server hosted at RENCI. The metrics collected by Prometheus enable us to dynamically take actions to ensure the infrastructure QoS. The actions include enabling compute, storage and network elasticity, i.e., growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. To visualize the collected data in a comprehensive and easy to understand way, an instance of Grafana has been configured to pull the metric data from Prometheus and plot various graphs on a dashboard depicted in Figure.
-
-#### Example Monitoring Dashboard
+### Example Monitoring Dashboard
 ![Monitoring Dashboard](./mobius/plantuml/images/grafana.png)
 
 ## <a name="pm"></a> Virtual SDX
