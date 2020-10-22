@@ -9,7 +9,7 @@
   - [Periodic Processor](#pp)
   - [Policy Monitor](#pm)
   - [Mobius Controller](#mc)
-  - [To do list](#todo)
+  - [Mobius APIs](#todo)
   - [How to use or launch Mobius?](#docker)
 # <a name="Mobius"></a>DyNamo Network-centric Platform: Mobius
 A network-centric platform called Mobius depicted in Figure includes (a) support for integrated, multi-cloud resource provisioning and for high-performance science data flows across diverse infrastructures, and (b) enhanced mechanisms for interacting with higher level application and workflow management systems and transforming high-level resource requests to low-level provisioning actions, thereby bridging the abstraction gap between data-driven science applications and resource provisioning systems, and (c) transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Mobius was enhanced to support the provisioning of network connections between compute resources across sites/clouds and modulating the bandwidth on these network connections.
@@ -66,9 +66,129 @@ In our scenario, the Exoplex Slice controller runs as a docker container. Mobius
 ## <a name="mc"></a> Mobius Controller
 The Mobius controller orchestrates all the above components and processes the incoming REST requests to trigger appropriate Mobius components. 
 
-## <a name="todo"></a>TODO List
-- Enable Shrinking of the resources in Monitoring client
-- Enable monitoring of network resources in Monitoring client
+## <a name="todo"></a>APIS
+API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/mobius/1.0.0)
 
+#### Version
+
+The Orchestrator API is versioned based on the release found in GitHub.
+
+API :
+
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/listWorkflows` | GET: Get the list of active workflows | NA | Response format
+`/workflow` | GET: Get the status of the workflow by passing workflow id | `workflowID` Workflow ID | Response format
+`/workflow` | POST: Creates a new workflow | `workflowID` Workflow ID | Response format
+`/workflow` | POST: Creates a new workflow | `workflowID` Workflow ID | Response format
+`/workflow` | DELETE: Delete a workflow | `workflowID` Workflow ID | Response format
+`/storage` | POST: Request/modify storage resource for a workflow | `workflowID` Workflow ID, `storage request` body | Response format
+`/network` | POST: Request/modify network resource for a workflow | `workflowID` Workflow ID, `network request` body | Response format
+`/compute` | POST: Request/modify compute resource for a workflow | `workflowID` Workflow ID, `compute request` body | Response format
+`/stitch` | POST: Request/modify stitching | `workflowID` Workflow ID, `stitch request` body | Response format
+`/sdxPrefix` | POST: Request to publish subnets and connect them at the SDX | `workflowID` Workflow ID, `prefix request` body | Response format
+`/script` | POST: Request to push command or set of commands to a node | `workflowID` Workflow ID, `script request` body | Response format
+
+
+Example: Response format
+
+```json
+{
+  "status": 0,
+  "message": "string",
+  "value": {},
+  "version": "string"
+}
+```
+Storage Request
+```json
+{
+  "mountPoint": "string",
+  "target": "string",
+  "size": 0,
+  "leaseStart": "string",
+  "leaseEnd": "string",
+  "action": "add"
+}
+```
+Network Request
+```json
+{
+  "source": "string",
+  "sourceIP": "string",
+  "sourceSubnet": "string",
+  "sourceLocalSubnet": "string",
+  "destination": "string",
+  "destinationIP": "string",
+  "destinationSubnet": "string",
+  "destLocalSubnet": "string",
+  "linkSpeed": "string",
+  "leaseStart": "string",
+  "leaseEnd": "string",
+  "chameleonSdxControllerIP": "string",
+  "action": "add"
+}
+```
+Compute Request
+```json
+{
+  "site": "string",
+  "cpus": 0,
+  "gpus": 0,
+  "ramPerCpus": 0,
+  "diskPerCpus": 0,
+  "leaseStart": "string",
+  "leaseEnd": "string",
+  "coallocate": false,
+  "slicePolicy": "default",
+  "sliceName": "string",
+  "hostNamePrefix": "string",
+  "ipAddress": "string",
+  "bandwidth": "string",
+  "networkType": "default",
+  "physicalNetwork": "string",
+  "externalNetwork": "string",
+  "networkCidr": "string",
+  "vpcCidr": "string",
+  "imageUrl": "string",
+  "imageHash": "string",
+  "imageName": "string",
+  "postBootScript": "string",
+  "stitchPortUrl": "string",
+  "stitchTag": "string",
+  "stitchIP": "string",
+  "stitchBandwidth": "string",
+  "forceflavor": "string",
+  "cometFamily": "string"
+}
+```
+Stitch Request
+```json
+{
+  "target": "string",
+  "portUrl": "string",
+  "tag": "string",
+  "stitchIP": "string",
+  "bandwidth": "string"
+}
+```
+Prefix Request
+```json
+{
+  "source": "string",
+  "sourceSubnet": "string",
+  "gatewayIP": "string",
+  "destinationSubnet": "string",
+  "bandwidth": "string"
+}
+```
+Script Request
+```
+{
+  "target": "string",
+  "name": "string",
+  "script": "string"
+}
+```
 ## <a name="docker"></a>How to use or launch Mobius?
 - Refer to [Docker](./docker/Readme.md) to launch Mobius
