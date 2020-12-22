@@ -543,15 +543,13 @@ public class NetworkController implements Closeable {
 
             sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
                             .ethertype(RuleEthertype.IPV4)
-                            .protocol(RuleProtocol.ICMP)
+                            .protocol(RuleProtocol.TCP)
                             .remoteIpPrefix("0.0.0.0/0")
                             .build());
 
             sgApi.create(Rule.createBuilder(RuleDirection.INGRESS, securityGroup.getId())
                             .ethertype(RuleEthertype.IPV4)
-                            .protocol(RuleProtocol.TCP)
-                            .portRangeMax(22)
-                            .portRangeMin(22)
+                            .protocol(RuleProtocol.UDP)
                             .remoteIpPrefix("0.0.0.0/0")
                             .build());
 
