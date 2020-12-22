@@ -257,6 +257,11 @@ python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exoge
 ```
 python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./exogeni_mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
 ```
+##### MOC
+- Master, Worker nodes on MOC
+```
+python3 condor_client.py -o create -w casa-moc-test -s4 'Mos:moc-kzn' -d4 ./moc-casa/ -i4 "192.158.100.4" -l `date -v +2d +%s`  -n4 1
+```
 
 ##### Hybrid Model: 
 - Master, Worker and Storage nodes on Exogeni
