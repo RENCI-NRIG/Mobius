@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.renci</groupId>
     <artifactId>jclouds-shaded</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1</version>
     <properties>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -41,7 +39,7 @@
     <dependency>
       <groupId>org.apache.jclouds.api</groupId>
       <artifactId>openstack-nova</artifactId>
-      <version>2.2.0</version>
+      <version>${jclouds.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.jclouds.api</groupId>
@@ -103,7 +101,7 @@
                                 </relocation>
                             </relocations>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                             </transformers>
                             <filters>
                                 <filter>

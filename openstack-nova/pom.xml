@@ -172,4 +172,8 @@
   </profiles>
 
 
+
+  <scm>
+    <tag>mobius-1.0.1</tag>
+  </scm>
 </project>

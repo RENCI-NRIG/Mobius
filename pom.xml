@@ -4,7 +4,7 @@
     <artifactId>mobius</artifactId>
     <packaging>pom</packaging>
     <name>mobius</name>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
     <modules>
         <module>comet</module>
@@ -25,7 +25,7 @@
     <scm>
         <connection>scm:git:git@github.com:RENCI-NRIG/Mobius.git</connection>
         <url>https://github.com/RENCI-NRIG/Mobius</url>
-        <tag>HEAD</tag>
+        <tag>mobius-1.0.1</tag>
     </scm>
     <licenses>
         <license>
