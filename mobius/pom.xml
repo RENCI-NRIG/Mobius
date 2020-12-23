@@ -4,7 +4,7 @@
     <artifactId>mobius-spring</artifactId>
     <packaging>jar</packaging>
     <name>mobius-spring</name>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
     <properties>
         <java.version>1.8</java.version>
@@ -50,8 +50,8 @@
                 </executions>
                 <configuration>
                     <repository>${docker.image.prefix}/${docker.image.name}</repository>
-                    <tag>latest</tag>
-                        <!-- <tag>${project.version}</tag> -->
+                        <tag>latest</tag> 
+                            <!-- <tag>${project.version}</tag> -->
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
