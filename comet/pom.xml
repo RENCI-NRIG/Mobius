@@ -3,7 +3,7 @@
     <parent>
         <artifactId>mobius</artifactId>
         <groupId>org.renci</groupId>
-        <version>1.0.1</version>
+        <version>1.0.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <url>https://github.com/RENCI-NRIG/Mobius</url>
@@ -148,9 +148,4 @@
             <version>2.12.1</version>
         </dependency>
     </dependencies>
-
-
-  <scm>
-    <tag>mobius-1.0.1</tag>
-  </scm>
 </project>
