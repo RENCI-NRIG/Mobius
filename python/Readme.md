@@ -33,7 +33,12 @@ Python based clients
 
 You are now ready execute python client.
 
-Pre-requisites: requires python 3 or above version and python requests package installed
+## Pre-requisites: 
+Requires python 3 or above version and following python packages to be installed
+```
+pip3 install requests
+pip3 install kafka-python
+```
 
 ## <a name="mbclient"></a>Mobius Client
 Mobius client to trigger Moobius REST commands.
