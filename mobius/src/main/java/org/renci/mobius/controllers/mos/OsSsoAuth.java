@@ -73,6 +73,7 @@ public class OsSsoAuth {
 
             LOGGER.debug("accesEndPoint=" + accesEndPoint);
             String content = String.format(AUTH_DOCUMENT, userName, password, scope);
+            LOGGER.debug("Auth Content: " + content);
             HttpEntity<String> requestEntity = new HttpEntity<>(content, headers);
 
             ResponseEntity<Map> result = rest.exchange(accesEndPoint, HttpMethod.POST, requestEntity, Map.class);
@@ -89,6 +90,7 @@ public class OsSsoAuth {
                     throw new SsoAuthException("Failed to get access token");
                 }
 
+                LOGGER.debug("AccessToken: " + accessToken);
                 return accessToken;
             }
         }
