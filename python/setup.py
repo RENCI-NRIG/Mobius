@@ -1,4 +1,6 @@
-# !/usr/bin/env python3
+# coding: utf-8
+
+#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 RENCI NRIG
@@ -23,23 +25,41 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from keystoneauth1 import identity
-from keystoneauth1 import session
-from novaclient import client
-VERSION=2
-auth = identity.v3.oidc.OidcPassword(
-    'https://kaizen.massopen.cloud:13000/v3',
-    identity_provider='moc',
-    protocol='openid',
-    client_id='',
-    client_secret='',
-    access_token_endpoint='https://sso.massopen.cloud/auth/realms/moc/protocol/openid-connect/token',
-    discovery_endpoint='https://sso.massopen.cloud/auth/realms/moc/.well-known/openid-configuration',
-    username='',
-    password='',
-    project_name='',
-    project_domain_name='Default'
+from setuptools import setup, find_packages
+
+NAME = "mobius"
+VERSION = "0.1"
+# To install the library, run the following
+#
+# python setup.py install
+#
+# prerequisite: setuptools
+# http://pypi.python.org/pypi/setuptools
+
+with open("Readme.md", "r") as fh:
+    long_description = fh.read()
+
+with open("requirements.txt", "r") as fh:
+    requirements = fh.read()
+
+setup(
+    name=NAME,
+    version=VERSION,
+    description="Mobius Framework",
+    author="Komal Thareja",
+    author_email="kthare10@renci.org",
+    url="https://github.com/RENCI-NRIG/Mobius",
+    keywords=["Swagger", "Mobius Framework"],
+    install_requires=requirements,
+    setup_requires=requirements,
+    packages=find_packages(),
+    include_package_data=True,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.7'
 )
-s = session.Session(auth)
-nova = client.Client(VERSION, session=s)
-print(nova.servers.list())

@@ -1,6 +1,7 @@
 package org.renci.mobius.controllers;
 
 import com.google.common.collect.ImmutableSet;
+import org.renci.mobius.controllers.chameleon.StackContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -49,7 +50,9 @@ public class MobiusConfig {
     public static final String amqpExchangeName = "mobius.amqp.exchange.name";
     public static final String amqpRoutingKey = "mobius.amqp.exchange.routing.key";
 
-    public static final String chameleonAuthUrl = "mobius.chameleon.authUrl";
+    public static final String chameleonAuthUrlTACC = "mobius.chameleon.authUrl.tacc";
+    public static final String chameleonAuthUrlUC = "mobius.chameleon.authUrl.uc";
+    public static final String chameleonAuthUrlKVM = "mobius.chameleon.authUrl.kvm";
     public static final String chameleonUser = "mobius.chameleon.user";
     public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
     public static final String chameleonUserPassword = "mobius.chameleon.user.password";
@@ -66,6 +69,12 @@ public class MobiusConfig {
     public static final String chameleonTACCStitchPort = "mobius.chameleon.tacc.stitchport";
     public static final String ucchameleonDnsServers = "mobius.chameleon.uc.dnsServers";
     public static final String taccchameleonDnsServers = "mobius.chameleon.tacc.dnsServers";
+    public static final String chameleonAccessTokenEndpoint = "mobius.chameleon.access_token_endpoint";
+    public static final String chameleonFederatedIdentityProvider = "mobius.chameleon.federated_identity_provider";
+    public static final String chameleonClientId = "mobius.chameleon.client_id";
+    public static final String chameleonClientSecret = "mobius.chameleon.client_secret";
+    public static final String chameleonAccessEndpointScope = "mobius.chameleon.endpoint.scope";
+
 
     public static final String cometHost = "mobius.comet.host";
     public static final String cometCert = "mobius.comet.cert";
@@ -214,7 +223,23 @@ public class MobiusConfig {
 
     public String getChameleonTACCStitchPort() { return properties.getProperty(chameleonTACCStitchPort); }
 
-    public String getChameleonAuthUrl() { return properties.getProperty(chameleonAuthUrl); }
+    public String getChameleonAuthUrlTACC() { return properties.getProperty(chameleonAuthUrlTACC); }
+
+    public String getChameleonAuthUrlUC() { return properties.getProperty(chameleonAuthUrlUC); }
+
+    public String getChameleonAuthUrlKVM() { return properties.getProperty(chameleonAuthUrlKVM); }
+
+    public String getChameleonAuthUrl(String region) {
+        switch (region) {
+            case StackContext.RegionUC:
+                return getChameleonAuthUrlUC();
+            case StackContext.RegionTACC:
+                return getChameleonAuthUrlTACC();
+            case StackContext.RegionKVM:
+                return getChameleonAuthUrlKVM();
+        }
+        return null;
+    }
 
     public String getChameleonUser() { return properties.getProperty(chameleonUser); }
 
@@ -247,6 +272,16 @@ public class MobiusConfig {
     }
 
     public Integer getChameleonLeaseRetry() { return Integer.valueOf(properties.getProperty(MobiusConfig.chameleonLeaseRetry)); }
+
+    public String getChameleonAccessEndpointScope() { return properties.getProperty(chameleonAccessEndpointScope); }
+
+    public String getChameleonAccessTokenEndpoint() { return properties.getProperty(chameleonAccessTokenEndpoint); }
+
+    public String getChameleonFederatedIdentityProvider() { return properties.getProperty(chameleonFederatedIdentityProvider); }
+
+    public String getChameleonClientId() { return properties.getProperty(chameleonClientId); }
+
+    public String getChameleonClientSecret() { return properties.getProperty(chameleonClientSecret); }
 
     public String getAmqpExchangeName() { return properties.getProperty(amqpExchangeName); }
 

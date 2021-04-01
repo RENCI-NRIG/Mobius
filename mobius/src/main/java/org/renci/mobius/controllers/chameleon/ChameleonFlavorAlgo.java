@@ -19,12 +19,19 @@ public class ChameleonFlavorAlgo {
 
     enum Flavor {
         // cpus, diskspace, ram, name
-        Cascade(48, 250059, 131072, "compute_cascadelake"),
+        CascadeR(96, 250059, 196608, "compute_cascadelake_r"),
+        Cascade(64, 250059, 196608, "compute_cascadelake"),
         Haswell(48, 250059, 131072, "compute_haswell"),
         InfiniBand(48, 250059, 131072, "compute_haswell_ib"),
         Skylake(48, 240057, 196608, "compute_skylake"),
         Gpus(56, 250059, 131072, "gpu_k80, gpu_m40, gpu_p100, gpu_p100_nvlink"),
-        Storage(40, 30000000, 64000, "storage");
+        Storage(40, 30000000, 64000, "storage"),
+        M1Tiny(1, 1024, 512, "m1.tiny"),
+        M1Small(1, 20480, 2048, "m1.small"),
+        M1Medium(2, 40960, 4096, "m1.medium"),
+        M1Large(4, 40960, 8192, "m1.large"),
+        M1XLarge(8, 40960, 16384, "m1.xlarge"),
+        M1XXLarge(16, 40960, 32768, "m1.xxlarge");
 
         private Flavor(Integer cpus, Integer diskSpace, Integer ram, String name) {
             this.cpus = cpus;
@@ -70,6 +77,13 @@ public class ChameleonFlavorAlgo {
         fv.add(Flavor.Haswell);
         fv.add(Flavor.InfiniBand);
         fv.add(Flavor.Skylake);
+        fv.add(Flavor.CascadeR);
+        fv.add(Flavor.M1Tiny);
+        fv.add(Flavor.M1Small);
+        fv.add(Flavor.M1Medium);
+        fv.add(Flavor.M1Large);
+        fv.add(Flavor.M1XLarge);
+        fv.add(Flavor.M1XXLarge);
         computeflavors = fv;
     }
 
@@ -126,11 +140,32 @@ public class ChameleonFlavorAlgo {
                 else if ( forceFlavor.compareToIgnoreCase(Flavor.Cascade.name) == 0) {
                     result.put(Flavor.Cascade.name, count);
                 }
+                else if ( forceFlavor.compareToIgnoreCase(Flavor.CascadeR.name) == 0) {
+                    result.put(Flavor.CascadeR.name, count);
+                }
                 else if (forceFlavor.compareToIgnoreCase(Flavor.InfiniBand.name) == 0 ) {
                     result.put(Flavor.InfiniBand.name, count);
                 }
                 else if (forceFlavor.compareToIgnoreCase(Flavor.Skylake.name) == 0 ) {
                     result.put(Flavor.Skylake.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1Tiny.name) == 0 ) {
+                    result.put(Flavor.M1Tiny.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1Small.name) == 0 ) {
+                    result.put(Flavor.M1Small.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1Medium.name) == 0 ) {
+                    result.put(Flavor.M1Medium.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1Large.name) == 0 ) {
+                    result.put(Flavor.M1Large.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1XLarge.name) == 0 ) {
+                    result.put(Flavor.M1XLarge.name, count);
+                }
+                else if (forceFlavor.compareToIgnoreCase(Flavor.M1XXLarge.name) == 0 ) {
+                    result.put(Flavor.M1XXLarge.name, count);
                 }
                 else {
                     throw new MobiusException(HttpStatus.BAD_REQUEST, "Invalid flavor specified in forceflavor");

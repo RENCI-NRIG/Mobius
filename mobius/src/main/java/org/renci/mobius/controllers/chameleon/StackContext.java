@@ -13,6 +13,7 @@ import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.sdx.SdxClient;
+import org.renci.mobius.controllers.utils.OsSsoAuth;
 import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.SdxPrefix;
@@ -31,6 +32,7 @@ public class StackContext implements AutoCloseable{
     private static final Logger LOGGER = LogManager.getLogger( StackContext.class.getName() );
     public static final String RegionUC = "CHI@UC";
     public static final String RegionTACC = "CHI@TACC";
+    public static final String RegionKVM = "KVM@TACC";
 
     private String sliceName;
     private String workflowId;
@@ -137,7 +139,7 @@ public class StackContext implements AutoCloseable{
      * @param region - chameleon region on which resources are allocated
      *
      */
-    public StackContext(String sliceName, String workflowId, String region) {
+    public StackContext(String sliceName, String workflowId, String region) throws Exception {
         this.sliceName = sliceName;
         this.workflowId = workflowId;
         activeOrFailedInstances = 0;
@@ -148,13 +150,28 @@ public class StackContext implements AutoCloseable{
 
         String user = MobiusConfig.getInstance().getChameleonUser();
         String password = MobiusConfig.getInstance().getChameleonUserPassword();
-        String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
+        String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
-        // Instantiate Jclouds based Openstack Controller object
-        computeController = new ComputeController(authurl, user, password, userDomain, project);
+        String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
+        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider();
+        String clientId = MobiusConfig.getInstance().getChameleonClientId();
+        String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
+        String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
+
+        computeController = null;
+        if(accessEndPoint != null && federatedIdProvider != null && clientId != null && clientSecret != null &&
+                scope != null) {
+            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
+            String federatedToken = ssoAuth.federatedToken();
+            computeController = new ComputeController(authurl, federatedToken, userDomain, project);
+        }
+        else {
+            // Instantiate Jclouds based Openstack Controller object
+            computeController = new ComputeController(authurl, user, password, userDomain, project);
+        }
 
         // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
         // jclouds
@@ -304,11 +321,11 @@ public class StackContext implements AutoCloseable{
      */
     public ComputeResponse provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
                                          String leaseEnd, String hostNamePrefix, String postBootScript,
-                                         Map<String, String> metaData, String networkId, String ip) throws Exception {
+                                         Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
 
         LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
         + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
-        + " ip=" + ip);
+        + " ip=" + ip + " sgName=" + sgName);
 
         try {
 
@@ -335,66 +352,102 @@ public class StackContext implements AutoCloseable{
             Date now = new Date();
             now.setTime(now.getTime() + 60000);
 
-            String reservationRequest = api.buildComputeLeaseRequest(sliceName, sdf.format(now),
-                    sdf.format(endTime), flavorList);
-
-            if(reservationRequest == null) {
-                throw new MobiusException("Failed to construct reservation request");
-            }
-
-            Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName,
-                    reservationRequest, 300);
-
-            if(result == null || result.getFirst() == null || result.getSecond() == null) {
-                throw new MobiusException("Failed to request lease");
-            }
-
-            leaseId = result.getFirst();
-            Map<String, Integer> reservationIds = result.getSecond();
             ComputeResponse response = new ComputeResponse(0, 0);
+            if (region.compareToIgnoreCase(RegionKVM) != 0) {
 
-            LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
-            LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                String reservationRequest = api.buildComputeLeaseRequest(sliceName, sdf.format(now),
+                        sdf.format(endTime), flavorList);
 
-            for(Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
-                for (int i = 0; i < entry.getValue(); ++i) {
-                    String name = workflowId + "-";
-                    if (hostNamePrefix != null) {
-                        name = workflowId + hostNamePrefix + nameIndex;
-                    } else {
-                        name = name + CloudContext.NodeName + nameIndex;
-                    }
-                    name = name.toLowerCase();
-                    LOGGER.debug("adding node=" + name);
-                    response.addHost(name + ".novalocal", null);
-
-                    Map<String, String> meta = null;
-                    if (metaData != null) {
-                        metaData.put("reservation_id", name);
-                        meta = metaData;
-                    }
-
-                    if (postBootScript == null) {
-                        postBootScript = postBootScriptRequiredForComet;
-                    }
-
-                    String instanceId = computeController.createInstance(region,
-                            MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
-                            image,
-                            MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
-                            networkId,
-                            entry.getKey(),
-                            sliceName,
-                            name,
-                            postBootScript, meta, ip, null);
-
-                    if (instanceId == null) {
-                        throw new MobiusException("Failed to create instance");
-                    }
-                    instanceIdList.add(instanceId);
-                    ++nameIndex;
+                if (reservationRequest == null) {
+                    throw new MobiusException("Failed to construct reservation request");
                 }
+
+                Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName,
+                        reservationRequest, 300);
+
+                if (result == null || result.getFirst() == null || result.getSecond() == null) {
+                    throw new MobiusException("Failed to request lease");
+                }
+
+                leaseId = result.getFirst();
+                Map<String, Integer> reservationIds = result.getSecond();
+
+
+                LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
+                LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+                for (Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
+                    for (int i = 0; i < entry.getValue(); ++i) {
+                        String name = workflowId + "-";
+                        if (hostNamePrefix != null) {
+                            name = workflowId + hostNamePrefix + nameIndex;
+                        } else {
+                            name = name + CloudContext.NodeName + nameIndex;
+                        }
+                        name = name.toLowerCase();
+                        LOGGER.debug("adding node=" + name);
+                        response.addHost(name + ".novalocal", null);
+
+                        Map<String, String> meta = null;
+                        if (metaData != null) {
+                            metaData.put("reservation_id", name);
+                            meta = metaData;
+                        }
+
+                        if (postBootScript == null) {
+                            postBootScript = postBootScriptRequiredForComet;
+                        }
+
+                        String instanceId = computeController.createInstance(region,
+                                MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                                image,
+                                MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
+                                networkId,
+                                entry.getKey(),
+                                sliceName,
+                                name,
+                                postBootScript, meta, ip, sgName);
+
+                        if (instanceId == null) {
+                            throw new MobiusException("Failed to create instance");
+                        }
+                        instanceIdList.add(instanceId);
+                        ++nameIndex;
+                    }
+                }
+            }
+            else {
+                for(Map.Entry<String, Integer> entry : flavorList.entrySet()) {
+                    for (int i = 0; i < entry.getValue(); ++i) {
+                        String name = workflowId + "-";
+                        if (hostNamePrefix != null) {
+                            name = workflowId + hostNamePrefix + nameIndex;
+                        } else {
+                            name = name + CloudContext.NodeName + nameIndex;
+                        }
+                        name = name.toLowerCase();
+                        response.addHost(name + ".novalocal", null);
+                        LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
+
+                        String instanceId = computeController.createInstance(region,
+                                MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                                image,
+                                entry.getKey(),
+                                networkId,
+                                null,
+                                sliceName,
+                                name,
+                                postBootScript, metaData, ip, sgName);
+
+                        if (instanceId == null) {
+                            throw new MobiusException("Failed to create instance");
+                        }
+                        instanceIdList.add(instanceId);
+                        ++nameIndex;
+                    }
+                }
+
             }
             response.setNodeCount(nameIndex);
             return response;

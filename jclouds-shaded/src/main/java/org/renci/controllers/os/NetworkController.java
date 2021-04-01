@@ -520,7 +520,7 @@ public class NetworkController implements Closeable {
      * @return SecurityGroup
      * @throws Exception in case of error
      */
-    private SecurityGroup createSecurityGroup(String region, String name) throws Exception {
+    public SecurityGroup createSecurityGroup(String region, String name) throws Exception {
         SecurityGroupApi sgApi = null;
         SecurityGroup securityGroup = null;
 
@@ -570,7 +570,7 @@ public class NetworkController implements Closeable {
      * @param securityGroupId - securityGroupId
      *
      */
-    private void deleteSecurityGroup(String region, String securityGroupId) {
+    public void deleteSecurityGroup(String region, String securityGroupId) {
         SecurityGroupApi sgApi;
         SecurityGroup securityGroup = null;
 

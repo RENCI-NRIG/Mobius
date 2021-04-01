@@ -1,7 +1,7 @@
 package org.renci.mobius.controllers.chameleon;
 
-import com.google.common.collect.ImmutableSet;
 import org.jclouds.openstack.neutron.v2.domain.Network;
+import org.jclouds.openstack.neutron.v2.domain.SecurityGroup;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.NetworkController;
@@ -9,6 +9,7 @@ import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
+import org.renci.mobius.controllers.utils.OsSsoAuth;
 import org.renci.mobius.model.*;
 
 import java.text.SimpleDateFormat;
@@ -76,12 +77,28 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
         String user = MobiusConfig.getInstance().getChameleonUser();
         String password = MobiusConfig.getInstance().getChameleonUserPassword();
-        String authurl = MobiusConfig.getInstance().getChameleonAuthUrl();
+        String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
-        String projectDomain = MobiusConfig.getInstance().getJetStreamProjectDomain();
+        String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
-        networkController = new NetworkController(authurl, user, password, userDomain, project);
+        String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
+        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider();
+        String clientId = MobiusConfig.getInstance().getChameleonClientId();
+        String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
+        String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
+
+        networkController = null;
+        if(accessEndPoint != null && federatedIdProvider != null && clientId != null && clientSecret != null &&
+                scope != null) {
+            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
+            String federatedToken = ssoAuth.federatedToken();
+
+            networkController = new NetworkController(authurl, federatedToken, userDomain, project);
+        }
+        else {
+            networkController = new NetworkController(authurl, user, password, userDomain, project);
+        }
         api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
         subnets = new HashSet<>();
     }
@@ -93,14 +110,59 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         networkController.close();
     }
 
+    private String setupNetwork_kvm(ComputeRequest request) throws Exception {
+        LOGGER.debug("IN request=" + request);
+        String networkId = null, sgName = null;
+        try {
+            if (workflowNetwork != null &&
+                    workflowNetwork.containsKey(NetworkController.NetworkId)) {
+                return workflowNetwork.get(NetworkController.NetworkId);
+            }
+
+
+            // If network type is default; use chameleon default network i.e. sharednet1
+            if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
+                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+            }
+
+            String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
+            String networkName = workflowId + CloudContext.generateRandomString();
+            LOGGER.debug("Setting up Network for " + region + " network=" + networkName);
+
+            // Workflow network for region does not exist create workflow private network
+            workflowNetwork = networkController.createNetwork(region, null,
+                    externalNetworkId, false, request.getNetworkCidr(), null,
+                    null, networkName, true);
+
+            networkId = workflowNetwork.get(NetworkController.NetworkId);
+            sgName = networkController.getSecurityGroupName(region,
+                    workflowNetwork.get(NetworkController.SecurityGroupId));
+        }
+        catch (Exception e){
+            LOGGER.error("Exception occurred while setting up network ");
+            LOGGER.error("Ex= " + e);
+            e.printStackTrace();
+            throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to setup network " +
+                    e.getLocalizedMessage());
+        }
+        finally {
+            if(networkController != null) {
+                networkController.close();
+            }
+            LOGGER.debug("OUT networkId=" + networkId + " sgName=" + sgName);
+        }
+        return networkId;
+    }
+
     /*
      * @brief setup private network for chameleon region; all instances are connected to each other via this
      *        network;
      */
-    private String setupNetwork(ComputeRequest request) throws Exception {
+    private String setupNetwork_baremetal(ComputeRequest request) throws Exception {
         LOGGER.debug("IN: request=" + request.toString());
         LOGGER.debug("workflowNetwork=" + workflowNetwork);
         String networkId = null;
+        String sgName = null;
         try {
             String gatewayIp = request.getNetworkCidr();
             gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
@@ -181,7 +243,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             else {
                 // Workflow network for region does not exist create workflow private network
                 workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
-                        externalNetworkId, false, request.getNetworkCidr(), gatewayIp, dnsServers, networkName, false);
+                        externalNetworkId, false, request.getNetworkCidr(), gatewayIp, dnsServers,
+                        networkName, false);
             }
 
             subnets.add(request.getNetworkCidr());
@@ -217,8 +280,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         }
 
         if(request.getNetworkType() == ComputeRequest.NetworkTypeEnum.PRIVATE) {
-            if(request.getPhysicalNetwork() == null || request.getExternalNetwork() == null ||
-                    request.getNetworkCidr() == null) {
+            if(request.getExternalNetwork() == null || request.getNetworkCidr() == null ||
+                    (region.compareToIgnoreCase(StackContext.RegionKVM) != 0 && request.getPhysicalNetwork() == null)) {
                 throw new MobiusException(HttpStatus.BAD_REQUEST,
                         "Required externalNetwork, physicalNetwork or networkCidr not specified for private network");
             }
@@ -283,17 +346,23 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
     @Override
     public void fromJson(JSONArray array) {
         synchronized (this) {
-            if (array != null) {
-                for (Object object : array) {
-                    JSONObject slice = (JSONObject) object;
-                    String sliceName = (String) slice.get("name");
-                    LOGGER.debug("sliceName=" + sliceName);
-                    StackContext sliceContext = new StackContext(sliceName, workflowId, region);
-                    sliceContext.fromJson(slice);
-                    stackContextHashMap.put(sliceName, sliceContext);
+            try {
+                if (array != null) {
+                    for (Object object : array) {
+                        JSONObject slice = (JSONObject) object;
+                        String sliceName = (String) slice.get("name");
+                        LOGGER.debug("sliceName=" + sliceName);
+                        StackContext sliceContext = new StackContext(sliceName, workflowId, region);
+                        sliceContext.fromJson(slice);
+                        stackContextHashMap.put(sliceName, sliceContext);
+                    }
+                } else {
+                    LOGGER.error("Null array passed");
                 }
-            } else {
-                LOGGER.error("Null array passed");
+            }
+            catch (Exception e) {
+                LOGGER.error("Exception occurred while reloading context from database: " + e);
+                e.printStackTrace();
             }
         }
     }
@@ -309,6 +378,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         if(workflowNetwork != null) {
             String networkLeaseId = workflowNetwork.get(NetworkLeaseId);
             String networkId = workflowNetwork.get(NetworkController.NetworkId);
+            String sgId = workflowNetwork.get(NetworkController.SecurityGroupId);
             String subnetId = workflowNetwork.get(NetworkController.SubnetId);
             String routerId = workflowNetwork.get(NetworkController.RouterId);
             String networkName = workflowNetwork.get(NetworkName);
@@ -317,6 +387,9 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
             if(networkId != null) {
                 object.put(NetworkController.NetworkId, networkId);
+            }
+            if(sgId != null) {
+                object.put(NetworkController.SecurityGroupId, sgId);
             }
             if(subnetId != null) {
                 object.put(NetworkController.SubnetId, subnetId);
@@ -351,12 +424,16 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
     public void loadCloudSpecificDataFromJson(JSONObject object) {
         String networkLeaseId = (String) object.get(NetworkLeaseId);
         String networkId = (String) object.get(NetworkController.NetworkId);
+        String sgId = (String) object.get(NetworkController.SecurityGroupId);
         String subnetId = (String) object.get(NetworkController.SubnetId);
         String routerId = (String) object.get(NetworkController.RouterId);
         String networkName = (String) object.get(NetworkName);
         if(networkId != null) {
             workflowNetwork = new HashMap<>();
             workflowNetwork.put(NetworkController.NetworkId, networkId);
+        }
+        if(sgId != null) {
+            workflowNetwork.put(NetworkController.SecurityGroupId, sgId);
         }
         if(subnetId != null) {
             workflowNetwork.put(NetworkController.SubnetId, subnetId);
@@ -412,11 +489,19 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 StackContext context = new StackContext(sliceName, workflowId, region);
 
                 try {
-                    String networkId = setupNetwork(request);
+                    String networkId = null, sgName = null;
+
+                    if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0) {
+                        networkId = setupNetwork_kvm(request);
+                    }
+                    else {
+                        networkId = setupNetwork_baremetal(request);
+                    }
+
                     // For chameleon; slice per request mechanism is followed
                     ComputeResponse response = context.provisionNode(flavorList, nameIndex, request.getImageName(),
                             request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
-                            metaData, networkId, request.getIpAddress());
+                            metaData, networkId, request.getIpAddress(), sgName);
                     LOGGER.debug("Created new context=" + sliceName);
 
                     sliceName = context.getSliceName();
@@ -467,6 +552,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             switch (request.getAction()) {
                 case ADD: {
+                    if (region == StackContext.RegionKVM) {
+                        throw new MobiusException(HttpStatus.BAD_REQUEST,
+                                "Storage Request not supported on Chameleon KVM");
+                    }
                     Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getSize());
 
                     if (flavorList == null) {
@@ -477,7 +566,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     String sliceName = null;
                     StackContext context = new StackContext(sliceName, workflowId, region);
 
-                    String networkId = null;
+                    String networkId = null, sgName = null;
                     if (workflowNetwork != null && workflowNetwork.containsKey(NetworkController.NetworkId)) {
                         networkId = workflowNetwork.get(NetworkController.NetworkId);
                     } else {
@@ -486,7 +575,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
                     String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
                     ComputeResponse response = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
-                            prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId, null);
+                            prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId, null, sgName);
                     LOGGER.debug("Created new context=" + sliceName);
                     nameIndex = response.getNodeCount();
 
@@ -684,13 +773,17 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
             stackContextHashMap.clear();
             if(workflowNetwork != null) {
-                networkController.deleteNetwork(region, workflowNetwork, 300);
-                if(workflowNetwork.containsKey(NetworkLeaseId)) {
-                    try {
-                        api.deleteLease(region, workflowNetwork.get(NetworkLeaseId));
-                    }
-                    catch (Exception e) {
-                        LOGGER.error("Exception occurred while deleting network lease e=" + e.getMessage());
+                if(workflowNetwork.get(NetworkController.NetworkName).compareToIgnoreCase(MobiusConfig.getInstance().getChameleonDefaultNetwork()) == 0) {
+                    networkController.deleteSecurityGroup(region, workflowNetwork.get(NetworkController.SecurityGroupId));
+                }
+                else {
+                    networkController.deleteNetwork(region, workflowNetwork, 300);
+                    if (workflowNetwork.containsKey(NetworkLeaseId)) {
+                        try {
+                            api.deleteLease(region, workflowNetwork.get(NetworkLeaseId));
+                        } catch (Exception e) {
+                            LOGGER.error("Exception occurred while deleting network lease e=" + e.getMessage());
+                        }
                     }
                 }
             }
