@@ -27,6 +27,7 @@ import argparse
 import logging
 import sys
 import traceback
+from logging.handlers import RotatingFileHandler
 
 from get_workflow import GetWorkflow
 from list_workflow import ListWorkflow
@@ -45,9 +46,10 @@ class K8sClient:
         self.parser = self.__set_up_parser()
         self.args = self.parser.parse_args()
         self.logger = logging.getLogger(__name__)
+        file_handler = RotatingFileHandler('./k8s_client.log', backupCount=5, maxBytes=50000)
         logging.basicConfig(level=logging.DEBUG,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
-                            handlers=[logging.StreamHandler()])
+                            handlers=[logging.StreamHandler(), file_handler])
 
     def __set_up_parser(self):
         parser = argparse.ArgumentParser(

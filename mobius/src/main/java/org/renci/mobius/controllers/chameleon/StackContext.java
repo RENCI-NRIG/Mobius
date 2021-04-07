@@ -153,6 +153,7 @@ public class StackContext implements AutoCloseable{
         String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
+        String projectId = MobiusConfig.getInstance().getChameleonProjectId();
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
         String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
@@ -161,12 +162,22 @@ public class StackContext implements AutoCloseable{
         String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
         String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
 
-        computeController = null;
-        if(accessEndPoint != null && federatedIdProvider != null && clientId != null && clientSecret != null &&
-                scope != null) {
-            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
+        LOGGER.debug("accessEndPoint= " + accessEndPoint);
+        LOGGER.debug("federatedIdProvider= " + federatedIdProvider);
+        LOGGER.debug("clientId= " + clientId);
+        LOGGER.debug("clientSecret= " + clientSecret);
+        LOGGER.debug("scope= " + scope);
+        LOGGER.debug("projectId= " + projectId);
+
+        if(accessEndPoint != null && !accessEndPoint.isEmpty() &&
+                federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
+                clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
+                scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
+            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret,
+                    user, password, scope);
             String federatedToken = ssoAuth.federatedToken();
-            computeController = new ComputeController(authurl, federatedToken, userDomain, project);
+            LOGGER.debug("federatedToken= " + federatedToken);
+            computeController = new ComputeController(authurl, federatedToken, userDomain, projectId, true);
         }
         else {
             // Instantiate Jclouds based Openstack Controller object

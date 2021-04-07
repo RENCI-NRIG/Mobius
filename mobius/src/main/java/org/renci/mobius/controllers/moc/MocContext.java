@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.mos;
+package org.renci.mobius.controllers.moc;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,8 +22,8 @@ import java.util.*;
  *
  * @author kthare10
  */
-public class MosContext extends CloudContext {
-    private static final Logger LOGGER = LogManager.getLogger( MosContext.class.getName() );
+public class MocContext extends CloudContext {
+    private static final Logger LOGGER = LogManager.getLogger( MocContext.class.getName() );
     private static final Long maxDiffInSeconds = 604800L;
 
     private HashMap<String, ReqContext> stackContextHashMap;
@@ -42,7 +42,7 @@ public class MosContext extends CloudContext {
      * @throws Exception in case region could not be determined from site
      *
      */
-    public MosContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
+    public MocContext(CloudContext.CloudType t, String s, String workflowId) throws Exception {
         super(t, s, workflowId);
         stackContextHashMap = new HashMap<>();
         String[] arrOfStr = s.split(":");
@@ -76,7 +76,7 @@ public class MosContext extends CloudContext {
             OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
             String federatedToken = ssoAuth.federatedToken();
 
-            networkController = new NetworkController(authUrl, federatedToken, userDomain, project);
+            networkController = new NetworkController(authUrl, federatedToken, userDomain, project, false);
 
             if (workflowNetwork != null &&
                     workflowNetwork.containsKey(NetworkController.NetworkId) &&
@@ -295,7 +295,7 @@ public class MosContext extends CloudContext {
             LOGGER.debug("IN request=" + request + " nameIndex=" + nameIndex + " spIndex=" + spNameIndex + " isFutureRequest=" + isFutureRequest);
             validateComputeRequest(request, isFutureRequest);
 
-            Map<String, Integer> flavorList = MosFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
+            Map<String, Integer> flavorList = MocFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
                     request.getRamPerCpus(), request.getDiskPerCpus());
 
             if (flavorList == null) {
@@ -502,7 +502,7 @@ public class MosContext extends CloudContext {
                     OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
                     String federatedToken = ssoAuth.federatedToken();
 
-                    NetworkController networkController = new NetworkController(authUrl, federatedToken, userDomain, project);
+                    NetworkController networkController = new NetworkController(authUrl, federatedToken, userDomain, project, false);
                     networkController.deleteNetwork(region, workflowNetwork, 300);
                 }
             }

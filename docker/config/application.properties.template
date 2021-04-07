@@ -51,6 +51,7 @@ mobius.chameleon.user.domain=default
 mobius.chameleon.user=kthare10
 mobius.chameleon.user.password=
 mobius.chameleon.project=CH-818348
+mobius.chameleon.projectId=
 mobius.chameleon.project.domain=default
 mobius.chameleon.KeyPath=./ssh/
 mobius.chameleon.sshKeyFile=id_rsa.pub

@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.mos;
+package org.renci.mobius.controllers.moc;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -13,8 +13,8 @@ import java.util.*;
  *
  * @author kthare10
  */
-public class MosFlavorAlgo {
-    private static final Logger LOGGER = LogManager.getLogger(MosFlavorAlgo.class.getName());
+public class MocFlavorAlgo {
+    private static final Logger LOGGER = LogManager.getLogger(MocFlavorAlgo.class.getName());
 
     private static MinMaxPriorityQueue<Flavor> flavorsSortedByNumberOfCpus;
     private static Multimap<Integer, Flavor> flavorsByCpuKey;

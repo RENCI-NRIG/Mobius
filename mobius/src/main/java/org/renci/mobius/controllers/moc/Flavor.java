@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.mos;
+package org.renci.mobius.controllers.moc;
 
 /*
  * @brief class representing flavor for storage or compute nodes

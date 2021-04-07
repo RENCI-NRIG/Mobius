@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.mos;
+package org.renci.mobius.controllers.moc;
 
 import org.renci.mobius.controllers.MobiusException;
 

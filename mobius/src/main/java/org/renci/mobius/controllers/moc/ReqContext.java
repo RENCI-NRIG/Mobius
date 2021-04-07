@@ -1,4 +1,4 @@
-package org.renci.mobius.controllers.mos;
+package org.renci.mobius.controllers.moc;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -167,7 +167,7 @@ public class ReqContext {
             OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
             String federatedToken = ssoAuth.federatedToken();
 
-            ComputeController computeController = new ComputeController(authUrl, federatedToken, userDomain, project);
+            ComputeController computeController = new ComputeController(authUrl, federatedToken, userDomain, project, false);
             for(String instanceId : instanceIdList) {
                 try {
                     computeController.destroyInstance(region, instanceId);
@@ -239,7 +239,7 @@ public class ReqContext {
             ComputeResponse response = new ComputeResponse(0,0);
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authUrl, federatedToken, userDomain, project);
+            computeController = new ComputeController(authUrl, federatedToken, userDomain, project, false);
 
             // First compute request
             if (sliceName == null) {
@@ -371,7 +371,7 @@ public class ReqContext {
             String federatedToken = ssoAuth.federatedToken();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authUrl, federatedToken, userDomain, project);
+            computeController = new ComputeController(authUrl, federatedToken, userDomain, project, false);
             returnValue.put(CloudContext.JsonKeySlice, sliceName);
             JSONArray array = new JSONArray();
 
@@ -474,7 +474,7 @@ public class ReqContext {
             String federatedToken = ssoAuth.federatedToken();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authUrl, federatedToken, userDomain, project);
+            computeController = new ComputeController(authUrl, federatedToken, userDomain, project, false);
 
             String name = workflowId + "-" + CloudContext.StorageNameSuffix + nameIndex;
             name = name.toLowerCase();
@@ -529,7 +529,7 @@ public class ReqContext {
             String federatedToken = ssoAuth.federatedToken();
 
             // Instantiate Jclouds based Openstack Controller object
-            computeController = new ComputeController(authUrl, federatedToken, userDomain, project);
+            computeController = new ComputeController(authUrl, federatedToken, userDomain, project, false);
 
             Server server = computeController.getInstanceFromInstanceName(region, request.getTarget());
 

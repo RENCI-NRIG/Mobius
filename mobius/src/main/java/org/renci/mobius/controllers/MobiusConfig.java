@@ -57,6 +57,7 @@ public class MobiusConfig {
     public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
     public static final String chameleonUserPassword = "mobius.chameleon.user.password";
     public static final String chameleonProject = "mobius.chameleon.project";
+    public static final String chameleonProjectId = "mobius.chameleon.projectId";
     public static final String chameleonProjectDomain = "mobius.chameleon.project.domain";
     public static final String chameleonUserKeyPath = "mobius.chameleon.KeyPath";
     public static final String chameleonUserSshKey = "mobius.chameleon.sshKeyFile";
@@ -248,6 +249,8 @@ public class MobiusConfig {
     public String getChameleonUserPassword() { return properties.getProperty(chameleonUserPassword); }
 
     public String getChameleonProject() { return properties.getProperty(chameleonProject); }
+
+    public String getChameleonProjectId() { return properties.getProperty(chameleonProjectId); }
 
     public String getChameleonProjectDomain() { return properties.getProperty(chameleonProjectDomain); }
 

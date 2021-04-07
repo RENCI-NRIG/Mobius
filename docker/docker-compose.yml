@@ -1,16 +1,6 @@
 version: '3.6'
 
 services:
-    rabbitmq_server:
-        container_name: rabbitmq 
-        hostname: rabbitmq
-        image: rabbitmq:management
-        restart: always
-        ports:
-        - "5672:5672"
-        - "15672:15672"
-        labels:
-            NAME: rabbitmq
     database:
         image: postgres:10
         container_name: database
@@ -27,7 +17,6 @@ services:
         image: rencinrig/mobius:latest
         restart: always
         depends_on:
-        - rabbitmq_server
         - database 
         environment:
         - MOBIUS_HOME=/code/
@@ -44,16 +33,3 @@ services:
         - "~/.ssh/id_rsa:/code/ssh/id_rsa"
         - "../mobius/src/main/resources/DigiCertCA.crt:/code/config/DigiCertCA.crt"
         - "../mobius/src/main/resources/client.jks:/code/config/client.jks"
-    notification:
-        container_name: notification 
-        hostname: notification 
-        image: rencinrig/notification:1.0.0-SNAPSHOT
-        restart: always
-        depends_on:
-        - rabbitmq_server
-        - mobius_server
-        environment:
-        - RABBITMQ_SERVER=rabbitmq
-        - RABBITMQ_PORT=5672 
-        - EXCHANGE_NAME=notifications 
-        - ROUTING_KEY=workflows 

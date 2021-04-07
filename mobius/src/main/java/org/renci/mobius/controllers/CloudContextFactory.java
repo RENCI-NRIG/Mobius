@@ -4,7 +4,7 @@ import org.renci.mobius.controllers.aws.AwsContext;
 import org.renci.mobius.controllers.chameleon.ChameleonContext;
 import org.renci.mobius.controllers.exogeni.ExogeniContext;
 import org.renci.mobius.controllers.jetstream.JetstreamContext;
-import org.renci.mobius.controllers.mos.MosContext;
+import org.renci.mobius.controllers.moc.MocContext;
 import org.springframework.http.HttpStatus;
 
 /*
@@ -48,7 +48,7 @@ public class CloudContextFactory {
             return new AwsContext(CloudContext.CloudType.Aws, site, workflowId);
         }
         else if(site.contains(CloudContext.CloudType.Mos.toString()) == true) {
-            return new MosContext(CloudContext.CloudType.Mos, site, workflowId);
+            return new MocContext(CloudContext.CloudType.Mos, site, workflowId);
         }
         else if(site.contains(CloudContext.CloudType.Exogeni.toString()) == true) {
             return new ExogeniContext(CloudContext.CloudType.Exogeni, site, workflowId);

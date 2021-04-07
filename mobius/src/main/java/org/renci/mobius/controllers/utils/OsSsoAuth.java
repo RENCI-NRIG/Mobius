@@ -3,7 +3,7 @@ package org.renci.mobius.controllers.utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.renci.mobius.controllers.mos.SsoAuthException;
+import org.renci.mobius.controllers.moc.SsoAuthException;
 import org.springframework.http.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;

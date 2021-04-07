@@ -24,24 +24,22 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import requests
-import urllib3
-import string
 import logging
 import json
-from random import shuffle
+import pprint
+
 
 class MobiusException(Exception):
     pass
 
+
 class MobiusInterface:
-    @classmethod
     def __init__(self, log=None):
         self.stdout_path = '/dev/null'
         self._log = log
         if self._log is None:
             self._log = logging.getLogger('')
 
-    @classmethod
     def _headers(self):
         headers = {
             'Accept': 'application/json',
@@ -49,19 +47,26 @@ class MobiusInterface:
         }
         return headers
 
-    @classmethod
+    def __print_value(self, value: str):
+        if value is None:
+            return
+        print(f"Received Response Value:")
+        pp = pprint.PrettyPrinter(indent=4)
+        value = json.loads(value)
+        pp.pprint(value)
+
     def create_workflow(self, host, workflowId):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/workflow'), headers=self._headers(), params=params, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            print("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def list_workflows(self, host):
         response = requests.get(host + "/listWorkflows", verify=False)
         print("Received Response Status:{}".format(response.status_code))
@@ -70,101 +75,96 @@ class MobiusInterface:
                 print(json.dumps(response.json()))
         else:
             if response.json() is not None:
-                print(json.dumps(response.json()["value"]))
+                print("Received Response Value: ")
+                pp = pprint.PrettyPrinter(indent=4)
+                value = json.loads(response.json()["value"])
+                pp.pprint(value)
         return response
-
-    @classmethod
+    
     def get_workflow(self, host, workflowId):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.get((host + '/workflow'), headers=self._headers(), params=params, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def delete_workflow(self, host, workflowId):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.delete((host + '/workflow'), headers=self._headers(), params=params, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def create_compute(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/compute'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def create_storage(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/storage'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def create_stitchport(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/stitch'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
-
-    @classmethod
+    
     def create_network(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/network'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
-
-    @classmethod
+    
     def add_prefix(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/sdxPrefix'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response
 
-    @classmethod
     def push_script(self, host, workflowId, data):
         params = {
-            'workflowID':workflowId
+            'workflowID': workflowId
             }
         response = requests.post((host + '/script'), headers=self._headers(), params=params, json=data, verify=False)
-        print ("Received Response Message: " + response.json()["message"])
-        print ("Received Response Status: " + str(response.json()["status"]))
+        print("Received Response Message: " + response.json()["message"])
+        print("Received Response Status: " + str(response.json()["status"]))
         if response.json()["status"] == 200:
-            print ("Received Response Value: " + str(response.json()["value"]))
+            self.__print_value(value=response.json()["value"])
         return response

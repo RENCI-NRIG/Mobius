@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
+import sun.nio.ch.Net;
 
 /*
  * @brief class represents context for all resources on a specific region on chameleon. It maintains
@@ -80,6 +81,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
+        String projectId = MobiusConfig.getInstance().getChameleonProjectId();
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
         String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
@@ -88,13 +90,22 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
         String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
 
-        networkController = null;
-        if(accessEndPoint != null && federatedIdProvider != null && clientId != null && clientSecret != null &&
-                scope != null) {
-            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret, user, password, scope);
-            String federatedToken = ssoAuth.federatedToken();
+        LOGGER.debug("accessEndPoint= " + accessEndPoint);
+        LOGGER.debug("federatedIdProvider= " + federatedIdProvider);
+        LOGGER.debug("clientId= " + clientId);
+        LOGGER.debug("clientSecret= " + clientSecret);
+        LOGGER.debug("scope= " + scope);
+        LOGGER.debug("projectId= " + projectId);
 
-            networkController = new NetworkController(authurl, federatedToken, userDomain, project);
+        if(accessEndPoint != null && !accessEndPoint.isEmpty() &&
+                federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
+                clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
+                scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
+            OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret,
+                                              user, password, scope);
+            String federatedToken = ssoAuth.federatedToken();
+            LOGGER.debug("federatedToken= " + federatedToken);
+            networkController = new NetworkController(authurl, federatedToken, userDomain, projectId, true);
         }
         else {
             networkController = new NetworkController(authurl, user, password, userDomain, project);
@@ -110,29 +121,48 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         networkController.close();
     }
 
-    private String setupNetwork_kvm(ComputeRequest request) throws Exception {
+    private Pair<String, String> setupNetwork_kvm(ComputeRequest request) throws Exception {
         LOGGER.debug("IN request=" + request);
         String networkId = null, sgName = null;
         try {
             if (workflowNetwork != null &&
                     workflowNetwork.containsKey(NetworkController.NetworkId)) {
-                return workflowNetwork.get(NetworkController.NetworkId);
+                return Pair.of(workflowNetwork.get(NetworkController.NetworkId),
+                        networkController.getSecurityGroupName(region, workflowNetwork.get(NetworkController.SecurityGroupId)));
             }
-
 
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                networkId =  networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                sgName = workflowId + "-sg-" + CloudContext.generateRandomString();
+                SecurityGroup sg = networkController.createSecurityGroup(region, sgName);
+                workflowNetwork.put(NetworkController.NetworkId,networkId);
+                workflowNetwork.put(NetworkController.SecurityGroupId, sg.getId());
+
+                return Pair.of(networkId, sgName);
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
             String networkName = workflowId + CloudContext.generateRandomString();
             LOGGER.debug("Setting up Network for " + region + " network=" + networkName);
 
-            // Workflow network for region does not exist create workflow private network
-            workflowNetwork = networkController.createNetwork(region, null,
-                    externalNetworkId, false, request.getNetworkCidr(), null,
-                    null, networkName, true);
+
+            if (request.getPhysicalNetwork() != null) {
+                String gatewayIp = request.getNetworkCidr();
+                gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
+                List<String> dnsServers = MobiusConfig.getInstance().getTaccChameleonDnsServers();
+
+                // Workflow network for region does not exist create workflow private network
+                workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
+                        externalNetworkId, false, request.getNetworkCidr(), gatewayIp,
+                        dnsServers, networkName, true);
+            }
+            else {
+                // Workflow network for region does not exist create workflow private network
+                workflowNetwork = networkController.createNetwork(region, null,
+                        externalNetworkId, false, request.getNetworkCidr(), null,
+                        null, networkName, true);
+            }
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
             sgName = networkController.getSecurityGroupName(region,
@@ -151,7 +181,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
             LOGGER.debug("OUT networkId=" + networkId + " sgName=" + sgName);
         }
-        return networkId;
+        return Pair.of(networkId, sgName);
     }
 
     /*
@@ -252,7 +282,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             networkId = workflowNetwork.get(NetworkController.NetworkId);
         }
         catch (Exception e){
-            LOGGER.error("Exception occured while setting up network ");
+            LOGGER.error("Exception occurred while setting up network ");
             LOGGER.error("Ex= " + e);
             e.printStackTrace();
             throw new MobiusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to setup network " + e.getLocalizedMessage());
@@ -492,7 +522,9 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     String networkId = null, sgName = null;
 
                     if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0) {
-                        networkId = setupNetwork_kvm(request);
+                        Pair<String, String> nwIdSgName = setupNetwork_kvm(request);
+                        networkId = nwIdSgName.getFirst();
+                        sgName = nwIdSgName.getSecond();
                     }
                     else {
                         networkId = setupNetwork_baremetal(request);
@@ -695,12 +727,12 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String retVal = null;
         if(workflowNetwork != null) {
             Network network = networkController.getNetwork(region, workflowNetwork.get(NetworkController.NetworkId));
-            if(network.getPhysicalNetworkName().compareToIgnoreCase(stitchablePhysicalNetwork) == 0) {
+            if(network.getPhysicalNetworkName() != null &&
+                    network.getPhysicalNetworkName().compareToIgnoreCase(stitchablePhysicalNetwork) == 0) {
                 if(network.getSegmentationId() != null) {
                     return network.getSegmentationId().toString();
                 }
             }
-
         }
         LOGGER.debug("OUT");
         return retVal;

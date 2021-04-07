@@ -15,6 +15,7 @@ public class CometDataManager {
 
     public static final String PubkeysFamilyPrefix = "pubkeys";
     public static final String HostsFamilyPrefix = "hosts";
+    public static final String TokensFamilyPrefix = "tokens";
 
     public final static String JsonKeyVal = "val_";
 
@@ -29,9 +30,8 @@ public class CometDataManager {
     public final static String JsonKeyScriptName = "scriptName";
     public final static String JsonKeyScriptBody = "scriptBody";
 
-
-
-
+    // KubeAdm fields
+    public final static String JsonKeyKubeTokenName = "keadmToken";
 
     private static final Logger LOGGER = LogManager.getLogger( CometDataManager.class.getName() );
 
@@ -71,7 +71,20 @@ public class CometDataManager {
                 array.add(object1);
                 object2.put(JsonKeyVal, array.toString());
                 String tempFamily = PubkeysFamilyPrefix + family;
-                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), tempFamily, object2.toString());
+                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId),
+                                              tempFamily, object2.toString());
+
+                // Create comet entry for kubeadm
+                object1.clear();
+                object1.put(JsonKeyKubeTokenName, "");
+                if (ipAddress != null) {
+                    object1.put(JsonKeyIp, ipAddress);
+                } else {
+                    object1.put(JsonKeyIp, "");
+                }
+                tempFamily = TokensFamilyPrefix + family;
+                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId),
+                                              tempFamily, object1.toString());
 
 
                 // Create comet entry for hostsall
@@ -87,11 +100,12 @@ public class CometDataManager {
                 array.add(object1);
                 object2.put(JsonKeyVal, array.toString());
                 tempFamily = HostsFamilyPrefix + family;
-                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), tempFamily, object2.toString());
+                cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId),
+                                              tempFamily, object2.toString());
             }
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);
+            LOGGER.error("Exception occurred while resetting COMET context for workflow: " + workflowId);
             LOGGER.error("Exception e: " + e);
             e.printStackTrace();
         }
@@ -114,10 +128,11 @@ public class CometDataManager {
             scripts.add(script);
             object2.put(JsonKeyVal, scripts.toString());
 
-            cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId), "scripts", object2.toString());
+            cometInterface.writeScopePost(workflowId, host, getReadToken(workflowId), getWriteToken(workflowId),
+                                   "scripts", object2.toString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);
+            LOGGER.error("Exception occurred while resetting COMET context for workflow: " + workflowId);
             LOGGER.error("Exception e: " + e);
             e.printStackTrace();
         }
@@ -134,7 +149,7 @@ public class CometDataManager {
             cometInterface.deleteFamilies(workflowId, getReadToken(workflowId), getWriteToken(workflowId));
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while resetting COMET context for workflow: " + workflowId);
+            LOGGER.error("Exception occurred while resetting COMET context for workflow: " + workflowId);
             LOGGER.error("Exception e: " + e);
             e.printStackTrace();
         }

@@ -119,8 +119,9 @@ public class ComputeController implements Closeable {
      * @parm token - federated identity token
      * @param domain -  user domain
      * @param project -  project Name
+     * @param projectId - True if project Id is sent; False otherwise
      */
-    public ComputeController(String authUrl, String token, String domain, String project) {
+    public ComputeController(String authUrl, String token, String domain, String project, boolean projectId) {
         this.authUrl = authUrl;
         this.token = token;
         this.domain = domain;
@@ -133,7 +134,12 @@ public class ComputeController implements Closeable {
         final Properties overrides = new Properties();
         overrides.put(KeystoneProperties.KEYSTONE_VERSION, "3");
         overrides.put(KeystoneProperties.CREDENTIAL_TYPE, CredentialTypes.TOKEN_CREDENTIALS);
-        overrides.put(KeystoneProperties.SCOPE, "project:" + project);
+        if (projectId) {
+            overrides.put(KeystoneProperties.SCOPE, "projectId:" + project);
+        }
+        else {
+            overrides.put(KeystoneProperties.SCOPE, "project:" + project);
+        }
         overrides.put(KeystoneProperties.PROJECT_DOMAIN_NAME, domain);
 
 
