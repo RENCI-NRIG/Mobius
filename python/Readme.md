@@ -4,6 +4,8 @@
  - [Installation](#install)
    - [Mobius Client](#mbclient)
      - [Usage](#usage1)
+   - [K8s Client](#k8sclient)
+     - [Usage](#k8susage)
    - [Condor Client](#condorclient)
      - [Usage](#usage2)   
    - [Json Data](#json)
@@ -73,6 +75,121 @@ optional arguments:
   -t TARGET, --target TARGET
                         target hostname of the server to which to attach
                         storage; only used with resourcetype storage
+```
+## <a name="k8sclient"></a>K8s Client
+Python client to provision K8s and Kube Edge Cluster by invoking various Mobius REST APIs on different clouds.
+
+### <a name="k8suage"></a>Usage
+```
+usage: k8s_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
+                     [-s3 JETSTREAMSITE] [-s4 MOCSITE] [-n1 EXOWORKERS]
+                     [-n2 CHWORKERS] [-n3 JTWORKERS] [-n4 MOCWORKERS]
+                     [-c COMETHOST] [-t CERT] [-k KEY] [-m MOBIUSHOST] -o
+                     OPERATION [-w WORKFLOWID] [-i1 EXOIPSTART]
+                     [-i2 CHIPSTART] [-i3 JTIPSTART] [-i4 MOCIPSTART]
+                     [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
+                     [-d3 JTDATADIR] [-d4 MOCDATADIR] [-kh KAFKAHOST]
+
+Python client to create Condor cluster using mobius. Uses master.json,
+submit.json and worker.json for compute requests present in data directory
+specified. Currently only supports provisioning compute resources. Other
+resources can be provisioned via mobius_client. Creates COMET contexts for
+Chameleon resources and thus enables exchanging keys and hostnames within
+workflow
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s1 EXOGENISITE, --exogenisite EXOGENISITE
+                        Exogeni Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
+                        Chameleon Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s3 JETSTREAMSITE, --jetstreamsite JETSTREAMSITE
+                        Jetstream Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s4 MOCSITE, --mocsite MOCSITE
+                        Mass Open Cloud Site at which resources must be
+                        provisioned; must be specified for create operation
+  -n1 EXOWORKERS, --exoworkers EXOWORKERS
+                        Number of workers to be provisioned on Exogeni; must
+                        be specified for create operation
+  -n2 CHWORKERS, --chworkers CHWORKERS
+                        Number of workers to be provisioned on Chameleon; must
+                        be specified for create operation
+  -n3 JTWORKERS, --jtworkers JTWORKERS
+                        Number of workers to be provisioned on Jetstream; must
+                        be specified for create operation
+  -n4 MOCWORKERS, --mocworkers MOCWORKERS
+                        Number of workers to be provisioned on Mass Open
+                        Cloud; must be specified for create operation
+  -c COMETHOST, --comethost COMETHOST
+                        Comet Host default(https://comet-
+                        hn1.exogeni.net:8111/) used only for provisioning
+                        resources on chameleon
+  -t CERT, --cert CERT  Comet Certificate default(certs/client.pem); used only
+                        for provisioning resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key default(certs/client.key); used
+                        only for provisioning resources on chameleon
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -o OPERATION, --operation OPERATION
+                        Operation allowed values: create|get|delete|list|add
+  -w WORKFLOWID, --workflowId WORKFLOWID
+                        workflowId
+  -i1 EXOIPSTART, --exoipStart EXOIPSTART
+                        Exogeni Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i2 CHIPSTART, --chipStart CHIPSTART
+                        Chameleon Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i3 JTIPSTART, --jtipStart JTIPSTART
+                        Jetstream Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i4 MOCIPSTART, --mocipStart MOCIPSTART
+                        Mass Open Cloud Start IP Address of the range of IPs
+                        to be used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time; can be specified for create operation
+  -d1 EXODATADIR, --exodatadir EXODATADIR
+                        Exogeni Data directory where to look for master.json,
+                        submit.json and worker.json; must be specified for
+                        create operation
+  -d2 CHDATADIR, --chdatadir CHDATADIR
+                        Chameleon Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d3 JTDATADIR, --jtdatadir JTDATADIR
+                        Jetstream Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d4 MOCDATADIR, --mocdatadir MOCDATADIR
+                        Mass Open Cloud Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -kh KAFKAHOST, --kafkahost KAFKAHOST
+                        Kafka Host - monitoring server; must be specified for
+                        delete operation
+```
+### <a name="k8sexample"></a>K8s Example
+#### Provision K8s cluster on Exogeni
+User can provision Kubernetes and Kube Edge cluster on Exogeni as below:
+```
+python3 k8s_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni/ -l `date -v +2d +%s` -o create -w flynet2 -n1 2 -i1 192.168.125.10
+```
+#### Provision K8s cluster on Chameleon
+NOTE: Additional Configuration is required in docker/application.properties file for Chameleon KVM. Please check README in docker directory.
+User can provision Kubernetes and Kube Edge cluster on Chameleon as below:
+```
+python3 k8s_client.py -s2 'Chameleon:KVM@TACC'  -d2 ./flynet/chameleon/ -l `date -v +2d +%s` -o create -w flynet1 -n2 2 -i2 192.168.125.10
 ```
 ## <a name="condor"></a>Condor Client
 Python client to create Condor clusters by invoking various supported Mobius REST commands.
