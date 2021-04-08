@@ -18,15 +18,35 @@ cd ./Mobius/docker
 ```
 ### <a name="config"></a>User specific configuration
 Once images are ready, update configuration in docker as indicated below:
-1. Update docker/config/application.properties to specify user specific values for each cloud credentials (exogeni, chameleon, jetstream and mass open cloud) 
+1. Copy `config/application.properties.template` to `config/application.properties`. Update user specific values for each cloud credentials (exogeni, chameleon, jetstream and mass open cloud) 
+#### Exogeni
 ```
-mobius.exogeni.user=<User Name>
+mobius.exogeni.user=kthare10
 mobius.exogeni.certKeyFile=<Exogeni Pem File Name(geni-kthare10.pem)>
+```
+#### Chameleon
+Follow the instructions here https://chameleoncloud.readthedocs.io/en/latest/technical/cli.html to setup Chameleon API password. Download Openstack RC file from Chameleon GUI to get the value for `client_id`.
+```
+mobius.chameleon.client_id=
+mobius.chameleon.client_secret=none
+mobius.chameleon.endpoint.scope=openid profile
+mobius.chameleon.user.domain=default
 mobius.chameleon.user=<User Name>
 mobius.chameleon.user.password=<Password>
+# Flynet Project Name and Project ID
+mobius.chameleon.project=CHI-210827
+mobius.chameleon.projectId=40753b15f6c34f9c8d4695c97b026796
+mobius.chameleon.project.domain=default
+```
+#### JetStream
+```
 mobius.jetstream.user.domain=<domain>
 mobius.jetstream.user=<User Name>
 mobius.jetstream.user.password=<Password>
+```
+#### MOC
+First, go to https://sso.massopen.cloud/auth/realms/moc/account and after logging in, go to the password tab and set a password. This will be used to bypass the University/GitHub login, and login directly from SSO.
+```
 mobius.mos.user=<User Name>
 mobius.mos.user.password=<Password>
 ```
