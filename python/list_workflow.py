@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
+
 from mobius import MobiusInterface
 
 
@@ -32,6 +34,10 @@ class ListWorkflow:
         self.args = args
 
     def list(self):
-        mb = MobiusInterface()
-        self.logger.info("List workflows")
-        response = mb.list_workflows(self.args.mobiushost)
+        try:
+            mb = MobiusInterface()
+            self.logger.info("List workflows")
+            response = mb.list_workflows(self.args.mobiushost)
+        except Exception as e:
+            self.logger.error(f"Exception occurred: {e}")
+            self.logger.error(traceback.format_exc())

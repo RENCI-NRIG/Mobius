@@ -45,6 +45,10 @@ class JSONData:
     def has_workers(self) -> bool:
         return self.worker is not None
 
+    def __str__(self):
+        return f"Core: {self.core} worker: {self.worker} site: {self.site} worker_count: {self.worker_count} " \
+               f"start_ip: {self.start_ip}"
+
 
 class CreateWorkflow:
     CORE = "core"
@@ -139,6 +143,7 @@ class CreateWorkflow:
             d_f.close()
 
         self.site_data[site] = json_data
+        self.logger.debug(f"Added Json data: {json_data} for site: {site}")
 
     def __wait_for_network_to_be_active(self, site):
         network_status = ""
@@ -203,7 +208,7 @@ class CreateWorkflow:
             ip = self.__get_next_ip(ip=ip)
         if site_data.has_workers():
             for x in range(site_data.worker_count):
-                data = self.__update_json_data(data=site_data.core, start_ip=site_data.start_ip,
+                data = self.__update_json_data(data=site_data.worker, start_ip=site_data.start_ip,
                                                workers=site_data.worker_count, name="worker", ip_address=ip,
                                                site=site_data.site)
                 self.__create_compute(site=site_data.site, data=data)
@@ -232,9 +237,11 @@ class CreateWorkflow:
             # Provision Site which has CORE first
             site_data = self.site_data.get(self.site_has_core, None)
 
+            self.logger.debug("Provisioning Core")
             self.__provision_k8s_cluster(site_data)
             for site in self.site_data.values():
                 if site.site != self.site_has_core:
+                    self.logger.debug("Provisioning Workers")
                     self.__provision_k8s_cluster(site_data=site)
         else:
             raise Exception(f"Failed to create workflow: {response.status_code}")

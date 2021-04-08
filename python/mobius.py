@@ -77,7 +77,7 @@ class MobiusInterface:
             if response.json() is not None:
                 print("Received Response Value: ")
                 pp = pprint.PrettyPrinter(indent=4)
-                value = json.loads(response.json()["value"])
+                value = json.loads(response.content)["value"]
                 pp.pprint(value)
         return response
     
