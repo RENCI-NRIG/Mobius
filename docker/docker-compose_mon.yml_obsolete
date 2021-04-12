@@ -1,0 +1,76 @@
+version: '3.6'
+
+services:
+    rabbitmq_server:
+        container_name: rabbitmq 
+        hostname: rabbitmq
+        image: rabbitmq:management
+        restart: always
+        ports:
+        - "5672:5672"
+        - "15672:15672"
+        labels:
+            NAME: rabbitmq
+    database:
+        image: postgres:10
+        container_name: database
+        restart: always
+        environment:
+        - POSTGRES_PASSWORD=mobius
+        - POSTGRES_USER=mobius
+        - POSTGRES_DB=mobius
+        ports:
+        - 5432:${POSTGRES_PORT:-5432}
+    mobius_server:
+        container_name: mobius 
+        hostname: mobius 
+        image: rencinrig/mobius:1.0.0-SNAPSHOT
+        restart: always
+        depends_on:
+        - rabbitmq_server
+        - database 
+        environment:
+        - MOBIUS_HOME=/code/
+        ports:
+        - "8080:8080"
+        # point to user specific keys below
+        volumes:
+        - "./logs:/code/logs"
+          #- "./mobius-sync:/code/mobius-sync"
+        - "./config/application.properties:/code/config/application.properties"
+        - "./config/log4j2.properties:/code/config/log4j2.properties"
+        - "~/.ssh/geni-kthare10.pem:/code/ssh/geni-kthare10.pem"
+        - "~/.ssh/id_rsa.pub:/code/ssh/id_rsa.pub"
+        - "~/.ssh/id_rsa:/code/ssh/id_rsa"
+        - "../mobius/src/main/resources/DigiCertCA.crt:/code/config/DigiCertCA.crt"
+        - "../mobius/src/main/resources/client.jks:/code/config/client.jks"
+    notification:
+        container_name: notification 
+        hostname: notification 
+        image: rencinrig/notification:1.0.0-SNAPSHOT
+        restart: always
+        depends_on:
+        - rabbitmq_server
+        - mobius_server
+        environment:
+        - RABBITMQ_SERVER=rabbitmq
+        - RABBITMQ_PORT=5672 
+        - EXCHANGE_NAME=notifications 
+        - ROUTING_KEY=workflows 
+    monitoring:
+        container_name: monitoring
+        hostname: monitoring
+        image: rencinrig/monitoring:latest
+        restart: always
+        environment:
+        - kafkahost=dynamo-broker1.exogeni.net:9093
+        - databasehost=database
+        - database=mobius
+        - user=mobius
+        - password=mobius
+        - mobiushost=http://mobius:8080/mobius
+        - tc=15
+        - td=85
+        - tm=85
+        - bucketcount=10
+        - leasedays=2
