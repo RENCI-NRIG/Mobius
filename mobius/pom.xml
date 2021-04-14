@@ -50,8 +50,7 @@
                 </executions>
                 <configuration>
                     <repository>${docker.image.prefix}/${docker.image.name}</repository>
-                        <tag>latest</tag> 
-                            <!-- <tag>${project.version}</tag> -->
+                        <tag>${project.version}</tag>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
