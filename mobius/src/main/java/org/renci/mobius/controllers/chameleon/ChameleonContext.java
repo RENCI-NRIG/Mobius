@@ -814,16 +814,14 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     networkController.deleteSecurityGroup(region, workflowNetwork.get(NetworkController.SecurityGroupId));
                 }
                 else {
+                    networkController.deleteNetwork(region, workflowNetwork, 300);
                     if (workflowNetwork.containsKey(NetworkLeaseId)) {
                         try {
                             api.deleteLease(region, workflowNetwork.get(NetworkLeaseId));
                         } catch (Exception e) {
                             LOGGER.error("Exception occurred while deleting network lease e=" + e.getMessage());
                         }
-                    } else {
-                        networkController.deleteNetwork(region, workflowNetwork, 300);
                     }
-
                 }
             }
             LOGGER.debug("OUT");
