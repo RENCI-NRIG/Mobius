@@ -10,8 +10,8 @@
     "imageHash":"cb7a8de2e3c6067e2a53d50c38ded68fa9c2fe23",
     "leaseEnd":"1557733832",
     "bandwidth":"1000000000",
-    "stitchPortUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1",
-    "stitchTag":"3295",
+    "stitchPortUrl":"http://geni-orca.renci.org/owl/ion.rdf#AL2S/TACC/Cisco/6509/TenGigabitEthernet/1/1",
+    "stitchTag":"3508",
     "stitchIP": "192.168.135.15",
     "stitchBandwidth": "20000000",
     "postBootScript":"yum install -y wget; wget  http://geni-images.renci.org/images/kthare10/scripts/flynet/flynet_mobius_start.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW all; git clone https://github.com/CASAelyons/flynetDemo.git /root/flynetDemo; cd /root/flynetDemo/drone; sh drone.sh"
