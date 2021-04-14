@@ -56,6 +56,7 @@ public class MobiusConfig {
     public static final String chameleonUser = "mobius.chameleon.user";
     public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
     public static final String chameleonUserPassword = "mobius.chameleon.user.password";
+    public static final String chameleonUserPasswordOidc = "mobius.chameleon.user.password.oidc";
     public static final String chameleonProject = "mobius.chameleon.project";
     public static final String chameleonProjectId = "mobius.chameleon.projectId";
     public static final String chameleonProjectDomain = "mobius.chameleon.project.domain";
@@ -71,8 +72,12 @@ public class MobiusConfig {
     public static final String ucchameleonDnsServers = "mobius.chameleon.uc.dnsServers";
     public static final String taccchameleonDnsServers = "mobius.chameleon.tacc.dnsServers";
     public static final String chameleonAccessTokenEndpoint = "mobius.chameleon.access_token_endpoint";
-    public static final String chameleonFederatedIdentityProvider = "mobius.chameleon.federated_identity_provider";
-    public static final String chameleonClientId = "mobius.chameleon.client_id";
+    public static final String chameleonFederatedIdentityProviderKvm = "mobius.chameleon.federated_identity_provider.kvm";
+    public static final String chameleonFederatedIdentityProviderUC = "mobius.chameleon.federated_identity_provider.uc";
+    public static final String chameleonFederatedIdentityProviderTACC = "mobius.chameleon.federated_identity_provider.tacc";
+    public static final String chameleonClientIdKvm = "mobius.chameleon.client_id.kvm";
+    public static final String chameleonClientIdUC = "mobius.chameleon.client_id.uc";
+    public static final String chameleonClientIdTACC = "mobius.chameleon.client_id.tacc";
     public static final String chameleonClientSecret = "mobius.chameleon.client_secret";
     public static final String chameleonAccessEndpointScope = "mobius.chameleon.endpoint.scope";
 
@@ -248,6 +253,8 @@ public class MobiusConfig {
 
     public String getChameleonUserPassword() { return properties.getProperty(chameleonUserPassword); }
 
+    public String getChameleonUserPasswordOidc() { return properties.getProperty(chameleonUserPasswordOidc); }
+
     public String getChameleonProject() { return properties.getProperty(chameleonProject); }
 
     public String getChameleonProjectId() { return properties.getProperty(chameleonProjectId); }
@@ -280,9 +287,29 @@ public class MobiusConfig {
 
     public String getChameleonAccessTokenEndpoint() { return properties.getProperty(chameleonAccessTokenEndpoint); }
 
-    public String getChameleonFederatedIdentityProvider() { return properties.getProperty(chameleonFederatedIdentityProvider); }
+    public String getChameleonFederatedIdentityProvider(String region) {
+        switch (region) {
+            case StackContext.RegionUC:
+                return properties.getProperty(chameleonFederatedIdentityProviderUC);
+            case StackContext.RegionTACC:
+                return properties.getProperty(chameleonFederatedIdentityProviderTACC);
+            case StackContext.RegionKVM:
+                return properties.getProperty(chameleonFederatedIdentityProviderKvm);
+        }
+        return null;
+    }
 
-    public String getChameleonClientId() { return properties.getProperty(chameleonClientId); }
+    public String getChameleonClientId(String region) {
+        switch (region) {
+            case StackContext.RegionUC:
+                return properties.getProperty(chameleonClientIdUC);
+            case StackContext.RegionTACC:
+                return properties.getProperty(chameleonClientIdTACC);
+            case StackContext.RegionKVM:
+                return properties.getProperty(chameleonClientIdKvm);
+        }
+        return null;
+    }
 
     public String getChameleonClientSecret() { return properties.getProperty(chameleonClientSecret); }
 

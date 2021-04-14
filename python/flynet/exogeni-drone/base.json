@@ -1,0 +1,14 @@
+{
+    "cpus":"2",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"base",
+    "coallocate":"true",
+    "imageUrl":"http://geni-images.renci.org/images/standard/centos-comet/centos8.3.2011/centos8.3.2011.xml",
+    "imageName":"CentOS 8.3.2011",
+    "imageHash":"cb7a8de2e3c6067e2a53d50c38ded68fa9c2fe23",
+    "leaseEnd":"1557733832",
+    "bandwidth":"1000000000",
+    "postBootScript":"yum install -y wget; wget  http://geni-images.renci.org/images/kthare10/scripts/flynet/flynet_mobius_start.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW all; git clone https://github.com/CASAelyons/flynetDemo.git /root/flynetDemo; cd /root/flynetDemo/basestation; sh basestation.sh"
+}

@@ -19,7 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
-import sun.nio.ch.Net;
+
 
 /*
  * @brief class represents context for all resources on a specific region on chameleon. It maintains
@@ -78,6 +78,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
         String user = MobiusConfig.getInstance().getChameleonUser();
         String password = MobiusConfig.getInstance().getChameleonUserPassword();
+        String oidcPassword = MobiusConfig.getInstance().getChameleonUserPasswordOidc();
         String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
@@ -85,8 +86,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
         String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
-        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider();
-        String clientId = MobiusConfig.getInstance().getChameleonClientId();
+        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider(region);
+        String clientId = MobiusConfig.getInstance().getChameleonClientId(region);
         String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
         String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
 
@@ -96,21 +97,23 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         LOGGER.debug("clientSecret= " + clientSecret);
         LOGGER.debug("scope= " + scope);
         LOGGER.debug("projectId= " + projectId);
+        LOGGER.debug("password= " + password);
+        LOGGER.debug("oidcPassword= " + oidcPassword);
 
-        if(accessEndPoint != null && !accessEndPoint.isEmpty() &&
+        if(region.compareToIgnoreCase(StackContext.RegionKVM) == 0 && accessEndPoint != null && !accessEndPoint.isEmpty() &&
                 federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
                 clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
                 scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
             OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret,
-                                              user, password, scope);
+                                              user, oidcPassword, scope);
             String federatedToken = ssoAuth.federatedToken();
             LOGGER.debug("federatedToken= " + federatedToken);
             networkController = new NetworkController(authurl, federatedToken, userDomain, projectId, true);
         }
         else {
             networkController = new NetworkController(authurl, user, password, userDomain, project);
+            api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
         }
-        api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
         subnets = new HashSet<>();
     }
 

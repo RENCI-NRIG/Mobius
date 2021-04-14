@@ -27,7 +27,9 @@ import json
 import os
 import socket
 import time
+import traceback
 
+from delete_workflow import DeleteWorkflow
 from mobius import MobiusInterface
 
 
@@ -38,6 +40,8 @@ class JSONData:
         self.site = None
         self.worker_count = 0
         self.start_ip = None
+        self.drone = None
+        self.base_station = None
 
     def has_core(self) -> bool:
         return self.core is not None
@@ -45,9 +49,15 @@ class JSONData:
     def has_workers(self) -> bool:
         return self.worker is not None
 
+    def has_drone(self) -> bool:
+        return self.drone is not None
+
+    def has_base_station(self) -> bool:
+        return self.base_station is not None
+
     def __str__(self):
         return f"Core: {self.core} worker: {self.worker} site: {self.site} worker_count: {self.worker_count} " \
-               f"start_ip: {self.start_ip}"
+               f"start_ip: {self.start_ip} drone: {self.drone} base_station: {self.base_station}"
 
 
 class CreateWorkflow:
@@ -142,6 +152,18 @@ class CreateWorkflow:
             json_data.worker_count = count
             d_f.close()
 
+        d = path + "/drone.json"
+        if os.path.exists(d):
+            d_f = open(d, 'r')
+            json_data.drone = json.load(d_f)
+            d_f.close()
+
+        d = path + "/base.json"
+        if os.path.exists(d):
+            d_f = open(d, 'r')
+            json_data.base_station = json.load(d_f)
+            d_f.close()
+
         self.site_data[site] = json_data
         self.logger.debug(f"Added Json data: {json_data} for site: {site}")
 
@@ -214,37 +236,58 @@ class CreateWorkflow:
                 self.__create_compute(site=site_data.site, data=data)
                 ip = self.__get_next_ip(ip=ip)
 
+        if site_data.has_drone():
+            data = self.__update_json_data(data=site_data.drone, start_ip=site_data.start_ip,
+                                           workers=site_data.worker_count, name="drone", ip_address=ip,
+                                           site=site_data.site)
+            self.__create_compute(site=site_data.site, data=data)
+            ip = self.__get_next_ip(ip=ip)
+
+        if site_data.has_base_station():
+            data = self.__update_json_data(data=site_data.base_station, start_ip=site_data.start_ip,
+                                           workers=site_data.worker_count, name="base", ip_address=ip,
+                                           site=site_data.site)
+            self.__create_compute(site=site_data.site, data=data)
+            ip = self.__get_next_ip(ip=ip)
+
     def create(self):
-        self.__validate_args()
-        mb = MobiusInterface()
-        response = mb.create_workflow(self.args.mobiushost, self.args.workflowId)
-        if response.json()["status"] == 200:
-            if self.args.exogenisite is not None and self.args.exodatadir is not None:
-                self.load_data_files(site=self.args.exogenisite, path=self.args.exodatadir,
-                                     start_ip=self.args.exoipStart, count=self.args.exoworkers)
-            if self.args.chameleonsite is not None and self.args.chdatadir is not None:
-                self.load_data_files(site=self.args.chameleonsite, path=self.args.chdatadir,
-                                     start_ip=self.args.chipStart, count=self.args.chworkers)
-            if self.args.jetstreamsite is not None and self.args.jtdatadir is not None:
-                self.load_data_files(site=self.args.jetstreamsite, path=self.args.jtdatadir,
-                                     start_ip=self.args.jtipStart, count=self.args.jtworkers)
-            if self.args.mocsite is not None and self.args.mocdatadir is not None:
-                self.load_data_files(site=self.args.mocsite, path=self.args.mocdatadir, start_ip=self.args.mocipStart,
-                                     count=self.args.mocworkers)
+        try:
+            self.__validate_args()
+            mb = MobiusInterface()
+            response = mb.create_workflow(self.args.mobiushost, self.args.workflowId)
+            if response.json()["status"] == 200:
+                if self.args.exogenisite is not None and self.args.exodatadir is not None:
+                    self.load_data_files(site=self.args.exogenisite, path=self.args.exodatadir,
+                                         start_ip=self.args.exoipStart, count=self.args.exoworkers)
+                if self.args.chameleonsite is not None and self.args.chdatadir is not None:
+                    self.load_data_files(site=self.args.chameleonsite, path=self.args.chdatadir,
+                                         start_ip=self.args.chipStart, count=self.args.chworkers)
+                if self.args.jetstreamsite is not None and self.args.jtdatadir is not None:
+                    self.load_data_files(site=self.args.jetstreamsite, path=self.args.jtdatadir,
+                                         start_ip=self.args.jtipStart, count=self.args.jtworkers)
+                if self.args.mocsite is not None and self.args.mocdatadir is not None:
+                    self.load_data_files(site=self.args.mocsite, path=self.args.mocdatadir, start_ip=self.args.mocipStart,
+                                         count=self.args.mocworkers)
 
-            if self.site_has_core is None:
-                raise Exception("None of the Sites has K8s core provisioned")
-            # Provision Site which has CORE first
-            site_data = self.site_data.get(self.site_has_core, None)
+                #if self.site_has_core is None:
+                #    raise Exception("None of the Sites has K8s core provisioned")
+                # Provision Site which has CORE first
+                site_data = self.site_data.get(self.site_has_core, None)
+                if site_data is not None:
+                    self.logger.debug("Provisioning Core")
+                    self.__provision_k8s_cluster(site_data)
 
-            self.logger.debug("Provisioning Core")
-            self.__provision_k8s_cluster(site_data)
-            for site in self.site_data.values():
-                if site.site != self.site_has_core:
-                    self.logger.debug("Provisioning Workers")
-                    self.__provision_k8s_cluster(site_data=site)
-        else:
-            raise Exception(f"Failed to create workflow: {response.status_code}")
+                for site in self.site_data.values():
+                    if site.site != self.site_has_core:
+                        self.logger.debug("Provisioning Workers/Other nodes")
+                        self.__provision_k8s_cluster(site_data=site)
+            else:
+                raise Exception(f"Failed to create workflow: {response.status_code}")
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+            d = DeleteWorkflow(args=self.args, logger=self.logger)
+            d.delete()
 
     @staticmethod
     def __is_valid_ipv4_address(address):

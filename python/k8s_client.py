@@ -285,8 +285,6 @@ class K8sClient:
             else:
                 raise Exception()
         except Exception as e:
-            d = DeleteWorkflow(args=self.args, logger=self.logger)
-            d.delete()
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
             #self.parser.print_help()

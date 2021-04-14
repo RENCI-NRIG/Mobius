@@ -14,7 +14,6 @@ import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.OsSsoAuth;
-import org.renci.mobius.controllers.utils.RemoteCommand;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.SdxPrefix;
 import org.springframework.data.util.Pair;
@@ -150,6 +149,7 @@ public class StackContext implements AutoCloseable{
 
         String user = MobiusConfig.getInstance().getChameleonUser();
         String password = MobiusConfig.getInstance().getChameleonUserPassword();
+        String oidcPassword = MobiusConfig.getInstance().getChameleonUserPasswordOidc();
         String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
@@ -157,8 +157,8 @@ public class StackContext implements AutoCloseable{
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
         String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
-        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider();
-        String clientId = MobiusConfig.getInstance().getChameleonClientId();
+        String federatedIdProvider = MobiusConfig.getInstance().getChameleonFederatedIdentityProvider(region);
+        String clientId = MobiusConfig.getInstance().getChameleonClientId(region);
         String clientSecret = MobiusConfig.getInstance().getChameleonClientSecret();
         String scope = MobiusConfig.getInstance().getChameleonAccessEndpointScope();
 
@@ -168,25 +168,31 @@ public class StackContext implements AutoCloseable{
         LOGGER.debug("clientSecret= " + clientSecret);
         LOGGER.debug("scope= " + scope);
         LOGGER.debug("projectId= " + projectId);
+        LOGGER.debug("password= " + password);
+        LOGGER.debug("oidcPassword= " + oidcPassword);
 
-        if(accessEndPoint != null && !accessEndPoint.isEmpty() &&
+        if(region.compareToIgnoreCase(StackContext.RegionKVM) == 0 && accessEndPoint != null && !accessEndPoint.isEmpty() &&
                 federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
                 clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
                 scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
             OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret,
-                    user, password, scope);
+                    user, oidcPassword, scope);
             String federatedToken = ssoAuth.federatedToken();
             LOGGER.debug("federatedToken= " + federatedToken);
             computeController = new ComputeController(authurl, federatedToken, userDomain, projectId, true);
         }
         else {
             // Instantiate Jclouds based Openstack Controller object
+            LOGGER.debug("authurl= " + authurl);
+            LOGGER.debug("user= " + user);
+            LOGGER.debug("password= " + password);
+            LOGGER.debug("userDomain= " + userDomain);
+            LOGGER.debug("project= " + project);
             computeController = new ComputeController(authurl, user, password, userDomain, project);
+            // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
+            // jclouds
+            api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
         }
-
-        // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
-        // jclouds
-        api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
     }
     /*
      * @brief close computeController
