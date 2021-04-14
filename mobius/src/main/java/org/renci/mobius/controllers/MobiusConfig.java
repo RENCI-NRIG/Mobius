@@ -58,7 +58,9 @@ public class MobiusConfig {
     public static final String chameleonUserPassword = "mobius.chameleon.user.password";
     public static final String chameleonUserPasswordOidc = "mobius.chameleon.user.password.oidc";
     public static final String chameleonProject = "mobius.chameleon.project";
-    public static final String chameleonProjectId = "mobius.chameleon.projectId";
+    public static final String chameleonProjectIdKvm = "mobius.chameleon.projectId.kvm";
+    public static final String chameleonProjectIdUc = "mobius.chameleon.projectId.uc";
+    public static final String chameleonProjectIdTacc = "mobius.chameleon.projectId.tacc";
     public static final String chameleonProjectDomain = "mobius.chameleon.project.domain";
     public static final String chameleonUserKeyPath = "mobius.chameleon.KeyPath";
     public static final String chameleonUserSshKey = "mobius.chameleon.sshKeyFile";
@@ -257,7 +259,17 @@ public class MobiusConfig {
 
     public String getChameleonProject() { return properties.getProperty(chameleonProject); }
 
-    public String getChameleonProjectId() { return properties.getProperty(chameleonProjectId); }
+    public String getChameleonProjectId(String region) {
+        switch (region) {
+            case StackContext.RegionUC:
+                return properties.getProperty(chameleonProjectIdUc);
+            case StackContext.RegionTACC:
+                return properties.getProperty(chameleonProjectIdTacc);
+            case StackContext.RegionKVM:
+                return properties.getProperty(chameleonProjectIdKvm);
+        }
+        return null;
+    }
 
     public String getChameleonProjectDomain() { return properties.getProperty(chameleonProjectDomain); }
 

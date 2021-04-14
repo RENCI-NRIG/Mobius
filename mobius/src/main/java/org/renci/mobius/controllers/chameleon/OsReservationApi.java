@@ -20,6 +20,7 @@ import java.util.*;
  */
 public class OsReservationApi {
     private String authUrl;
+    private String federatedToken;
     private String username;
     private String password;
     private String userDomain;
@@ -58,6 +59,10 @@ public class OsReservationApi {
             "     }\n" +
             " }";
 
+    private static final String AUTH_DOCUMENT_TOKEN =
+            "{\"auth\":{\"identity\":{\"methods\":[\"token\"],\"token\":{\"id\":\"%s\"}}," +
+                    "\"scope\":{\"project\":{\"id\":\"%s\",\"domain\":{\"name\":\"Default\"}}}}}";
+    
     /*
      * @brief constructor
      *
@@ -80,6 +85,112 @@ public class OsReservationApi {
     }
 
     /*
+     * @brief constructor
+     *
+     * @param authUrl - auth url for chameleon
+     * @parm federatedToken - chameleon federatedToken
+     * @param userDomain - chameleon user domain
+     * @param projectName - chameleon project Name
+     * @param projectDomain - chameleon project Domain
+     */
+    public OsReservationApi(String authUrl, String federatedToken,
+                            String userDomain, String projectId, String projectDomain) {
+        this.authUrl = authUrl;
+        this.federatedToken = federatedToken;
+        this.userDomain = userDomain;
+        this.projectName = projectId;
+        this.projectDomain = projectDomain;
+        reservationUrl = null;
+        username = null;
+        password = null;
+    }
+
+    /*
+     * @brief function to generate auth tokens to be used for openstack rest apis for reservations
+     *
+     * @param region - chameleon region
+     *
+     * @return token id
+     *
+     * @throws exception in case of error
+     */
+    private String authToken(String region) throws Exception {
+        try {
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(String.format(AUTH_DOCUMENT_TOKEN, federatedToken,
+                    projectName), headers);
+
+            ResponseEntity<Map> result = rest.exchange(authUrl + tokenUrl, HttpMethod.POST, requestEntity, Map.class);
+            LOGGER.debug("Auth Token Post Response Status Code=" + result.getStatusCode());
+
+            if (result.getStatusCode() == HttpStatus.OK ||
+                    result.getStatusCode() == HttpStatus.ACCEPTED ||
+                    result.getStatusCode() == HttpStatus.CREATED) {
+
+                HttpHeaders resultHeaders = result.getHeaders();
+                String token = resultHeaders.get(X_Subject_Token).get(0);
+                Map<String, Object> tokenObject = (Map<String, Object>) result.getBody().get("token");
+
+                if (tokenObject == null) {
+                    throw new LeaseException("Failed to get token");
+                }
+
+                List<Map<String, Object>> catalog = (List<Map<String, Object>>) tokenObject.get("catalog");
+
+                if (catalog == null) {
+                    throw new LeaseException("Failed to get catalog");
+                }
+
+                Map<String, Object> reservationEndPoint = null;
+                for (Map<String, Object> endpoint : catalog) {
+                    String name = (String) endpoint.get("name");
+                    if (name.compareToIgnoreCase("blazar") == 0) {
+                        LOGGER.debug("endpoint=" + endpoint);
+                        reservationEndPoint = endpoint;
+                        break;
+                    }
+                }
+                List<Map<String, Object>> endPoints = (List<Map<String, Object>>) reservationEndPoint.get("endpoints");
+                if (endPoints == null) {
+                    throw new LeaseException("Failed to get endPoints");
+                }
+                for (Map<String, Object> endpoint : endPoints) {
+                    String endPointRegion = (String) endpoint.get("region");
+                    String endPointInterface = (String) endpoint.get("interface");
+                    if (endPointRegion.compareToIgnoreCase(region) == 0 &&
+                            endPointInterface.compareToIgnoreCase("public") == 0) {
+                        LOGGER.debug(endpoint);
+                        reservationUrl = (String) endpoint.get("url");
+                        LOGGER.debug("Reservation Url = " + reservationUrl);
+                        break;
+                    }
+                }
+                return token;
+            }
+        }
+        catch (HttpClientErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            e.printStackTrace();
+            throw new LeaseException(e.getResponseBodyAsString());
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred while getting tokens e=" + e);
+            LOGGER.error("Message= " + e.getMessage());
+            LOGGER.error("Message= " + e.getLocalizedMessage());
+
+            e.printStackTrace();
+            throw new LeaseException("failed to get token e=" + e.getMessage());
+
+        }
+        return null;
+    }
+
+    /*
      * @brief function to generate auth tokens to be used for openstack rest apis for reservations
      *
      * @param region - chameleon region
@@ -89,6 +200,10 @@ public class OsReservationApi {
      * @throws exception in case of error
      */
     private String auth(String region) throws Exception {
+        if (federatedToken != null)
+        {
+            return authToken(region);
+        }
         try {
 
             HttpHeaders headers = new HttpHeaders();
@@ -153,7 +268,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while getting tokens e=" + e);
+            LOGGER.error("Exception occurred while getting tokens e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
 
@@ -218,7 +333,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while getting leases e=" + e);
+            LOGGER.error("Exception occurred while getting leases e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -263,7 +378,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while retrieving lease e=" + e);
+            LOGGER.error("Exception occurred while retrieving lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -452,7 +567,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while create lease e=" + e);
+            LOGGER.error("Exception occurred while create lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -497,7 +612,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while delete lease e=" + e);
+            LOGGER.error("Exception occurred while delete lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -577,7 +692,7 @@ public class OsReservationApi {
             throw new LeaseException(e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            LOGGER.error("Exception occured while update lease e=" + e);
+            LOGGER.error("Exception occurred while update lease e=" + e);
             LOGGER.error("Message= " + e.getMessage());
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();

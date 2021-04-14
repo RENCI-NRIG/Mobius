@@ -82,7 +82,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String authurl = MobiusConfig.getInstance().getChameleonAuthUrl(region);
         String userDomain = MobiusConfig.getInstance().getChameleonUserDomain();
         String project = MobiusConfig.getInstance().getChameleonProject();
-        String projectId = MobiusConfig.getInstance().getChameleonProjectId();
+        String projectId = MobiusConfig.getInstance().getChameleonProjectId(region);
         String projectDomain = MobiusConfig.getInstance().getChameleonProjectDomain();
 
         String accessEndPoint = MobiusConfig.getInstance().getChameleonAccessTokenEndpoint();
@@ -100,7 +100,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         LOGGER.debug("password= " + password);
         LOGGER.debug("oidcPassword= " + oidcPassword);
 
-        if(region.compareToIgnoreCase(StackContext.RegionKVM) == 0 && accessEndPoint != null && !accessEndPoint.isEmpty() &&
+        if(/*region.compareToIgnoreCase(StackContext.RegionKVM) == 0 &&*/ accessEndPoint != null &&
+                !accessEndPoint.isEmpty() &&
                 federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
                 clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
                 scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
@@ -109,6 +110,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             String federatedToken = ssoAuth.federatedToken();
             LOGGER.debug("federatedToken= " + federatedToken);
             networkController = new NetworkController(authurl, federatedToken, userDomain, projectId, true);
+            api = new OsReservationApi(authurl, federatedToken, userDomain, projectId, projectDomain);
         }
         else {
             networkController = new NetworkController(authurl, user, password, userDomain, project);
