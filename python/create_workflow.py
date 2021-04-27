@@ -30,6 +30,7 @@ import time
 import traceback
 
 from delete_workflow import DeleteWorkflow
+from get_workflow import GetWorkflow
 from mobius import MobiusInterface
 
 
@@ -69,6 +70,9 @@ class CreateWorkflow:
     MOC = "Moc"
     AWS = "Aws"
     JETSTREAM = "Jetstream"
+
+    TACC = "TACC"
+    UC = "UC"
 
     def __init__(self, args, logger):
         self.logger = logger
@@ -119,19 +123,19 @@ class CreateWorkflow:
                 self.logger.error("ERROR: comet certificate and key must be specified when comethost is indicated")
                 raise Exception()
         if self.args.chameleonsite is not None:
-            if "Chameleon" not in self.args.chameleonsite:
+            if self.CHAMELEON not in self.args.chameleonsite:
                 self.logger.error("ERROR: Invalid site specified")
                 raise Exception()
         if self.args.exogenisite is not None:
-            if "Exogeni" not in self.args.exogenisite:
+            if self.EXOGENI not in self.args.exogenisite:
                 self.logger.error("ERROR: Invalid site specified")
                 raise Exception()
         if self.args.jetstreamsite is not None:
-            if "Jetstream" not in self.args.jetstreamsite:
+            if self.JETSTREAM not in self.args.jetstreamsite:
                 self.logger.error("ERROR: Invalid site specified")
                 raise Exception()
         if self.args.mocsite is not None:
-            if "Mos" not in self.args.mocsite:
+            if self.MOC not in self.args.mocsite:
                 self.logger.error("ERROR: Invalid site specified")
                 raise Exception()
 
@@ -220,7 +224,7 @@ class CreateWorkflow:
 
         return data
 
-    def __provision_k8s_cluster(self, site_data: JSONData):
+    def __provision_k8s_cluster(self, site_data: JSONData, vlan_dict: dict = None, stitch_ip: str = None):
         ip = site_data.start_ip
         if site_data.has_core():
             data = self.__update_json_data(data=site_data.core, start_ip=site_data.start_ip,
@@ -240,6 +244,19 @@ class CreateWorkflow:
             data = self.__update_json_data(data=site_data.drone, start_ip=site_data.start_ip,
                                            workers=site_data.worker_count, name="drone", ip_address=ip,
                                            site=site_data.site)
+            if self.EXOGENI in site_data.site and vlan_dict is not None:
+                if self.UC in vlan_dict["site"]:
+                    data["stitchPortUrl"] = "http://geni-orca.renci.org/owl/ion.rdf#AL2S/Chameleon/Cisco/6509/GigabitEthernet/1/1"
+                    data["stitchTag"] = vlan_dict["vlan"]
+                    if stitch_ip is not None:
+                        data["stitchIP"] = stitch_ip
+
+                elif self.TACC in vlan_dict["site"]:
+                    data["stitchPortUrl"] = "http://geni-orca.renci.org/owl/ion.rdf#AL2S/TACC/Cisco/6509/TenGigabitEthernet/1/1"
+                    data["stitchTag"] = vlan_dict["vlan"]
+                    if stitch_ip is not None:
+                        data["stitchIP"] = stitch_ip
+
             self.__create_compute(site=site_data.site, data=data)
             ip = self.__get_next_ip(ip=ip)
 
@@ -249,6 +266,26 @@ class CreateWorkflow:
                                            site=site_data.site)
             self.__create_compute(site=site_data.site, data=data)
             ip = self.__get_next_ip(ip=ip)
+        return ip
+
+    def __determine_chameleon_vlan(self) -> dict:
+        self.logger.debug(f"Determining Chameleon VLAN tag")
+        vlan_dict = None
+        gw = GetWorkflow(args=self.args, logger=self.logger)
+        response = gw.get()
+        if response.status_code == 200:
+            status = json.loads(response.json()["value"])
+            self.logger.debug(f"type= {type(status)} value= {status}")
+            slices = json.loads(status["workflowStatus"])
+            self.logger.debug(f"type= {type(slices)} slices= {slices}")
+            for s in slices:
+                self.logger.debug(f"type= {type(s)} s= {s}")
+                vlan_tag = s.get("vlan", None)
+                site = s.get("site", None)
+                if site is not None and vlan_tag is not None and self.CHAMELEON in site:
+                    vlan_dict = {"site": str(site), "vlan": str(vlan_tag)}
+        self.logger.debug(f"Determined VLAN TAG: {vlan_dict}")
+        return vlan_dict
 
     def create(self):
         try:
@@ -269,18 +306,22 @@ class CreateWorkflow:
                     self.load_data_files(site=self.args.mocsite, path=self.args.mocdatadir, start_ip=self.args.mocipStart,
                                          count=self.args.mocworkers)
 
-                #if self.site_has_core is None:
-                #    raise Exception("None of the Sites has K8s core provisioned")
+                if self.site_has_core is None:
+                    raise Exception("None of the Sites has K8s core provisioned")
                 # Provision Site which has CORE first
                 site_data = self.site_data.get(self.site_has_core, None)
+                vlan_dict = None
+                stitch_ip = None
                 if site_data is not None:
-                    self.logger.debug("Provisioning Core")
-                    self.__provision_k8s_cluster(site_data)
+                    self.logger.debug(f"Provisioning Core on site {self.site_has_core}")
+                    stitch_ip = self.__provision_k8s_cluster(site_data)
+                    if self.CHAMELEON in self.site_has_core:
+                        vlan_dict = self.__determine_chameleon_vlan()
 
                 for site in self.site_data.values():
                     if site.site != self.site_has_core:
                         self.logger.debug("Provisioning Workers/Other nodes")
-                        self.__provision_k8s_cluster(site_data=site)
+                        self.__provision_k8s_cluster(site_data=site, vlan_dict=vlan_dict, stitch_ip=stitch_ip)
             else:
                 raise Exception(f"Failed to create workflow: {response.status_code}")
         except Exception as e:
