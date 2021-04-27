@@ -126,25 +126,20 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         networkController.close();
     }
 
-    private Pair<String, String> setupNetwork_kvm(ComputeRequest request) throws Exception {
+    private String setupNetwork_kvm(ComputeRequest request) throws Exception {
         LOGGER.debug("IN request=" + request);
-        String networkId = null, sgName = null;
+        String networkId = null;
         try {
             if (workflowNetwork != null &&
                     workflowNetwork.containsKey(NetworkController.NetworkId)) {
-                return Pair.of(workflowNetwork.get(NetworkController.NetworkId),
-                        networkController.getSecurityGroupName(region, workflowNetwork.get(NetworkController.SecurityGroupId)));
+                return workflowNetwork.get(NetworkController.NetworkId);
             }
 
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
                 networkId =  networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
-                sgName = workflowId + "-sg-" + CloudContext.generateRandomString();
-                SecurityGroup sg = networkController.createSecurityGroup(region, sgName);
                 workflowNetwork.put(NetworkController.NetworkId,networkId);
-                workflowNetwork.put(NetworkController.SecurityGroupId, sg.getId());
-
-                return Pair.of(networkId, sgName);
+                return networkId;
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
@@ -160,18 +155,16 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 // Workflow network for region does not exist create workflow private network
                 workflowNetwork = networkController.createNetwork(region, request.getPhysicalNetwork(),
                         externalNetworkId, false, request.getNetworkCidr(), gatewayIp,
-                        dnsServers, networkName, true);
+                        dnsServers, networkName, false);
             }
             else {
                 // Workflow network for region does not exist create workflow private network
                 workflowNetwork = networkController.createNetwork(region, null,
                         externalNetworkId, false, request.getNetworkCidr(), null,
-                        null, networkName, true);
+                        null, networkName, false);
             }
 
             networkId = workflowNetwork.get(NetworkController.NetworkId);
-            sgName = networkController.getSecurityGroupName(region,
-                    workflowNetwork.get(NetworkController.SecurityGroupId));
         }
         catch (Exception e){
             LOGGER.error("Exception occurred while setting up network ");
@@ -184,9 +177,9 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             if(networkController != null) {
                 networkController.close();
             }
-            LOGGER.debug("OUT networkId=" + networkId + " sgName=" + sgName);
+            LOGGER.debug("OUT networkId=" + networkId);
         }
-        return Pair.of(networkId, sgName);
+        return networkId;
     }
 
     /*
@@ -527,9 +520,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     String networkId = null, sgName = null;
 
                     if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0) {
-                        Pair<String, String> nwIdSgName = setupNetwork_kvm(request);
-                        networkId = nwIdSgName.getFirst();
-                        sgName = nwIdSgName.getSecond();
+                        networkId = setupNetwork_kvm(request);
                     }
                     else {
                         networkId = setupNetwork_baremetal(request);
@@ -553,13 +544,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     }
                     else {
                         LOGGER.debug("Retry request = " + count);
-                        if(context != null) {
-                            context.stop();
-                        }
+                        context.stop();
                     }
-                }
-                catch (Exception e) {
-                    throw e;
                 }
                 finally {
                     LOGGER.debug("OUT");
@@ -589,16 +575,11 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             switch (request.getAction()) {
                 case ADD: {
-                    if (region == StackContext.RegionKVM) {
+                    if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0) {
                         throw new MobiusException(HttpStatus.BAD_REQUEST,
                                 "Storage Request not supported on Chameleon KVM");
                     }
                     Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getSize());
-
-                    if (flavorList == null) {
-                        throw new MobiusException(HttpStatus.BAD_REQUEST,
-                                "None of the flavors can satisfy storage request");
-                    }
 
                     String sliceName = null;
                     StackContext context = new StackContext(sliceName, workflowId, region);

@@ -538,7 +538,7 @@ def main():
                 requests = json.loads(status["workflowStatus"])
                 stitchNodeStatus = None
                 for req in requests:
-                    if "Chameleon" in req["site"] :
+                    if "Chameleon" in req["site"]:
                         if "vlan" in req:
                             stitcVlanToChameleon = str(req["vlan"])
                     slices = req["slices"]

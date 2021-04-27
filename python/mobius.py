@@ -55,9 +55,9 @@ class MobiusInterface:
         value = json.loads(value)
         pp.pprint(value)
 
-    def create_workflow(self, host, workflowId):
+    def create_workflow(self, host: str, workflow_id: str):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/workflow'), headers=self._headers(), params=params, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -67,7 +67,7 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def list_workflows(self, host):
+    def list_workflows(self, host: str):
         response = requests.get(host + "/listWorkflows", verify=False)
         print("Received Response Status:{}".format(response.status_code))
         if response.status_code != 200:
@@ -81,9 +81,9 @@ class MobiusInterface:
                 pp.pprint(value)
         return response
     
-    def get_workflow(self, host, workflowId):
+    def get_workflow(self, host: str, workflow_id: str):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.get((host + '/workflow'), headers=self._headers(), params=params, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -92,9 +92,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def delete_workflow(self, host, workflowId):
+    def delete_workflow(self, host: str, workflow_id: str):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.delete((host + '/workflow'), headers=self._headers(), params=params, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -103,9 +103,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def create_compute(self, host, workflowId, data):
+    def create_compute(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/compute'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -114,9 +114,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def create_storage(self, host, workflowId, data):
+    def create_storage(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/storage'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -125,9 +125,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def create_stitchport(self, host, workflowId, data):
+    def create_stitchport(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/stitch'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -136,9 +136,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
     
-    def create_network(self, host, workflowId, data):
+    def create_network(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/network'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -147,9 +147,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
     
-    def add_prefix(self, host, workflowId, data):
+    def add_prefix(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/sdxPrefix'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])
@@ -158,9 +158,9 @@ class MobiusInterface:
             self.__print_value(value=response.json()["value"])
         return response
 
-    def push_script(self, host, workflowId, data):
+    def push_script(self, host: str, workflow_id: str, data: dict):
         params = {
-            'workflowID': workflowId
+            'workflowID': workflow_id
             }
         response = requests.post((host + '/script'), headers=self._headers(), params=params, json=data, verify=False)
         print("Received Response Message: " + response.json()["message"])

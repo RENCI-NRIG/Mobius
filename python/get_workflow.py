@@ -35,3 +35,4 @@ class GetWorkflow:
         mb = MobiusInterface()
         self.logger.info("Getting status of workflow")
         response = mb.get_workflow(self.args.mobiushost, self.args.workflowId)
+        return response
