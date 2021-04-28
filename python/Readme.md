@@ -186,21 +186,17 @@ User can provision Kubernetes and Kube Edge cluster on Exogeni as below:
 python3 k8s_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni/ -l `date -v +2d +%s` -o create -w flynet2 -n1 2 -i1 192.168.125.10
 ```
 
-#### Provision Drone and BaseStation on Exogeni stitched to Chameleon
-```
-python3 k8s_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni-drone/ -l `date -v +3d +%s` -o create -w flynet-exo -n1 0 -i1 192.168.130.10
-```
-NOTE: Provision the corresponding Chameleon Kube Edge cluster first and then update the drone.json to reflect the correct VLAN before executing the above command.
-
 #### Provision K8s cluster on Chameleon
 NOTE: Additional Configuration is required in docker/application.properties file for Chameleon KVM. Please check README in docker directory.
 ##### User can provision Kubernetes and Kube Edge cluster on Chameleon KVM as below:
 ```
-python3 k8s_client.py -s2 'Chameleon:KVM@TACC'  -d2 ./flynet/chameleon/ -l `date -v +2d +%s` -o create -w flynet1 -n2 2 -i2 192.168.125.10
+python3 k8s_client.py -s2 'Chameleon:KVM@TACC'  -d2 ./flynet/chameleon/ -l `date -v +2d +%s` -o create -w flynet-chameleon -n2 2 -i2 192.168.125.10
 ```
-##### User can provision Kubernetes and Kube Edge cluster on Chameleon Baremetal with exogeni stitchable network as below:
+#### Provision Hybrid K8s Cluster
+- Provision Kubernetes and Kube Edge cluster on Chameleon Baremetal
+- Provision Drone and BaseStation on Exogeni
 ```
-python3 k8s_client.py -s2 'Chameleon:CHI@TACC'  -d2 ./flynet/chameleon-exo/ -l `date -v +2d +%s` -o create -w flynet-ch -n2 2 -i2 192.168.135.10
+python3 k8s_client.py -s2 'Chameleon:CHI@UC'  -d2 ./flynet/chameleon-exo/ -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni-drone/  -l `date -v +2d +%s` -o create -w flynet-hybrid -n2 1 -i2 192.168.135.10 -n1 0 -i1 192.168.130.10
 ```
 
 ## <a name="condor"></a>Condor Client
