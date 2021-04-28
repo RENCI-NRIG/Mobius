@@ -59,7 +59,8 @@ class DeleteWorkflow:
             topic_name = 'mobius-promeithus'
             context = self.__create_ssl_context(cafile="certs/DigiCertCA.crt",
                                                 certfile="certs/client.pem",
-                                                keyfile="certs/client.key")
+                                                keyfile="certs/client.key",
+                                                password="fabric")
             context.check_hostname = False
             context.verify_mode = False
             producer_instance = KafkaProducer(bootstrap_servers=[self.args.kafkahost],
