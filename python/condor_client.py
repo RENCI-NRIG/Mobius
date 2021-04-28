@@ -983,7 +983,7 @@ def delete_prometheus_target(kafkahost, ip):
     try:
         topic_name = 'mobius-promeithus'
         context = _create_ssl_context(cafile="certs/DigiCertCA.crt", certfile="certs/client.pem",
-                                      keyfile="certs/client.key")
+                                      keyfile="certs/client.key", password="fabric")
         context.check_hostname = False
         context.verify_mode = False
         producer_instance = KafkaProducer(bootstrap_servers=[kafkahost],
