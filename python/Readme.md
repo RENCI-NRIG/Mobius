@@ -6,6 +6,7 @@
      - [Usage](#usage1)
    - [K8s Client](#k8sclient)
      - [Usage](#k8susage)
+     - [Examples](#k8sexamples)
    - [Condor Client](#condorclient)
      - [Usage](#usage2)   
    - [Json Data](#json)
@@ -79,7 +80,7 @@ optional arguments:
 ## <a name="k8sclient"></a>K8s Client
 Python client to provision K8s and Kube Edge Cluster by invoking various Mobius REST APIs on different clouds.
 
-### <a name="k8suage"></a>Usage
+### <a name="k8susage"></a>Usage
 ```
 usage: k8s_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
                      [-s3 JETSTREAMSITE] [-s4 MOCSITE] [-n1 EXOWORKERS]
@@ -179,7 +180,7 @@ optional arguments:
                         Kafka Host - monitoring server; must be specified for
                         delete operation
 ```
-### <a name="k8sexample"></a>K8s Example
+### <a name="k8sexamples"></a>K8s Example
 #### Provision K8s cluster on Exogeni
 User can provision Kubernetes and Kube Edge cluster on Exogeni as below:
 ```
