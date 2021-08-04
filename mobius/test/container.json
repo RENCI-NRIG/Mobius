@@ -1,0 +1,14 @@
+{
+    "site":"Chameleon:CHI@Edge",
+    "cpus":"1",
+    "gpus":"0",
+    "ramPerCpus":"0",
+    "diskPerCpus":"0",
+    "forceflavor": "Raspberry Pi",
+    "hostNamePrefix":"master",
+    "imageName":"arm64v8/python:slim",
+    "postBootScript":"python -m http.server 8000",
+    "workDirectory" : "/var/www/html",
+    "leaseEnd":"1628189214"
+}
+

@@ -19,7 +19,7 @@ import java.util.*;
  * @author kthare10
  */
 public class OsReservationApi {
-    private String authUrl;
+    protected String authUrl;
     private String federatedToken;
     private String username;
     private String password;
@@ -28,11 +28,11 @@ public class OsReservationApi {
     private String projectDomain;
     private String reservationUrl;
 
-    private final RestTemplate rest = new RestTemplate();
+    protected final RestTemplate rest = new RestTemplate();
     private final String tokenUrl = "/auth/tokens";
     private final String leaseUrl = "/leases";
     private final static String X_Subject_Token = "X-Subject-Token";
-    private static final Logger LOGGER = LogManager.getLogger(OsReservationApi.class.getName());
+    protected static final Logger LOGGER = LogManager.getLogger(OsReservationApi.class.getName());
 
     private static final String AUTH_DOCUMENT = "{\n" +
             "     \"auth\": {\n" +
@@ -124,6 +124,9 @@ public class OsReservationApi {
             HttpEntity<String> requestEntity = new HttpEntity<>(String.format(AUTH_DOCUMENT_TOKEN, federatedToken,
                     projectName), headers);
 
+            LOGGER.debug("url=" + authUrl + tokenUrl);
+            LOGGER.debug("requestEntity=" + requestEntity);
+
             ResponseEntity<Map> result = rest.exchange(authUrl + tokenUrl, HttpMethod.POST, requestEntity, Map.class);
             LOGGER.debug("Auth Token Post Response Status Code=" + result.getStatusCode());
 
@@ -199,7 +202,7 @@ public class OsReservationApi {
      *
      * @throws exception in case of error
      */
-    private String auth(String region) throws Exception {
+    protected String auth(String region) throws Exception {
         if (federatedToken != null)
         {
             return authToken(region);
@@ -417,6 +420,42 @@ public class OsReservationApi {
             r.put("resource_properties", "");
             r.put("before_end", "default");
             r.put("hypervisor_properties", "[\"==\",\"$node_type\",\"" + e.getKey() + "\"]");
+            reservations.add(r);
+        }
+        request.put("reservations", reservations);
+        return request.toString();
+    }
+
+    /*
+     * @brief Construct Lease Request body
+     *
+     * @param name - name for the lease
+     * @param startTime - lease start time
+     * @param endTime - lease end time
+     * @param nodeTypeCountMap - mapping of nodeType to nodeCount for each type
+     *
+     * @return returns lease request body
+     */
+    public String buildContainerLeaseRequest(String name, String startTime, String endTime,
+                                             Map<String, Integer> nodeTypeCountMap) {
+        if(name == null || startTime == null || endTime == null ||
+                nodeTypeCountMap == null || nodeTypeCountMap.size() == 0) {
+            return null;
+        }
+        JSONObject request = new JSONObject();
+        request.put("name", name);
+        request.put("start_date", startTime);
+        request.put("end_date", endTime);
+        JSONArray events = new JSONArray();
+        request.put("events", events);
+        JSONArray reservations  = new JSONArray();
+        for (Map.Entry<String, Integer> e : nodeTypeCountMap.entrySet()) {
+            JSONObject r = new JSONObject();
+            r.put("resource_type", "device");
+            r.put("min", e.getValue());
+            r.put("max", e.getValue());
+            r.put("before_end", "default");
+            r.put("resource_properties", "[\"==\",\"$vendor\",\"" + e.getKey() + "\"]");
             reservations.add(r);
         }
         request.put("reservations", reservations);

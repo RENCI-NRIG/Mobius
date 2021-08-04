@@ -8,14 +8,17 @@ import org.jclouds.openstack.nova.v2_0.domain.Server;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.ComputeController;
+import org.renci.controllers.os.NetworkController;
 import org.renci.mobius.controllers.CloudContext;
 import org.renci.mobius.controllers.ComputeResponse;
 import org.renci.mobius.controllers.MobiusConfig;
 import org.renci.mobius.controllers.MobiusException;
 import org.renci.mobius.controllers.sdx.SdxClient;
 import org.renci.mobius.controllers.utils.OsSsoAuth;
+import org.renci.mobius.model.ComputeRequest;
 import org.renci.mobius.model.NetworkRequest;
 import org.renci.mobius.model.SdxPrefix;
+import org.renci.mobius.model.StorageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 
@@ -32,16 +35,19 @@ public class StackContext implements AutoCloseable{
     public static final String RegionUC = "CHI@UC";
     public static final String RegionTACC = "CHI@TACC";
     public static final String RegionKVM = "KVM@TACC";
+    public static final String RegionEDGE = "CHI@Edge";
 
     private String sliceName;
     private String workflowId;
     private int activeOrFailedInstances;
     private List<String> instanceIdList;
     private String leaseId;
+    private String floatingIp;
     private String region;
     private boolean notificationSent;
     private ComputeController computeController;
-    private OsReservationApi api;
+    private NetworkController networkController;
+    private OsContainerApi api;
 
     private final static String postBootScriptRequiredForComet = "#!/bin/bash\n" +
             "echo 'begin installing neuca'\n" +
@@ -144,6 +150,7 @@ public class StackContext implements AutoCloseable{
         activeOrFailedInstances = 0;
         instanceIdList = new LinkedList<>();
         leaseId = null;
+        floatingIp = null;
         this.region = region;
         notificationSent = false;
 
@@ -171,7 +178,7 @@ public class StackContext implements AutoCloseable{
         LOGGER.debug("password= " + password);
         LOGGER.debug("oidcPassword= " + oidcPassword);
 
-        if(/*region.compareToIgnoreCase(StackContext.RegionKVM) == 0 &&*/ accessEndPoint != null && !accessEndPoint.isEmpty() &&
+        if(accessEndPoint != null && !accessEndPoint.isEmpty() &&
                 federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
                 clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
                 scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
@@ -180,7 +187,8 @@ public class StackContext implements AutoCloseable{
             String federatedToken = ssoAuth.federatedToken();
             LOGGER.debug("federatedToken= " + federatedToken);
             computeController = new ComputeController(authurl, federatedToken, userDomain, projectId, true);
-            api = new OsReservationApi(authurl, federatedToken, userDomain, projectId, projectDomain);
+            networkController = new NetworkController(authurl, federatedToken, userDomain, projectId, true);
+            api = new OsContainerApi(authurl, federatedToken, userDomain, projectId, projectDomain);
         }
         else {
             // Instantiate Jclouds based Openstack Controller object
@@ -192,7 +200,7 @@ public class StackContext implements AutoCloseable{
             computeController = new ComputeController(authurl, user, password, userDomain, project);
             // Instantiate Spring-framework based Rest API interface for openstack reservation apis not supported by
             // jclouds
-            api = new OsReservationApi(authurl, user, password, userDomain, project, projectDomain);
+            api = new OsContainerApi(authurl, user, password, userDomain, project, projectDomain);
         }
     }
     /*
@@ -249,6 +257,9 @@ public class StackContext implements AutoCloseable{
             if(leaseId != null) {
                 retVal.put("leaseId", leaseId);
             }
+            if(floatingIp != null) {
+                retVal.put("floatingIp", floatingIp);
+            }
             if(instanceIdList.size() > 0) {
                 JSONArray ids = new JSONArray();
                 for (String instanceId : instanceIdList) {
@@ -273,6 +284,9 @@ public class StackContext implements AutoCloseable{
             if (object.get("leaseId") != null) {
                 leaseId = (String) object.get("leaseId");
             }
+            if (object.get("floatingIp") != null) {
+                floatingIp = (String) object.get("floatingIp");
+            }
             if (object.get("ids") != null) {
                 JSONArray ids = (JSONArray) object.get("ids");
                 for (Object id : ids) {
@@ -295,7 +309,12 @@ public class StackContext implements AutoCloseable{
 
             for(String instanceId : instanceIdList) {
                 try {
-                    computeController.destroyInstance(region, instanceId);
+                    if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+                        api.delete(region, instanceId);
+                    }
+                    else {
+                        computeController.destroyInstance(region, instanceId);
+                    }
                 }
                 catch (Exception e) {
                     LOGGER.debug("Ignoring exception during destroy e=" + e);
@@ -303,7 +322,9 @@ public class StackContext implements AutoCloseable{
             }
 
             try {
-                computeController.deleteKeyPair(region, sliceName);
+                if (region.compareToIgnoreCase(StackContext.RegionEDGE) != 0) {
+                    computeController.deleteKeyPair(region, sliceName);
+                }
             }
             catch (Exception e) {
                 LOGGER.debug("Ignoring exception during destroy e=" + e);
@@ -312,10 +333,204 @@ public class StackContext implements AutoCloseable{
             api.deleteLease(region, leaseId);
         }
         catch (Exception e){
-            LOGGER.debug("Exception occured while deleting slice " + sliceName);
+            LOGGER.debug("Exception occurred while deleting slice " + sliceName);
         }
         LOGGER.debug("Instance destruction taking plance =============================");
         LOGGER.debug("OUT");
+    }
+
+    String buildLease(String sliceName, String leaseEnd, Map<String, Integer> nodeTypeCountMap) {
+        String reservationRequest = null;
+        sdf.setTimeZone(utc);
+        Date endTime = new Date();
+        if(leaseEnd != null) {
+            endTime = new Date(Long.parseLong(leaseEnd) * 1000);
+        }
+        else {
+            endTime.setTime(endTime.getTime() + 86400000);
+        }
+
+        Date now = new Date();
+        now.setTime(now.getTime() + 60000);
+
+        if (region.compareToIgnoreCase(StackContext.RegionEDGE) != 0) {
+            reservationRequest = api.buildComputeLeaseRequest(sliceName, sdf.format(now), sdf.format(endTime), nodeTypeCountMap);
+        }
+        else {
+            reservationRequest = api.buildContainerLeaseRequest(sliceName, sdf.format(now), sdf.format(endTime), nodeTypeCountMap);
+        }
+        return reservationRequest;
+    }
+
+    private ComputeResponse provisionBareMetal(Map<String, Integer> flavorList, String hostNamePrefix,
+                                               String postBootScript, String leaseEnd, String image, int nameIndex,
+                                               Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
+        ComputeResponse response = new ComputeResponse(0, 0);
+
+        String reservationRequest = buildLease(sliceName, leaseEnd, flavorList);
+
+        if (reservationRequest == null) {
+            throw new MobiusException("Failed to construct reservation request");
+        }
+
+        Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName, reservationRequest,
+                300);
+
+        if (result == null || result.getFirst() == null || result.getSecond() == null) {
+            throw new MobiusException("Failed to request lease");
+        }
+
+        leaseId = result.getFirst();
+        Map<String, Integer> reservationIds = result.getSecond();
+
+
+        LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
+        LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+        for (Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
+            for (int i = 0; i < entry.getValue(); ++i) {
+                String name = workflowId + "-";
+                if (hostNamePrefix != null) {
+                    name = workflowId + hostNamePrefix + nameIndex;
+                } else {
+                    name = name + CloudContext.NodeName + nameIndex;
+                }
+                name = name.toLowerCase();
+                LOGGER.debug("adding node=" + name);
+                response.addHost(name + ".novalocal", null);
+
+                Map<String, String> meta = null;
+                if (metaData != null) {
+                    metaData.put("reservation_id", name);
+                    meta = metaData;
+                }
+
+                if (postBootScript == null) {
+                    postBootScript = postBootScriptRequiredForComet;
+                }
+
+                String instanceId = computeController.createInstance(region,
+                        MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                        image,
+                        MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
+                        networkId,
+                        entry.getKey(),
+                        sliceName,
+                        name,
+                        postBootScript, meta, ip, sgName);
+
+                if (instanceId == null) {
+                    throw new MobiusException("Failed to create instance");
+                }
+                instanceIdList.add(instanceId);
+                ++nameIndex;
+            }
+        }
+        response.setNodeCount(nameIndex);
+        return response;
+    }
+
+    private ComputeResponse provisionEdge(Map<String, Integer> flavorList, int nameIndex,
+                                          String networkId, ComputeRequest request) throws Exception {
+        ComputeResponse response = new ComputeResponse(0, 0);
+        Map<String, Integer> reservationIds = null;
+
+        if(request.getReservationId() == null) {
+            String reservationRequest = buildLease(sliceName, request.getLeaseEnd(), flavorList);
+
+            if (reservationRequest == null) {
+                throw new MobiusException("Failed to construct reservation request");
+            }
+
+            Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName, reservationRequest,
+                    300);
+
+            if (result == null || result.getFirst() == null || result.getSecond() == null) {
+                throw new MobiusException("Failed to request lease");
+            }
+
+            leaseId = result.getFirst();
+            reservationIds = result.getSecond();
+        }
+        else {
+            reservationIds = new HashMap<>();
+            reservationIds.put(request.getReservationId(), 1);
+        }
+
+
+        LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
+        LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
+        for (Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
+            for (int i = 0; i < entry.getValue(); ++i) {
+                String name = workflowId + "-";
+                if (request.getHostNamePrefix() != null) {
+                    name = workflowId + request.getHostNamePrefix() + nameIndex;
+                } else {
+                    name = name + CloudContext.NodeName + nameIndex;
+                }
+                name = name.toLowerCase();
+                LOGGER.debug("adding node=" + name);
+                response.addHost(name + ".novalocal", null);
+
+                Map<String, Object> result = api.create(region, name, request.getImageName(),
+                        request.getPostBootScript(), request.getMounts(),
+                        request.getWorkDirectory(), entry.getKey(), request.getEnvironment(), request.getLabels(),
+                        null, networkId);
+
+                String instanceId = (String) result.get("uuid");
+                instanceIdList.add(instanceId);
+                String status = (String) result.get("status");
+                if (status.compareToIgnoreCase("error") == 0) {
+                    status = (String) result.get("status_reason");
+                    LOGGER.error(String.format("Failed to create container: %s", status));
+                }
+
+                ++nameIndex;
+            }
+        }
+        response.setNodeCount(nameIndex);
+        return response;
+    }
+
+
+    private ComputeResponse provisionKvm(Map<String, Integer> flavorList, String hostNamePrefix, String postBootScript,
+                              String image, int nameIndex, Map<String, String> metaData, String networkId,
+                              String ip, String sgName) throws Exception {
+        ComputeResponse response = new ComputeResponse(0, 0);
+        for(Map.Entry<String, Integer> entry : flavorList.entrySet()) {
+            for (int i = 0; i < entry.getValue(); ++i) {
+                String name = workflowId + "-";
+                if (hostNamePrefix != null) {
+                    name = workflowId + hostNamePrefix + nameIndex;
+                } else {
+                    name = name + CloudContext.NodeName + nameIndex;
+                }
+                name = name.toLowerCase();
+                response.addHost(name + ".novalocal", null);
+                LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
+
+                String instanceId = computeController.createInstance(region,
+                        MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
+                        image,
+                        entry.getKey(),
+                        networkId,
+                        null,
+                        sliceName,
+                        name,
+                        postBootScript, metaData, ip, sgName);
+
+                if (instanceId == null) {
+                    throw new MobiusException("Failed to create instance");
+                }
+                instanceIdList.add(instanceId);
+                ++nameIndex;
+            }
+        }
+        response.setNodeCount(nameIndex);
+        return response;
     }
 
     /*
@@ -326,24 +541,21 @@ public class StackContext implements AutoCloseable{
      *
      * @param flavorList - map of <flavorname, number of nodes for the flavor> to be instantiated
      * @param nameIndex - number representing index to be added to instance name
-     * @param image - image name
-     * @param leaseEnd - lease end time
-     * @param hostNamePrefix - host name prefix
-     * @param postBootScript - post boot script
      * @param metaData - meta data
      * @param networkId - network id to which instance is connected
-     * @param ip - ip
+     * @param sgName - sgName
      *
      * @return name index
      * @throws Exception in case of error
      */
-    public ComputeResponse provisionNode(Map<String, Integer> flavorList, int nameIndex, String image,
-                                         String leaseEnd, String hostNamePrefix, String postBootScript,
-                                         Map<String, String> metaData, String networkId, String ip, String sgName) throws Exception {
+    public ComputeResponse provisionNode(Map<String, Integer> flavorList, int nameIndex, ComputeRequest request,
+                                         Map<String, String> metaData, String networkId, String sgName) throws Exception {
 
-        LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex + " image=" + image + " leaseEnd=" + leaseEnd
-        + " hostNamePrefix=" + hostNamePrefix + " postBootScript=" + postBootScript + " metaData=" + metaData.toString() + " networkId=" + networkId
-        + " ip=" + ip + " sgName=" + sgName);
+        LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex
+                + " metaData=" + metaData.toString() + " networkId=" + networkId +" sgName=" + sgName);
+
+        String image = request.getImageName();
+        String leaseEnd = request.getLeaseEnd();
 
         try {
 
@@ -354,7 +566,7 @@ public class StackContext implements AutoCloseable{
             }
 
             // Extract image name
-            if(image == null) {
+            if(request.getImageName() == null) {
                 image = MobiusConfig.getInstance().getDefaultChameleonImageName();
             }
 
@@ -371,103 +583,85 @@ public class StackContext implements AutoCloseable{
             now.setTime(now.getTime() + 60000);
 
             ComputeResponse response = new ComputeResponse(0, 0);
-            if (region.compareToIgnoreCase(RegionKVM) != 0) {
+            if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0)
+                response = provisionKvm(flavorList, request.getHostNamePrefix(), request.getPostBootScript(),
+                        image, nameIndex, metaData, networkId, request.getIpAddress(),  sgName);
+            else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0)
+                    response = provisionEdge(flavorList, nameIndex, networkId, request);
+            else
+                    response = provisionBareMetal(flavorList, request.getHostNamePrefix(),
+                            request.getPostBootScript(), leaseEnd, image, nameIndex, metaData, networkId,
+                            request.getIpAddress(), sgName);
+            return response;
+        }
+        catch (MobiusException e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            // Cleanup in case of failure
+            stop();
+            throw e;
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred =" + e);
+            e.printStackTrace();
+            // Cleanup in case of failure
+            stop();
+            throw new MobiusException("Failed to server compute request e=" + e.getMessage());
+        }
+        finally {
+            // TODO clean any allocated CPUs, keys, leases
+            LOGGER.debug("OUT");
+        }
+    }
 
-                String reservationRequest = api.buildComputeLeaseRequest(sliceName, sdf.format(now),
-                        sdf.format(endTime), flavorList);
+    /*
+     * @brief function to provision a node on chameleon; if no post boot script is specified
+     *        default post boot script to install neuca tool is passed; creates a lease; waits for lease
+     *        to be active and then provisions the node. if lease does not become active in a timeout,
+     *        request is treated as a failure
+     *
+     * @param flavorList - map of <flavorname, number of nodes for the flavor> to be instantiated
+     * @param nameIndex - number representing index to be added to instance name
+     * @param metaData - meta data
+     * @param networkId - network id to which instance is connected
+     * @param sgName - sgName
+     *
+     * @return name index
+     * @throws Exception in case of error
+     */
+    public ComputeResponse provisionStorage(Map<String, Integer> flavorList, int nameIndex, StorageRequest request,
+                                         Map<String, String> metaData, String networkId, String sgName) throws Exception {
 
-                if (reservationRequest == null) {
-                    throw new MobiusException("Failed to construct reservation request");
-                }
+        LOGGER.debug("IN flavorList=" + flavorList.toString() + " nameIndex=" + nameIndex
+                + " metaData=" + metaData.toString() + " networkId=" + networkId +" sgName=" + sgName);
 
-                Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName,
-                        reservationRequest, 300);
+        String image = MobiusConfig.getInstance().getDefaultChameleonImageName();
+        String leaseEnd = request.getLeaseEnd();
+        String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
 
-                if (result == null || result.getFirst() == null || result.getSecond() == null) {
-                    throw new MobiusException("Failed to request lease");
-                }
+        try {
 
-                leaseId = result.getFirst();
-                Map<String, Integer> reservationIds = result.getSecond();
+            // First compute request
+            if (sliceName == null) {
+                sliceName = CloudContext.generateSliceName(CloudContext.CloudType.Chameleon,
+                        MobiusConfig.getInstance().getChameleonUser());
+            }
 
-
-                LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                LOGGER.debug("Reservation Id used for instance creation=" + reservationIds);
-                LOGGER.debug("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-
-                for (Map.Entry<String, Integer> entry : reservationIds.entrySet()) {
-                    for (int i = 0; i < entry.getValue(); ++i) {
-                        String name = workflowId + "-";
-                        if (hostNamePrefix != null) {
-                            name = workflowId + hostNamePrefix + nameIndex;
-                        } else {
-                            name = name + CloudContext.NodeName + nameIndex;
-                        }
-                        name = name.toLowerCase();
-                        LOGGER.debug("adding node=" + name);
-                        response.addHost(name + ".novalocal", null);
-
-                        Map<String, String> meta = null;
-                        if (metaData != null) {
-                            metaData.put("reservation_id", name);
-                            meta = metaData;
-                        }
-
-                        if (postBootScript == null) {
-                            postBootScript = postBootScriptRequiredForComet;
-                        }
-
-                        String instanceId = computeController.createInstance(region,
-                                MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
-                                image,
-                                MobiusConfig.getInstance().getChameleonDefaultFlavorName(),
-                                networkId,
-                                entry.getKey(),
-                                sliceName,
-                                name,
-                                postBootScript, meta, ip, sgName);
-
-                        if (instanceId == null) {
-                            throw new MobiusException("Failed to create instance");
-                        }
-                        instanceIdList.add(instanceId);
-                        ++nameIndex;
-                    }
-                }
+            sdf.setTimeZone(utc);
+            Date endTime = new Date();
+            if(leaseEnd != null) {
+                endTime = new Date(Long.parseLong(leaseEnd) * 1000);
             }
             else {
-                for(Map.Entry<String, Integer> entry : flavorList.entrySet()) {
-                    for (int i = 0; i < entry.getValue(); ++i) {
-                        String name = workflowId + "-";
-                        if (hostNamePrefix != null) {
-                            name = workflowId + hostNamePrefix + nameIndex;
-                        } else {
-                            name = name + CloudContext.NodeName + nameIndex;
-                        }
-                        name = name.toLowerCase();
-                        response.addHost(name + ".novalocal", null);
-                        LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
-
-                        String instanceId = computeController.createInstance(region,
-                                MobiusConfig.getInstance().getDefaultChameleonUserSshKey(),
-                                image,
-                                entry.getKey(),
-                                networkId,
-                                null,
-                                sliceName,
-                                name,
-                                postBootScript, metaData, ip, sgName);
-
-                        if (instanceId == null) {
-                            throw new MobiusException("Failed to create instance");
-                        }
-                        instanceIdList.add(instanceId);
-                        ++nameIndex;
-                    }
-                }
-
+                endTime.setTime(endTime.getTime() + 86400000);
             }
-            response.setNodeCount(nameIndex);
+
+            Date now = new Date();
+            now.setTime(now.getTime() + 60000);
+
+            ComputeResponse response = provisionBareMetal(flavorList, prefix,
+                    StackContext.postBootScriptRequiredForStorage, leaseEnd, image, nameIndex, metaData, networkId,
+                            null, sgName);
             return response;
         }
         catch (MobiusException e) {
@@ -520,6 +714,47 @@ public class StackContext implements AutoCloseable{
     }
 
     /*
+     * @brief function to generate JSONObject representing a single server
+     *
+     * @param server - server provisioned
+     * @param ip - ip associated with server
+     * @param fixedIPs - fixedIPs associated with server
+     * @return JSONObject representing server
+     */
+    private JSONObject nodeToJson(Map<String, Object> container, String ip){
+        LOGGER.debug("IN container=" + container.toString() + " ip=" + ip );
+        JSONObject object = new JSONObject();
+        object.put(CloudContext.JsonKeyName, container.get("name"));
+        object.put(CloudContext.JsonKeyState, container.get("status"));
+        if(ip != null) {
+            object.put(CloudContext.JsonKeyPublicIP, ip);
+        }
+        else {
+            object.put(CloudContext.JsonKeyPublicIP, "");
+        }
+        List<String> fixedIPs = new LinkedList<>();
+        Map<String, ArrayList<Object>> addresses = (Map<String, ArrayList<Object>>) container.get("addresses");
+        for (Object add_list_object : addresses.values()) {
+            ArrayList<Object> add_list = (ArrayList<Object>) add_list_object;
+            for (Object add_details: add_list) {
+                Map<String, String> details = (Map<String, String>) add_details;
+                String fixedIp = details.get("addr");
+                if (fixedIp != null) {
+                    fixedIPs.add(fixedIp);
+                }
+            }
+        }
+        if(fixedIPs != null) {
+            int index = 1;
+            for(String i: fixedIPs) {
+                object.put(CloudContext.JsonKeyIP + Integer.toString(index), i);
+            }
+        }
+        LOGGER.debug("OUT object=" + object.toString());
+        return object;
+    }
+
+    /*
      * @brief function to generate JSONObject representing status of all resources associated with this contexts
      *
      * @param hostNameSet - hostname set
@@ -538,39 +773,66 @@ public class StackContext implements AutoCloseable{
 
             for(String instanceId : instanceIdList) {
                 try {
-                    Server instance = computeController.getInstanceFromInstanceId(region, instanceId);
-                    if(instance != null) {
-                        String ip = computeController.getFloatingIpFromInstance(instance);
-                        if (!hostNameSet.contains(instance.getName())) {
-                            LOGGER.debug("Adding hostname: " + instance.getName());
-                            hostNameSet.add(instance.getName());
-                        }
-                        LOGGER.debug("Floating ip for instance = " + ip);
-                        if (instance.getStatus() == Server.Status.ACTIVE) {
-                            if(ip == null) {
-                                activeOrFailedInstances++;
-                                FloatingIP floatingIP = computeController.allocateFloatingIp(region, floatingIpPool);
-
-                                if (floatingIP == null) {
-                                    throw new MobiusException("Failed to allocate floatingIP");
-                                }
-
-                                computeController.attachFloatingIp(region, instance, floatingIP);
-                                ip = floatingIP.getIp();
+                    if (region.compareToIgnoreCase(StackContext.RegionEDGE) != 0) {
+                        Server instance = computeController.getInstanceFromInstanceId(region, instanceId);
+                        if (instance != null) {
+                            String ip = computeController.getFloatingIpFromInstance(instance);
+                            if (!hostNameSet.contains(instance.getName())) {
+                                LOGGER.debug("Adding hostname: " + instance.getName());
+                                hostNameSet.add(instance.getName());
                             }
-                        } else if (instance.getStatus() == Server.Status.ERROR) {
-                            activeOrFailedInstances++;
+                            LOGGER.debug("Floating ip for instance = " + ip);
+                            if (instance.getStatus() == Server.Status.ACTIVE) {
+                                if (ip == null) {
+                                    activeOrFailedInstances++;
+                                    FloatingIP floatingIP = computeController.allocateFloatingIp(region, floatingIpPool);
+
+                                    if (floatingIP == null) {
+                                        throw new MobiusException("Failed to allocate floatingIP");
+                                    }
+
+                                    computeController.attachFloatingIp(region, instance, floatingIP);
+                                    ip = floatingIP.getIp();
+                                }
+                            } else if (instance.getStatus() == Server.Status.ERROR) {
+                                activeOrFailedInstances++;
+                            }
+                            List<String> fixedIPs = computeController.getFixedIpFromInstance(instance);
+                            ;
+                            JSONObject object = nodeToJson(instance, ip, fixedIPs);
+                            array.add(object);
+                        } else {
+                            LOGGER.error("Instance not found for InstanceId=" + instanceId);
                         }
-                        List<String> fixedIPs = computeController.getFixedIpFromInstance(instance);;
-                        JSONObject object = nodeToJson(instance, ip, fixedIPs);
-                        array.add(object);
                     }
                     else {
-                        LOGGER.error("Instance not found for InstanceId=" + instanceId);
+                        Map<String, Object> container = api.get(region, instanceId);
+                        if (container != null) {
+                            String status = (String) container.get("status");
+                            String uuid = (String) container.get("uuid");
+                            if(status.compareToIgnoreCase("Running") == 0 && floatingIp == null) {
+                                String fixedIp = null, port = null;
+                                Map<String, ArrayList<Object>> addresses = (Map<String, ArrayList<Object>>) container.get("addresses");
+                                for (Object add_list_object : addresses.values()) {
+                                    ArrayList<Object> add_list = (ArrayList<Object>) add_list_object;
+                                    for (Object add_details: add_list) {
+                                        Map<String, String> details = (Map<String, String>) add_details;
+                                        fixedIp = details.get("addr");
+                                        port = details.get("port");
+                                        if (fixedIp != null && port != null) {
+                                            break;
+                                        }
+                                    }
+                                }
+                                floatingIp = networkController.attachFip(region, floatingIpPool, port, fixedIp);
+                            }
+                            JSONObject object = nodeToJson(container, floatingIp);
+                            array.add(object);
+                        }
                     }
                 }
                 catch (Exception e) {
-                    LOGGER.error("Exception occured while checking status e=" + e);
+                    LOGGER.error("Exception occurred while checking status e=" + e);
                     e.printStackTrace();
                 }
             }
@@ -578,7 +840,7 @@ public class StackContext implements AutoCloseable{
             returnValue.put(CloudContext.JsonKeyNodes, array);
         }
         catch (Exception e){
-            LOGGER.error("Exception occured while getting status of slice " + sliceName);
+            LOGGER.error("Exception occurred while getting status of slice " + sliceName);
             LOGGER.error("Ex= " + e);
             e.printStackTrace();
         }
@@ -604,7 +866,7 @@ public class StackContext implements AutoCloseable{
             object = status(hostNameSet);
         }
         catch (Exception e){
-            LOGGER.error("Exception occured while performing periodic updates to slice " + sliceName);
+            LOGGER.error("Exception occurred while performing periodic updates to slice " + sliceName);
         }
         LOGGER.debug("OUT object=" + object.toString());
         return object;
@@ -660,7 +922,7 @@ public class StackContext implements AutoCloseable{
             }
         }
         catch (Exception e){
-            LOGGER.error("Exception occured while getting status of slice " + sliceName);
+            LOGGER.error("Exception occurred while getting status of slice " + sliceName);
             LOGGER.error("Ex= " + e);
             e.printStackTrace();
         }
@@ -688,6 +950,10 @@ public class StackContext implements AutoCloseable{
                                                             NetworkRequest.ActionEnum action, String destSite,
                                                             String sdxStitchPortInterfaceIP) throws Exception{
         LOGGER.debug("IN");
+
+        if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+            throw new MobiusException("Stitching not supported for Containers");
+        }
 
         try {
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl());
@@ -755,6 +1021,9 @@ public class StackContext implements AutoCloseable{
                                           String bandwidth, String destinationIP,
                                           String sdxStitchPortInterfaceIP) throws Exception{
         LOGGER.debug("IN hostname=" + hostname + " subnet1=" + subnet1 + " subnet2=" + subnet2 + " bandwidth=" + bandwidth);
+        if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+            throw new MobiusException("Stitching not supported for Containers");
+        }
         try {
 
             Server node = getInstance(hostname);
@@ -795,6 +1064,9 @@ public class StackContext implements AutoCloseable{
 
     public void processSdxPrefix(SdxPrefix request) throws Exception {
         LOGGER.debug("IN");
+        if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+            throw new MobiusException("Stitching not supported for Containers");
+        }
 
         try {
             SdxClient sdxClient = new SdxClient(MobiusConfig.getInstance().getMobiusSdxUrl());

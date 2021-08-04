@@ -59,7 +59,7 @@ public class ComputeController implements Closeable {
     private final NovaApi novaApi;
     private final CinderApi cinderApi;
     private final ComputeService computeService;
-    private final Set<String> regions;
+    //private final Set<String> regions;
     /*
      * @brief constructor
      *
@@ -93,7 +93,7 @@ public class ComputeController implements Closeable {
                 .modules(modules)
                 .buildApi(NovaApi.class);
 
-        regions = novaApi.getConfiguredRegions();
+        //regions = novaApi.getConfiguredRegions();
 
         cinderApi = ContextBuilder.newBuilder(new CinderApiMetadata())
                 .endpoint(authUrl)
@@ -150,7 +150,7 @@ public class ComputeController implements Closeable {
                 .modules(modules)
                 .buildApi(NovaApi.class);
 
-        regions = novaApi.getConfiguredRegions();
+        //regions = novaApi.getConfiguredRegions();
 
         cinderApi = ContextBuilder.newBuilder(new CinderApiMetadata())
                 .endpoint(authUrl)
@@ -410,7 +410,6 @@ public class ComputeController implements Closeable {
             }
         }
     }
-
 
     /*
      * @brief get fixed ip from instance

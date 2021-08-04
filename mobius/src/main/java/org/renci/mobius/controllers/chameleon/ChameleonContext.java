@@ -1,7 +1,6 @@
 package org.renci.mobius.controllers.chameleon;
 
 import org.jclouds.openstack.neutron.v2.domain.Network;
-import org.jclouds.openstack.neutron.v2.domain.SecurityGroup;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.renci.controllers.os.NetworkController;
@@ -100,11 +99,9 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         LOGGER.debug("password= " + password);
         LOGGER.debug("oidcPassword= " + oidcPassword);
 
-        if(/*region.compareToIgnoreCase(StackContext.RegionKVM) == 0 &&*/ accessEndPoint != null &&
-                !accessEndPoint.isEmpty() &&
-                federatedIdProvider != null && !federatedIdProvider.isEmpty() &&
-                clientId != null && !clientId.isEmpty() && clientSecret != null && !clientSecret.isEmpty() &&
-                scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
+        if(accessEndPoint != null && !accessEndPoint.isEmpty() && federatedIdProvider != null &&
+                !federatedIdProvider.isEmpty() && clientId != null && !clientId.isEmpty() && clientSecret != null &&
+                !clientSecret.isEmpty() && scope != null && !scope.isEmpty() && projectId != null && !projectId.isEmpty()) {
             OsSsoAuth ssoAuth = new OsSsoAuth(accessEndPoint, federatedIdProvider, clientId, clientSecret,
                                               user, oidcPassword, scope);
             String federatedToken = ssoAuth.federatedToken();
@@ -193,7 +190,9 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
         String sgName = null;
         try {
             String gatewayIp = request.getNetworkCidr();
-            gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
+            if (gatewayIp != null) {
+                gatewayIp = gatewayIp.substring(0, gatewayIp.lastIndexOf(".") + 1) + "254";
+            }
 
             List<String> dnsServers = null;
             if(region.compareToIgnoreCase(StackContext.RegionUC) == 0) {
@@ -505,8 +504,20 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             int retries = MobiusConfig.getInstance().getChameleonLeaseRetry(), count = 0;
             while(count++ < retries){
-                Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
-                        request.getRamPerCpus(), request.getDiskPerCpus(), request.getForceflavor());
+
+                Map<String, Integer> flavorList = null;
+                if(region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+                    if (request.getForceflavor() == null) {
+                        throw new MobiusException("Flavor must be specified when requesting containers!");
+                    }
+                    flavorList = new HashMap<>();
+                    flavorList.put(request.getForceflavor(), 1);
+                }
+                else {
+
+                    flavorList = ChameleonFlavorAlgo.determineFlavors(request.getCpus(), request.getGpus(),
+                            request.getRamPerCpus(), request.getDiskPerCpus(), request.getForceflavor());
+                }
 
                 if (flavorList == null) {
                     throw new MobiusException(HttpStatus.BAD_REQUEST, "None of the flavors can satisfy compute request");
@@ -522,14 +533,16 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0) {
                         networkId = setupNetwork_kvm(request);
                     }
+                    /*else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+                        networkId = MobiusConfig.getInstance().getChameleonDefaultNetworkEdge();
+                    }*/
                     else {
                         networkId = setupNetwork_baremetal(request);
                     }
 
                     // For chameleon; slice per request mechanism is followed
-                    ComputeResponse response = context.provisionNode(flavorList, nameIndex, request.getImageName(),
-                            request.getLeaseEnd(), request.getHostNamePrefix(), request.getPostBootScript(),
-                            metaData, networkId, request.getIpAddress(), sgName);
+                    ComputeResponse response = context.provisionNode(flavorList, nameIndex, request,
+                            metaData, networkId, sgName);
                     LOGGER.debug("Created new context=" + sliceName);
 
                     sliceName = context.getSliceName();
@@ -579,6 +592,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                         throw new MobiusException(HttpStatus.BAD_REQUEST,
                                 "Storage Request not supported on Chameleon KVM");
                     }
+                    if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+                        throw new MobiusException(HttpStatus.BAD_REQUEST,
+                                "Storage Request not supported on Chameleon Edge");
+                    }
                     Map<String, Integer> flavorList = ChameleonFlavorAlgo.determineFlavors(request.getSize());
 
                     String sliceName = null;
@@ -591,9 +608,8 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                         networkId = networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
                     }
 
-                    String prefix = request.getTarget() + CloudContext.StorageNameSuffix;
-                    ComputeResponse response = context.provisionNode(flavorList, nameIndex, null, request.getLeaseEnd(),
-                            prefix, StackContext.postBootScriptRequiredForStorage, metaData, networkId, null, sgName);
+                    ComputeResponse response = context.provisionStorage(flavorList, nameIndex, request, metaData,
+                            networkId, sgName);
                     LOGGER.debug("Created new context=" + sliceName);
                     nameIndex = response.getNodeCount();
 
@@ -791,8 +807,13 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             }
             stackContextHashMap.clear();
             if(workflowNetwork != null) {
-                if(workflowNetwork.get(NetworkController.NetworkName).compareToIgnoreCase(MobiusConfig.getInstance().getChameleonDefaultNetwork()) == 0) {
-                    networkController.deleteSecurityGroup(region, workflowNetwork.get(NetworkController.SecurityGroupId));
+                String networkName = workflowNetwork.get(NetworkController.NetworkName);
+                if(networkName != null &&
+                        networkName.compareToIgnoreCase(MobiusConfig.getInstance().getChameleonDefaultNetwork()) == 0) {
+                    String sgId = workflowNetwork.get(NetworkController.SecurityGroupId);
+                    if (sgId != null) {
+                        networkController.deleteSecurityGroup(region, sgId);
+                    }
                 }
                 else {
                     networkController.deleteNetwork(region, workflowNetwork, 300);
