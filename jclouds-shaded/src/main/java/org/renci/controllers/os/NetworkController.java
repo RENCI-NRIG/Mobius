@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closeables;
 import com.google.inject.Module;
 import org.jclouds.ContextBuilder;
+import org.jclouds.collect.PagedIterable;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.openstack.keystone.auth.config.CredentialTypes;
 import org.jclouds.openstack.keystone.config.KeystoneProperties;
@@ -15,6 +16,7 @@ import org.jclouds.openstack.neutron.v2.extensions.RouterApi;
 import org.jclouds.openstack.neutron.v2.features.NetworkApi;
 import org.jclouds.openstack.neutron.v2.features.SecurityGroupApi;
 import org.jclouds.openstack.neutron.v2.features.SubnetApi;
+import org.jclouds.openstack.neutron.v2.features.FloatingIPApi;
 
 import java.io.Closeable;
 import java.util.HashMap;
@@ -124,7 +126,7 @@ public class NetworkController implements Closeable {
             retVal = subnet.getId();
         }
         catch (Exception e){
-            System.out.println("Exception occured while adding subnet to network " + networkId + " e=" + e);
+            System.out.println("Exception occurred while adding subnet to network " + networkId + " e=" + e);
             throw e;
         }
         return retVal;
@@ -163,7 +165,7 @@ public class NetworkController implements Closeable {
             retVal.put(RouterId, router.getId());
 
         } catch (Exception e){
-            System.out.println("Exception occured while updating network " + networkName + " e=" + e);
+            System.out.println("Exception occurred while updating network " + networkName + " e=" + e);
             throw e;
         }
         return retVal;
@@ -224,7 +226,7 @@ public class NetworkController implements Closeable {
                 networkApi.delete(net.getId());
                 net = null;
             }
-            System.out.println("Exception occured while creating network " + name + " e=" + e);
+            System.out.println("Exception occurred while creating network " + name + " e=" + e);
             throw e;
         }
         return retVal;
@@ -270,7 +272,7 @@ public class NetworkController implements Closeable {
             if(subnet != null) {
                 subnetApi.delete(subnet.getId());
             }
-            System.out.println("Exception occured while creating subnet " + name + " e=" + e);
+            System.out.println("Exception occurred while creating subnet " + name + " e=" + e);
             throw e;
         }
         return subnet;
@@ -289,7 +291,7 @@ public class NetworkController implements Closeable {
 
             subnetApi.delete(subnetId);
         } catch (Exception e){
-            System.out.println("Exception occured while deleting subnet " + subnetId + " e=" + e);
+            System.out.println("Exception occurred while deleting subnet " + subnetId + " e=" + e);
         }
     }
 
@@ -323,7 +325,7 @@ public class NetworkController implements Closeable {
             if(router != null) {
                 routerApi.get().delete(router.getId());
             }
-            System.out.println("Exception occured while creating router " + name + " e=" + e);
+            System.out.println("Exception occurred while creating router " + name + " e=" + e);
             throw e;
         }
         return router;
@@ -344,7 +346,7 @@ public class NetworkController implements Closeable {
             }
 
         } catch (Exception e){
-            System.out.println("Exception occured while deleting router " + routerId + " e=" + e);
+            System.out.println("Exception occurred while deleting router " + routerId + " e=" + e);
         }
     }
 
@@ -373,7 +375,7 @@ public class NetworkController implements Closeable {
             if(routerInterface != null) {
                 routerApi.get().removeInterfaceForSubnet(routerId, subnetId);
             }
-            System.out.println("Exception occured while attaching subnet " + subnetId + " to " + routerId + " e=" + e);
+            System.out.println("Exception occurred while attaching subnet " + subnetId + " to " + routerId + " e=" + e);
             throw e;
         }
         return routerInterface;
@@ -396,7 +398,7 @@ public class NetworkController implements Closeable {
             }
 
         } catch (Exception e){
-            System.out.println("Exception occured while attaching subnet " + subnetId + " to " + routerId + " e=" + e);
+            System.out.println("Exception occurred while attaching subnet " + subnetId + " to " + routerId + " e=" + e);
         }
     }
 
@@ -444,7 +446,7 @@ public class NetworkController implements Closeable {
                         deleteSecurityGroup(region, ids.get(SecurityGroupId));
                     }
                 } catch (Exception e) {
-                    System.out.println("Exception occured while deleting network e=" + e);
+                    System.out.println("Exception occurred while deleting network e=" + e);
                     TimeUnit.SECONDS.sleep(1);
                     continue;
                 }
@@ -452,7 +454,7 @@ public class NetworkController implements Closeable {
             }
         }
         catch (Exception e) {
-            System.out.println("Exception occured while deleting network e=" + e);
+            System.out.println("Exception occurred while deleting network e=" + e);
         }
     }
 
@@ -561,7 +563,7 @@ public class NetworkController implements Closeable {
 
         } catch (Exception e){
             if(securityGroup != null) {
-                System.out.println("Exception occured while creating security group " + name + " e=" + e);
+                System.out.println("Exception occurred while creating security group " + name + " e=" + e);
                 deleteSecurityGroup(region, securityGroup.getId());
             }
             throw e;
@@ -594,7 +596,7 @@ public class NetworkController implements Closeable {
             }
         }
         catch (Exception e) {
-            System.out.println("Exception occured while deleting security group e=" + e);
+            System.out.println("Exception occurred while deleting security group e=" + e);
         }
     }
 
@@ -607,7 +609,43 @@ public class NetworkController implements Closeable {
             Closeables.close(neutronApi, true);
         }
         catch (Exception e) {
-            System.out.println("Exception occured while closing e=" + e);
+            System.out.println("Exception occurred while closing e=" + e);
         }
     }
+
+    public FloatingIP getFreeFloatingIP(String region, String floatingNetwork) {
+        String floatingNetworkId = getNetworkId(region, floatingNetwork);
+
+        FloatingIP fip = null;
+        FloatingIPApi floatingIPApi = neutronApi.getFloatingIPApi(region);
+
+        PagedIterable<FloatingIP> fipList = floatingIPApi.list();
+        while (fipList.iterator().hasNext()){
+            fip = fipList.iterator().next().iterator().next();
+            if (fip.getFixedIpAddress() == null) {
+                break;
+            }
+            else {
+                fip = null;
+            }
+        }
+        if (fip == null) {
+            FloatingIP.CreateFloatingIP createFloatingIP = FloatingIP.createBuilder(floatingNetworkId).build();
+            fip = floatingIPApi.create(createFloatingIP);
+        }
+        return fip;
+    }
+
+    public String attachFip(String region, String floatingNetwork, String portId, String fixedIpAddress) {
+        FloatingIPApi floatingIPApi = neutronApi.getFloatingIPApi(region);
+        FloatingIP fip = getFreeFloatingIP(region, floatingNetwork);
+
+        FloatingIP.UpdateFloatingIP updateFloatingIP = FloatingIP.updateBuilder().portId(portId)
+                .fixedIpAddress(fixedIpAddress).build();
+
+        floatingIPApi.update(fip.getId(), updateFloatingIP);
+        return fip.getFloatingIpAddress();
+    }
+
+
 }

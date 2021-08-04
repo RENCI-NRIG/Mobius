@@ -6,6 +6,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.validation.annotation.Validated;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -14,7 +18,7 @@ import javax.validation.constraints.*;
  * ComputeRequest
  */
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-05-25T16:02:47.597-04:00[America/New_York]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2021-08-02T10:51:26.426-04:00[America/New_York]")
 public class ComputeRequest   {
   @JsonProperty("site")
   private String site = null;
@@ -161,6 +165,24 @@ public class ComputeRequest   {
 
   @JsonProperty("cometFamily")
   private String cometFamily = "all";
+
+  @JsonProperty("workDirectory")
+  private String workDirectory = null;
+
+  @JsonProperty("mounts")
+  @Valid
+  private List<Map<String, String>> mounts = null;
+
+  @JsonProperty("environment")
+  @Valid
+  private Map<String, String> environment = null;
+
+  @JsonProperty("labels")
+  @Valid
+  private Map<String, String> labels = null;
+
+  @JsonProperty("reservationId")
+  private String reservationId = null;
 
   public ComputeRequest site(String site) {
     this.site = site;
@@ -706,6 +728,125 @@ public class ComputeRequest   {
     this.cometFamily = cometFamily;
   }
 
+  public ComputeRequest workDirectory(String workDirectory) {
+    this.workDirectory = workDirectory;
+    return this;
+  }
+
+  /**
+   * Work directory location, used only when creating containers
+   * @return workDirectory
+  **/
+  @ApiModelProperty(value = "Work directory location, used only when creating containers")
+  
+    public String getWorkDirectory() {
+    return workDirectory;
+  }
+
+  public void setWorkDirectory(String workDirectory) {
+    this.workDirectory = workDirectory;
+  }
+
+  public ComputeRequest mounts(List<Map<String, String>> mounts) {
+    this.mounts = mounts;
+    return this;
+  }
+
+  public ComputeRequest addMountsItem(Map<String, String> mountsItem) {
+    if (this.mounts == null) {
+      this.mounts = new ArrayList<Map<String, String>>();
+    }
+    this.mounts.add(mountsItem);
+    return this;
+  }
+
+  /**
+   * Dictionary for the mounts to be passed when creating containers at CHI@Edge
+   * @return mounts
+  **/
+  @ApiModelProperty(value = "Dictionary for the mounts to be passed when creating containers at CHI@Edge")
+      @Valid
+    public List<Map<String, String>> getMounts() {
+    return mounts;
+  }
+
+  public void setMounts(List<Map<String, String>> mounts) {
+    this.mounts = mounts;
+  }
+
+  public ComputeRequest environment(Map<String, String> environment) {
+    this.environment = environment;
+    return this;
+  }
+
+  public ComputeRequest putEnvironmentItem(String key, String environmentItem) {
+    if (this.environment == null) {
+      this.environment = new HashMap<String, String>();
+    }
+    this.environment.put(key, environmentItem);
+    return this;
+  }
+
+  /**
+   * Dictionary for the environment to be passed when creating containers at CHI@Edge
+   * @return environment
+  **/
+  @ApiModelProperty(value = "Dictionary for the environment to be passed when creating containers at CHI@Edge")
+  
+    public Map<String, String> getEnvironment() {
+    return environment;
+  }
+
+  public void setEnvironment(Map<String, String> environment) {
+    this.environment = environment;
+  }
+
+  public ComputeRequest labels(Map<String, String> labels) {
+    this.labels = labels;
+    return this;
+  }
+
+  public ComputeRequest putLabelsItem(String key, String labelsItem) {
+    if (this.labels == null) {
+      this.labels = new HashMap<String, String>();
+    }
+    this.labels.put(key, labelsItem);
+    return this;
+  }
+
+  /**
+   * Dictionary for the labels to be passed when creating containers at CHI@Edge
+   * @return labels
+  **/
+  @ApiModelProperty(value = "Dictionary for the labels to be passed when creating containers at CHI@Edge")
+  
+    public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
+  }
+
+  public ComputeRequest reservationId(String reservationId) {
+    this.reservationId = reservationId;
+    return this;
+  }
+
+  /**
+   * reservation id returned by the lease created at chameleon, if not specified Mobius creates a new lease
+   * @return reservationId
+  **/
+  @ApiModelProperty(value = "reservation id returned by the lease created at chameleon, if not specified Mobius creates a new lease")
+  
+    public String getReservationId() {
+    return reservationId;
+  }
+
+  public void setReservationId(String reservationId) {
+    this.reservationId = reservationId;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -743,12 +884,17 @@ public class ComputeRequest   {
         Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
         Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth) &&
         Objects.equals(this.forceflavor, computeRequest.forceflavor) &&
-        Objects.equals(this.cometFamily, computeRequest.cometFamily);
+        Objects.equals(this.cometFamily, computeRequest.cometFamily) &&
+        Objects.equals(this.workDirectory, computeRequest.workDirectory) &&
+        Objects.equals(this.mounts, computeRequest.mounts) &&
+        Objects.equals(this.environment, computeRequest.environment) &&
+        Objects.equals(this.labels, computeRequest.labels) &&
+        Objects.equals(this.reservationId, computeRequest.reservationId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, vpcCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor, cometFamily);
+    return Objects.hash(site, cpus, gpus, ramPerCpus, diskPerCpus, leaseStart, leaseEnd, coallocate, slicePolicy, sliceName, hostNamePrefix, ipAddress, bandwidth, networkType, physicalNetwork, externalNetwork, networkCidr, vpcCidr, imageUrl, imageHash, imageName, postBootScript, stitchPortUrl, stitchTag, stitchIP, stitchBandwidth, forceflavor, cometFamily, workDirectory, mounts, environment, labels, reservationId);
   }
 
   @Override
@@ -784,6 +930,11 @@ public class ComputeRequest   {
     sb.append("    stitchBandwidth: ").append(toIndentedString(stitchBandwidth)).append("\n");
     sb.append("    forceflavor: ").append(toIndentedString(forceflavor)).append("\n");
     sb.append("    cometFamily: ").append(toIndentedString(cometFamily)).append("\n");
+    sb.append("    workDirectory: ").append(toIndentedString(workDirectory)).append("\n");
+    sb.append("    mounts: ").append(toIndentedString(mounts)).append("\n");
+    sb.append("    environment: ").append(toIndentedString(environment)).append("\n");
+    sb.append("    labels: ").append(toIndentedString(labels)).append("\n");
+    sb.append("    reservationId: ").append(toIndentedString(reservationId)).append("\n");
     sb.append("}");
     return sb.toString();
   }

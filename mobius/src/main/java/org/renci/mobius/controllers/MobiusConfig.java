@@ -53,18 +53,21 @@ public class MobiusConfig {
     public static final String chameleonAuthUrlTACC = "mobius.chameleon.authUrl.tacc";
     public static final String chameleonAuthUrlUC = "mobius.chameleon.authUrl.uc";
     public static final String chameleonAuthUrlKVM = "mobius.chameleon.authUrl.kvm";
+    public static final String chameleonAuthUrlEdge = "mobius.chameleon.authUrl.edge";
     public static final String chameleonUser = "mobius.chameleon.user";
     public static final String chameleonUserDomain = "mobius.chameleon.user.domain";
     public static final String chameleonUserPassword = "mobius.chameleon.user.password";
     public static final String chameleonUserPasswordOidc = "mobius.chameleon.user.password.oidc";
     public static final String chameleonProject = "mobius.chameleon.project";
     public static final String chameleonProjectIdKvm = "mobius.chameleon.projectId.kvm";
+    public static final String chameleonProjectIdEdge = "mobius.chameleon.projectId.edge";
     public static final String chameleonProjectIdUc = "mobius.chameleon.projectId.uc";
     public static final String chameleonProjectIdTacc = "mobius.chameleon.projectId.tacc";
     public static final String chameleonProjectDomain = "mobius.chameleon.project.domain";
     public static final String chameleonUserKeyPath = "mobius.chameleon.KeyPath";
     public static final String chameleonUserSshKey = "mobius.chameleon.sshKeyFile";
     public static final String chameleonDefaultNetwork = "mobius.chameleon.default.network";
+    public static final String chameleonDefaultNetworkEdge = "mobius.chameleon.default.network.edge";
     public static final String chameleonDefaultImageName = "mobius.chameleon.defaultImageName";
     public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
     public static final String chameleonFloatingIpPool = "mobius.chameleon.floatingIpPool";
@@ -75,8 +78,10 @@ public class MobiusConfig {
     public static final String taccchameleonDnsServers = "mobius.chameleon.tacc.dnsServers";
     public static final String chameleonAccessTokenEndpoint = "mobius.chameleon.access_token_endpoint";
     public static final String chameleonFederatedIdentityProviderKvm = "mobius.chameleon.federated_identity_provider.kvm";
+    public static final String chameleonFederatedIdentityProviderEdge = "mobius.chameleon.federated_identity_provider.edge";
     public static final String chameleonFederatedIdentityProviderUC = "mobius.chameleon.federated_identity_provider.uc";
     public static final String chameleonFederatedIdentityProviderTACC = "mobius.chameleon.federated_identity_provider.tacc";
+    public static final String chameleonClientIdEdge = "mobius.chameleon.client_id.edge";
     public static final String chameleonClientIdKvm = "mobius.chameleon.client_id.kvm";
     public static final String chameleonClientIdUC = "mobius.chameleon.client_id.uc";
     public static final String chameleonClientIdTACC = "mobius.chameleon.client_id.tacc";
@@ -237,15 +242,17 @@ public class MobiusConfig {
 
     public String getChameleonAuthUrlKVM() { return properties.getProperty(chameleonAuthUrlKVM); }
 
+    public String getChameleonAuthUrlEdge() { return properties.getProperty(chameleonAuthUrlEdge); }
+
     public String getChameleonAuthUrl(String region) {
-        switch (region) {
-            case StackContext.RegionUC:
-                return getChameleonAuthUrlUC();
-            case StackContext.RegionTACC:
-                return getChameleonAuthUrlTACC();
-            case StackContext.RegionKVM:
-                return getChameleonAuthUrlKVM();
-        }
+        if (region.compareToIgnoreCase(StackContext.RegionUC) == 0)
+            return getChameleonAuthUrlUC();
+        else if (region.compareToIgnoreCase(StackContext.RegionTACC) == 0)
+            return getChameleonAuthUrlTACC();
+        else if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0)
+            return getChameleonAuthUrlKVM();
+        else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0)
+            return getChameleonAuthUrlEdge();
         return null;
     }
 
@@ -260,14 +267,14 @@ public class MobiusConfig {
     public String getChameleonProject() { return properties.getProperty(chameleonProject); }
 
     public String getChameleonProjectId(String region) {
-        switch (region) {
-            case StackContext.RegionUC:
-                return properties.getProperty(chameleonProjectIdUc);
-            case StackContext.RegionTACC:
-                return properties.getProperty(chameleonProjectIdTacc);
-            case StackContext.RegionKVM:
-                return properties.getProperty(chameleonProjectIdKvm);
-        }
+        if (region.compareToIgnoreCase(StackContext.RegionUC) == 0)
+            return properties.getProperty(chameleonProjectIdUc);
+        else if (region.compareToIgnoreCase(StackContext.RegionTACC) == 0)
+            return properties.getProperty(chameleonProjectIdTacc);
+        else if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0)
+            return properties.getProperty(chameleonProjectIdKvm);
+        else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0)
+            return properties.getProperty(chameleonProjectIdEdge);
         return null;
     }
 
@@ -276,6 +283,8 @@ public class MobiusConfig {
     public String getChameleonFloatingIpPool() { return properties.getProperty(chameleonFloatingIpPool); }
 
     public String getChameleonDefaultNetwork() { return properties.getProperty(chameleonDefaultNetwork); }
+
+    public String getChameleonDefaultNetworkEdge() { return properties.getProperty(chameleonDefaultNetworkEdge); }
 
     public String getDefaultChameleonImageName() { return properties.getProperty(MobiusConfig.chameleonDefaultImageName); }
 
@@ -300,26 +309,28 @@ public class MobiusConfig {
     public String getChameleonAccessTokenEndpoint() { return properties.getProperty(chameleonAccessTokenEndpoint); }
 
     public String getChameleonFederatedIdentityProvider(String region) {
-        switch (region) {
-            case StackContext.RegionUC:
-                return properties.getProperty(chameleonFederatedIdentityProviderUC);
-            case StackContext.RegionTACC:
-                return properties.getProperty(chameleonFederatedIdentityProviderTACC);
-            case StackContext.RegionKVM:
-                return properties.getProperty(chameleonFederatedIdentityProviderKvm);
+        if (region.compareToIgnoreCase(StackContext.RegionUC) == 0)
+            return properties.getProperty(chameleonFederatedIdentityProviderUC);
+        else if (region.compareToIgnoreCase(StackContext.RegionTACC) == 0)
+            return properties.getProperty(chameleonFederatedIdentityProviderTACC);
+        else if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0)
+            return properties.getProperty(chameleonFederatedIdentityProviderKvm);
+        else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0) {
+            return properties.getProperty(chameleonFederatedIdentityProviderEdge);
         }
         return null;
     }
 
     public String getChameleonClientId(String region) {
-        switch (region) {
-            case StackContext.RegionUC:
+
+        if (region.compareToIgnoreCase(StackContext.RegionUC) == 0)
                 return properties.getProperty(chameleonClientIdUC);
-            case StackContext.RegionTACC:
+        else if (region.compareToIgnoreCase(StackContext.RegionTACC) == 0)
                 return properties.getProperty(chameleonClientIdTACC);
-            case StackContext.RegionKVM:
+        else if (region.compareToIgnoreCase(StackContext.RegionKVM) == 0)
                 return properties.getProperty(chameleonClientIdKvm);
-        }
+        else if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0)
+                return properties.getProperty(chameleonClientIdEdge);
         return null;
     }
 
