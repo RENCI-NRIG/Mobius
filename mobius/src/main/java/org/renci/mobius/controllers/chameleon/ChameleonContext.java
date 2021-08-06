@@ -256,7 +256,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                 }
 
                 Pair<String, Map<String, Integer>> result = api.createLease(region, leaseName,
-                        reservationRequest, 300);
+                        reservationRequest, 600);
 
                 if(result == null || result.getFirst() == null || result.getSecond() == null) {
                     throw new MobiusException("Failed to request lease");

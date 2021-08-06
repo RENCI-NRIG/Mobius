@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class OsContainerApi extends OsReservationApi {
     private final String containersUrl = "https://chi.edge.chameleoncloud.org:9517/v1/containers/";
-    private final String CONTAINER_DOC_PORTS = "{\"name\":\"%s\",\"image\":\"%s\"," +
+    private final String CONTAINER_DOC_PORTS = "{\"name\":\"%s\",\"cpu\":\"0\",\"memory\":\"0\",\"disk\":\"0\",\"image\":\"%s\"," +
             "\"image_driver\":\"docker\",\"command\":\"%s\",\"run\":true,\"auto_heal\":false,\"mounts\":%s," +
             "\"security_groups\":[\"default\"],\"workdir\":\"%s\",\"interactive\":true,\"hints\":{\"reservation\":\"%s\"}," +
             "\"environment\":%s,\"labels\":%s,\"exposed_ports\":%s,\"nets\":[{\"network\":\"%s\"}]}";

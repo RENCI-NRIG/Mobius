@@ -215,12 +215,15 @@ class CreateWorkflow:
             data["postBootScript"] = value
         if name is not None:
             data["hostNamePrefix"] = name
-        if ip_address is not None:
-            data["ipAddress"] = ip_address
         if self.args.leaseEnd is not None:
             self.logger.debug(f"Setting leaseEnd to {self.args.leaseEnd}")
             data["leaseEnd"] = self.args.leaseEnd
-        data["site"] = site
+        if data.get("site", None) is not None and "CHI@Edge" in data["site"]:
+            self.logger.debug("Requested Container, do not override site")
+        else:
+            if ip_address is not None:
+                data["ipAddress"] = ip_address
+            data["site"] = site
 
         return data
 
