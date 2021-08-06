@@ -374,7 +374,7 @@ public class StackContext implements AutoCloseable{
         }
 
         Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName, reservationRequest,
-                300);
+                600);
 
         if (result == null || result.getFirst() == null || result.getSecond() == null) {
             throw new MobiusException("Failed to request lease");
@@ -444,7 +444,7 @@ public class StackContext implements AutoCloseable{
             }
 
             Pair<String, Map<String, Integer>> result = api.createLease(region, sliceName, reservationRequest,
-                    300);
+                    600);
 
             if (result == null || result.getFirst() == null || result.getSecond() == null) {
                 throw new MobiusException("Failed to request lease");

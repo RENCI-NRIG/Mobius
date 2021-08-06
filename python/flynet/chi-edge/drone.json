@@ -9,6 +9,6 @@
     "imageName":"arm64v8/python:slim",
     "postBootScript":"python -m http.server 8000",
     "workDirectory" : "/var/www/html",
-    "leaseEnd":"1628371955"
+    "leaseEnd":"1628189214"
 }
 
