@@ -199,6 +199,12 @@ python3 k8s_client.py -s2 'Chameleon:KVM@TACC'  -d2 ./flynet/chameleon/ -l `date
 ```
 python3 k8s_client.py -s2 'Chameleon:CHI@UC'  -d2 ./flynet/chameleon-exo/ -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni-drone/  -l `date -v +2d +%s` -o create -w flynet-hybrid -n2 1 -i2 192.168.135.10 -n1 0 -i1 192.168.130.10
 ```
+#### Provision Flynet with CHI@Edge
+- Provision Kubernetes and Kube Edge cluster on Chameleon Baremetal
+- Provision Drone on CHI@Edge
+```
+python3 k8s_client.py -s2 'Chameleon:CHI@UC'  -d2 ./flynet/chi-edge/ -l `date -v +2d +%s` -o create -w flynet-hybrid -n2 1 -i2 192.168.135.10 
+```
 
 ## <a name="condor"></a>Condor Client
 Python client to create Condor clusters by invoking various supported Mobius REST commands.
