@@ -10,5 +10,5 @@
     "imageHash":"ed69e69db4947d70eb61cde724103c0dbb3db98d",    
     "leaseEnd":"1557733832",
     "bandwidth":"1000000000",
-    "postBootScript":"yum install -y wget; wget  http://geni-images.renci.org/images/kthare10/scripts/flynet/flynet_mobius_start.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW all; git clone https://github.com/kthare10/flynetDemo.git /root/flynetDemo; cd /root/flynetDemo/; git checkout -b edge-fix; git pull origin edge-fix;cd worker/;sh worker.sh STARTIP WORKERS > /var/log/worker.log 2>&1"
+    "postBootScript":"yum install -y wget; wget  http://geni-images.renci.org/images/kthare10/scripts/flynet/flynet_mobius_start.sh -O /root/mobius_start_up.sh; sh /root/mobius_start_up.sh WORKFLOW all; git clone https://github.com/CASAelyons/flynetDemo.git /root/flynetDemo; cd /root/flynetDemo/worker/;sh worker.sh STARTIP WORKERS > /var/log/worker.log 2>&1"
 }
