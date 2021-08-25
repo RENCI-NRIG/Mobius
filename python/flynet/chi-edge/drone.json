@@ -4,11 +4,10 @@
     "gpus":"0",
     "ramPerCpus":"0",
     "diskPerCpus":"0",
-    "forceflavor": "NVIDIA",
-    "hostNamePrefix":"master",
-    "imageName":"ryantanaka/condor8-arm64-worker",
-    "postBootScript":"",
-    "workDirectory" : "",
-    "leaseEnd":"1628189214"
+    "forceflavor": "Raspberry Pi",
+    "hostNamePrefix":"iperf",
+    "imageName":"taoyou/iperf3-alpine:latest",
+    "postBootScript":"iperf3 -s -p5201",
+    "leaseEnd":"1630078455"
 }
 

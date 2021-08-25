@@ -474,11 +474,9 @@ public class StackContext implements AutoCloseable{
                 name = name.toLowerCase();
                 LOGGER.debug("adding node=" + name);
                 response.addHost(name + ".novalocal", null);
-
-                Map<String, Object> result = api.create(region, name, request.getImageName(),
-                        request.getPostBootScript(), request.getMounts(),
-                        request.getWorkDirectory(), entry.getKey(), request.getEnvironment(), request.getLabels(),
-                        null, networkId);
+                Map<String, Object> result = api.create(region, name, request.getImageName(), null,
+                        request.getEnvironment(), null, null, networkId, entry.getKey(),
+                        request.getPostBootScript(), request.getWorkDirectory(), request.getLabels(), request.getMounts());
 
                 String instanceId = (String) result.get("uuid");
                 instanceIdList.add(instanceId);
@@ -809,12 +807,14 @@ public class StackContext implements AutoCloseable{
                         Map<String, Object> container = api.get(region, instanceId);
                         if (container != null) {
                             String status = (String) container.get("status");
-                            String uuid = (String) container.get("uuid");
                             if(status.compareToIgnoreCase("Running") == 0 && floatingIp == null) {
+                                LOGGER.debug("Container is running with no floating ipd");
                                 String fixedIp = null, port = null;
                                 Map<String, ArrayList<Object>> addresses = (Map<String, ArrayList<Object>>) container.get("addresses");
+                                LOGGER.debug(addresses);
                                 for (Object add_list_object : addresses.values()) {
                                     ArrayList<Object> add_list = (ArrayList<Object>) add_list_object;
+                                    LOGGER.debug(add_list);
                                     for (Object add_details: add_list) {
                                         Map<String, String> details = (Map<String, String>) add_details;
                                         fixedIp = details.get("addr");
@@ -824,7 +824,12 @@ public class StackContext implements AutoCloseable{
                                         }
                                     }
                                 }
+                                LOGGER.debug("attach FIP");
+                                LOGGER.debug(floatingIpPool);
+                                LOGGER.debug(port);
+                                LOGGER.debug(fixedIp);
                                 floatingIp = networkController.attachFip(region, floatingIpPool, port, fixedIp);
+                                LOGGER.debug("attach FIP complete");
                             }
                             JSONObject object = nodeToJson(container, floatingIp);
                             array.add(object);
