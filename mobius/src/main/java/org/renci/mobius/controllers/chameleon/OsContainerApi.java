@@ -11,15 +11,7 @@ import java.util.Map;
 
 public class OsContainerApi extends OsReservationApi {
     private final String containersUrl = "https://chi.edge.chameleoncloud.org:9517/v1/containers/";
-    private final String CONTAINER_DOC_PORTS = "{\"name\":\"%s\",\"cpu\":\"0\",\"memory\":\"0\",\"disk\":\"0\",\"image\":\"%s\"," +
-            "\"image_driver\":\"docker\",\"command\":\"%s\",\"run\":true,\"auto_heal\":false,\"mounts\":%s," +
-            "\"security_groups\":[\"default\"],\"workdir\":\"%s\",\"interactive\":true,\"hints\":{\"reservation\":\"%s\"}," +
-            "\"environment\":%s,\"labels\":%s,\"exposed_ports\":%s,\"nets\":[{\"network\":\"%s\"}]}";
-
-    private final String CONTAINER_DOC = "{\"name\":\"%s\",\"image\":\"%s\"," +
-            "\"image_driver\":\"docker\",\"command\":\"%s\",\"run\":true,\"auto_heal\":false,\"mounts\":%s," +
-            "\"security_groups\":[\"default\"],\"workdir\":\"%s\",\"interactive\":true,\"hints\":{\"reservation\":\"%s\"}," +
-            "\"environment\":%s,\"labels\":%s,\"nets\":[{\"network\":\"%s\"}]}";
+    private final String DEFAULT_IMAGE_DRIVER = "docker";
 
     /*
      * @brief constructor
@@ -40,17 +32,17 @@ public class OsContainerApi extends OsReservationApi {
         super(authUrl, username, password, userDomain, projectDomain, projectDomain);
     }
 
-    private String buildObject(Map<String, String> keyValueMap) {
+    private JSONObject buildObject(Map<String, String> keyValueMap) {
         JSONObject object = new JSONObject();
         if(keyValueMap != null) {
             for (Map.Entry<String, String> e : keyValueMap.entrySet()) {
                 object.put(e.getKey(), e.getValue());
             }
         }
-        return object.toString();
+        return object;
     }
 
-    private String buildArray(List<Map<String, String>> keyValueMapList) {
+    private JSONArray buildArray(List<Map<String, String>> keyValueMapList) {
         JSONArray array = new JSONArray();
         if(keyValueMapList != null) {
             for(Map<String, String> elem : keyValueMapList) {
@@ -61,10 +53,10 @@ public class OsContainerApi extends OsReservationApi {
                 array.add(object);
             }
         }
-        return array.toJSONString();
+        return array;
     }
 
-    private String buildObject(List<String> stringList) {
+    private JSONObject buildObject(List<String> stringList) {
         JSONObject object = new JSONObject();
         if(stringList != null) {
             for(String elem: stringList) {
@@ -72,33 +64,74 @@ public class OsContainerApi extends OsReservationApi {
                 object.put(elem, emptyObject);
             }
         }
-        return object.toJSONString();
+        return object;
     }
 
-    public Map<String, Object> create(String region, String name, String image, String command, List<Map<String, String>> mounts,
-                                      String workDirectory, String reservationId, Map<String, String> environment,
-                                      Map<String, String> labels, List<String> exposedPorts, String networkId) throws Exception {
+    private String constructBody(String name, String image, String imageDriver, Map<String, String> environment,
+                                 List<String> exposedPorts, String runtime, String networkId, String reservationId,
+                                 String command, String workDirectory, Map<String, String> labels,
+                                 List<Map<String, String>> mounts) throws Exception {
+        //{'name': 'my-first-container', 'image': 'taoyou/iperf3-alpine:latest', 'image_driver': 'docker', 'nets': [{'network': '9471db15-b33b-4a95-8e2b-1b7f69c0be7c'}],
+        // 'exposed_ports': {'5201': {}}, 'environment': None, 'runtime': None, 'hints': {'reservation': 'bbab83be-8283-4f73-90da-9f8bb902957a'}, 'command': ['iperf3', '-s', '-p', '5201']}
+        if (name == null || image == null || networkId == null || reservationId == null) {
+            throw new Exception(String.format("Missing mandatory parameters! name: %s image: %s networkId: %s",
+                    name, image, networkId));
+        }
+        JSONObject body = new JSONObject();
+        body.put("name", name);
+        body.put("image", image);
+        body.put("image_driver", DEFAULT_IMAGE_DRIVER);
+        if(imageDriver != null) {
+            body.put("image_driver", imageDriver);
+        }
+        JSONArray networks = new JSONArray();
+        JSONObject network = new JSONObject();
+        network.put("network", networkId);
+        networks.add(network);
+        body.put("nets", networks);
+        if (exposedPorts != null) {
+            JSONObject ports = buildObject(exposedPorts);
+            body.put("exposed_ports", ports);
+        }
+        if (environment != null) {
+            JSONObject env = buildObject(environment);
+            body.put("environment", env);
+        }
+        if (runtime != null) {
+            body.put("runtime", runtime);
+        }
+        JSONObject res = new JSONObject();
+        res.put("reservation", reservationId);
+        body.put("hints", res);
+        if (command != null){
+            body.put("command", command);
+        }
+        if(workDirectory != null) {
+            body.put("workdir", workDirectory);
+        }
+        if(labels != null) {
+            body.put("labels", buildObject(labels));
+        }
+        if(mounts != null) {
+            body.put("mounts", buildArray(mounts));
+        }
+        return body.toJSONString();
+    }
+
+    public Map<String, Object> create(String region, String name, String image, String imageDriver,
+                                       Map<String, String> environment, List<String> exposedPorts, String runtime,
+                                       String networkId, String reservationId, String command, String workDirectory,
+                                       Map<String, String> labels, List<Map<String, String>> mounts) throws Exception {
         Map<String, Object> result_map = null;
         try {
-            if(region == null || name == null || image == null || networkId == null) {
-                throw new Exception(String.format("Missing mandatory parameters! region: %s name: %s image: %s networkId: %s",
-                        region, name, image, networkId));
-            }
-            String request = null;
-            if (exposedPorts != null && exposedPorts.size() > 0) {
-                request = String.format(CONTAINER_DOC_PORTS, name, image, command, buildArray(mounts), workDirectory,
-                        reservationId, buildObject(environment), buildObject(labels), buildObject(exposedPorts), networkId);
-            }
-            else {
-                request = String.format(CONTAINER_DOC, name, image, command, buildArray(mounts), workDirectory,
-                        reservationId, buildObject(environment), buildObject(labels), networkId);
-            }
+            String body = constructBody(name, image, imageDriver, environment, exposedPorts, runtime, networkId,
+                    reservationId, command, workDirectory, labels, mounts);
             String token = auth(region);
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Auth-Token", token);
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-            HttpEntity<?> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<?> requestEntity = new HttpEntity<>(body, headers);
 
             ResponseEntity<Map> result = rest.exchange(containersUrl, HttpMethod.POST,
                     requestEntity, Map.class);
@@ -109,6 +142,27 @@ public class OsContainerApi extends OsReservationApi {
                 LOGGER.debug("Successfully created container");
             } else {
                 throw new Exception(String.format("Failed to create container: %s", result.toString()));
+            }
+            // Wait for upto 30 minutes for a container to be created
+            String uuid = (String) result_map.get("uuid");
+            Integer timeoutInSeconds = 60 * 30;
+            while(timeoutInSeconds != 0) {
+                Map<String, Object> container = get(region, uuid);
+                if (container != null) {
+                    String status = (String) container.get("status");
+                    LOGGER.debug("Container " + uuid + " status=" + status);
+                    if(status.compareToIgnoreCase("created") == 0) {
+                        LOGGER.debug("Container " + uuid + " created successfully, starting the container!");
+                        start(region, uuid);
+                        break;
+                    }
+                    else if(status.compareToIgnoreCase("error") == 0) {
+                        LOGGER.debug("Container " + uuid + " failed to create!");
+                    }
+                    Thread.sleep(1000);
+                    --timeoutInSeconds;
+                    LOGGER.debug("Waiting for the container= " + uuid + " to be created");
+                }
             }
         }
         catch (HttpClientErrorException e) {
@@ -205,6 +259,47 @@ public class OsContainerApi extends OsReservationApi {
             LOGGER.error("Message= " + e.getLocalizedMessage());
             e.printStackTrace();
             throw new Exception("failed to fetch container e=" + e.getMessage());
+        }
+        return result_map;
+    }
+
+    public Map<String, Object> start(String region, String uuid) throws Exception {
+        Map<String, Object> result_map = null;
+        try {
+            if(region == null || uuid == null) {
+                throw new Exception(String.format("Missing mandatory parameters! region: %s uuid: %s ",
+                        region, uuid));
+            }
+            String token = auth(region);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Auth-Token", token);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+            HttpEntity<?> requestEntity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map> result = rest.exchange(containersUrl + "/" + uuid + "/start", HttpMethod.POST,
+                    requestEntity, Map.class);
+            LOGGER.debug("Start Container Response Status Code=" + result.getStatusCode());
+            LOGGER.debug("Start Container Response Body=" + result.getBody());
+            result_map = result.getBody();
+            if (result.getStatusCode() == HttpStatus.OK || result.getStatusCode() == HttpStatus.ACCEPTED) {
+                LOGGER.debug("Successfully started container");
+            } else {
+                throw new Exception(String.format("Failed to start container: %s", result.toString()));
+            }
+        }
+        catch (HttpClientErrorException e) {
+            LOGGER.error("HTTP exception occurred e=" + e);
+            LOGGER.error("HTTP Error response = " + e.getResponseBodyAsString());
+            e.printStackTrace();
+            throw new Exception(e.getResponseBodyAsString());
+        }
+        catch (Exception e) {
+            LOGGER.error("Exception occurred while starting container e=" + e);
+            LOGGER.error("Message= " + e.getMessage());
+            LOGGER.error("Message= " + e.getLocalizedMessage());
+            e.printStackTrace();
+            throw new Exception("failed to start container e=" + e.getMessage());
         }
         return result_map;
     }

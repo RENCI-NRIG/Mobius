@@ -282,7 +282,12 @@ public class MobiusConfig {
 
     public String getChameleonFloatingIpPool() { return properties.getProperty(chameleonFloatingIpPool); }
 
-    public String getChameleonDefaultNetwork() { return properties.getProperty(chameleonDefaultNetwork); }
+    public String getChameleonDefaultNetwork(String region) {
+        if (region.compareToIgnoreCase(StackContext.RegionEDGE) == 0)
+            return properties.getProperty(chameleonDefaultNetworkEdge);
+        else
+            return properties.getProperty(chameleonDefaultNetwork);
+    }
 
     public String getChameleonDefaultNetworkEdge() { return properties.getProperty(chameleonDefaultNetworkEdge); }
 

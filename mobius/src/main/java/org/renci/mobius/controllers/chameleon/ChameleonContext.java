@@ -134,7 +134,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                networkId =  networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                networkId =  networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
                 workflowNetwork.put(NetworkController.NetworkId,networkId);
                 return networkId;
             }
@@ -227,7 +227,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
@@ -605,7 +605,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
                     if (workflowNetwork != null && workflowNetwork.containsKey(NetworkController.NetworkId)) {
                         networkId = workflowNetwork.get(NetworkController.NetworkId);
                     } else {
-                        networkId = networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork());
+                        networkId = networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
                     }
 
                     ComputeResponse response = context.provisionStorage(flavorList, nameIndex, request, metaData,
@@ -809,7 +809,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             if(workflowNetwork != null) {
                 String networkName = workflowNetwork.get(NetworkController.NetworkName);
                 if(networkName != null &&
-                        networkName.compareToIgnoreCase(MobiusConfig.getInstance().getChameleonDefaultNetwork()) == 0) {
+                        networkName.compareToIgnoreCase(MobiusConfig.getInstance().getChameleonDefaultNetwork(region)) == 0) {
                     String sgId = workflowNetwork.get(NetworkController.SecurityGroupId);
                     if (sgId != null) {
                         networkController.deleteSecurityGroup(region, sgId);

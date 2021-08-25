@@ -1,6 +1,7 @@
 package org.renci.controllers.os;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closeables;
 import com.google.inject.Module;
@@ -613,32 +614,32 @@ public class NetworkController implements Closeable {
         }
     }
 
-    public FloatingIP getFreeFloatingIP(String region, String floatingNetwork) {
-        String floatingNetworkId = getNetworkId(region, floatingNetwork);
+    public FloatingIP getFreeFloatingIP(String region, String networkId) {
 
         FloatingIP fip = null;
         FloatingIPApi floatingIPApi = neutronApi.getFloatingIPApi(region);
-
         PagedIterable<FloatingIP> fipList = floatingIPApi.list();
-        while (fipList.iterator().hasNext()){
-            fip = fipList.iterator().next().iterator().next();
-            if (fip.getFixedIpAddress() == null) {
-                break;
-            }
-            else {
-                fip = null;
+        if (!fipList.isEmpty()) {
+            ImmutableList<FloatingIP> floatingIPImmutableList = fipList.get(0).toList();
+
+            for(FloatingIP floatingIP: floatingIPImmutableList) {
+                if (floatingIP.getFixedIpAddress() == null) {
+                    fip = floatingIP;
+                    break;
+                }
             }
         }
         if (fip == null) {
-            FloatingIP.CreateFloatingIP createFloatingIP = FloatingIP.createBuilder(floatingNetworkId).build();
+            FloatingIP.CreateFloatingIP createFloatingIP = FloatingIP.createBuilder(networkId).build();
             fip = floatingIPApi.create(createFloatingIP);
         }
         return fip;
     }
 
     public String attachFip(String region, String floatingNetwork, String portId, String fixedIpAddress) {
+        String networkId = getNetworkId(region, floatingNetwork);
         FloatingIPApi floatingIPApi = neutronApi.getFloatingIPApi(region);
-        FloatingIP fip = getFreeFloatingIP(region, floatingNetwork);
+        FloatingIP fip = getFreeFloatingIP(region, networkId);
 
         FloatingIP.UpdateFloatingIP updateFloatingIP = FloatingIP.updateBuilder().portId(portId)
                 .fixedIpAddress(fixedIpAddress).build();
