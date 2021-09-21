@@ -49,9 +49,9 @@ public class ComputeRequest   {
    */
   public enum SlicePolicyEnum {
     NEW("new"),
-    
+
     EXISTING("existing"),
-    
+
     DEFAULT("default");
 
     private String value;
@@ -96,8 +96,10 @@ public class ComputeRequest   {
    */
   public enum NetworkTypeEnum {
     PRIVATE("private"),
-    
-    DEFAULT("default");
+
+    DEFAULT("default"),
+
+    DEFAULT_WAN("default_wan");
 
     private String value;
 
@@ -192,11 +194,11 @@ public class ComputeRequest   {
   /**
    * execution site
    * @return site
-  **/
+   **/
   @ApiModelProperty(required = true, value = "execution site")
-      @NotNull
+  @NotNull
 
-    public String getSite() {
+  public String getSite() {
     return site;
   }
 
@@ -213,9 +215,9 @@ public class ComputeRequest   {
    * number of cpus
    * minimum: 0
    * @return cpus
-  **/
+   **/
   @ApiModelProperty(required = true, value = "number of cpus")
-      @NotNull
+  @NotNull
 
   @Min(0)  public Integer getCpus() {
     return cpus;
@@ -234,9 +236,9 @@ public class ComputeRequest   {
    * number of gpus
    * minimum: 0
    * @return gpus
-  **/
+   **/
   @ApiModelProperty(required = true, value = "number of gpus")
-      @NotNull
+  @NotNull
 
   @Min(0)  public Integer getGpus() {
     return gpus;
@@ -255,9 +257,9 @@ public class ComputeRequest   {
    * RAM per cpu in MB
    * minimum: 0
    * @return ramPerCpus
-  **/
+   **/
   @ApiModelProperty(required = true, value = "RAM per cpu in MB")
-      @NotNull
+  @NotNull
 
   @Min(0)  public Integer getRamPerCpus() {
     return ramPerCpus;
@@ -276,9 +278,9 @@ public class ComputeRequest   {
    * Disk per cpu in MB
    * minimum: 0
    * @return diskPerCpus
-  **/
+   **/
   @ApiModelProperty(required = true, value = "Disk per cpu in MB")
-      @NotNull
+  @NotNull
 
   @Min(0)  public Integer getDiskPerCpus() {
     return diskPerCpus;
@@ -296,10 +298,10 @@ public class ComputeRequest   {
   /**
    * Least Start Time
    * @return leaseStart
-  **/
+   **/
   @ApiModelProperty(value = "Least Start Time")
-  
-    public String getLeaseStart() {
+
+  public String getLeaseStart() {
     return leaseStart;
   }
 
@@ -315,10 +317,10 @@ public class ComputeRequest   {
   /**
    * Least End Time
    * @return leaseEnd
-  **/
+   **/
   @ApiModelProperty(value = "Least End Time")
-  
-    public String getLeaseEnd() {
+
+  public String getLeaseEnd() {
     return leaseEnd;
   }
 
@@ -334,11 +336,11 @@ public class ComputeRequest   {
   /**
    * flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'
    * @return coallocate
-  **/
+   **/
   @ApiModelProperty(required = true, value = "flag indicating if CPUs should be allocated across multiple compute resources or not. Should be set to 'true' if CPUs should be coallocated on single compute resource. Default value is 'false'")
-      @NotNull
+  @NotNull
 
-    public Boolean isCoallocate() {
+  public Boolean isCoallocate() {
     return coallocate;
   }
 
@@ -354,11 +356,11 @@ public class ComputeRequest   {
   /**
    * Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'
    * @return slicePolicy
-  **/
+   **/
   @ApiModelProperty(required = true, value = "Indicates Slice policy to be used. For 'new' slicePolicy, compute resources are added in a new slice on site specified. For 'existing' slicePolicy, compute resources are added to existing slice specified by 'sliceName' field. For 'default' slicePolicy, compute resources are either added to an existing slice with same leaseEndTime if found or added to a new slice on site specified. Default value is 'default'")
-      @NotNull
+  @NotNull
 
-    public SlicePolicyEnum getSlicePolicy() {
+  public SlicePolicyEnum getSlicePolicy() {
     return slicePolicy;
   }
 
@@ -374,10 +376,10 @@ public class ComputeRequest   {
   /**
    * existing slice name to which compute resources should be added
    * @return sliceName
-  **/
+   **/
   @ApiModelProperty(value = "existing slice name to which compute resources should be added")
-  
-    public String getSliceName() {
+
+  public String getSliceName() {
     return sliceName;
   }
 
@@ -393,10 +395,10 @@ public class ComputeRequest   {
   /**
    * prefix to be added to hostName
    * @return hostNamePrefix
-  **/
+   **/
   @ApiModelProperty(value = "prefix to be added to hostName")
-  
-    public String getHostNamePrefix() {
+
+  public String getHostNamePrefix() {
     return hostNamePrefix;
   }
 
@@ -412,10 +414,10 @@ public class ComputeRequest   {
   /**
    * ip address to assign. should be specified only if coallocate is set to 'true'.
    * @return ipAddress
-  **/
+   **/
   @ApiModelProperty(value = "ip address to assign. should be specified only if coallocate is set to 'true'.")
-  
-    public String getIpAddress() {
+
+  public String getIpAddress() {
     return ipAddress;
   }
 
@@ -431,10 +433,10 @@ public class ComputeRequest   {
   /**
    * bandwidth for subnet interface.
    * @return bandwidth
-  **/
+   **/
   @ApiModelProperty(value = "bandwidth for subnet interface.")
-  
-    public String getBandwidth() {
+
+  public String getBandwidth() {
     return bandwidth;
   }
 
@@ -450,11 +452,11 @@ public class ComputeRequest   {
   /**
    * Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.
    * @return networkType
-  **/
+   **/
   @ApiModelProperty(required = true, value = "Indicates Network policy to be used for Chameleon resources. When set to 'private', a private network for the workflow is created to connect all compute instances. The user is expected to pass the physicalNetwork Name in this case. When set to 'default', all compute instances are connected to the default network 'sharednet' which is configured as Default chameleon network in mobius. Default value is 'default'. Private network is created only once per workflow. For subsequent requests existing network is used.")
-      @NotNull
+  @NotNull
 
-    public NetworkTypeEnum getNetworkType() {
+  public NetworkTypeEnum getNetworkType() {
     return networkType;
   }
 
@@ -470,10 +472,10 @@ public class ComputeRequest   {
   /**
    * physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'.
    * @return physicalNetwork
-  **/
+   **/
   @ApiModelProperty(value = "physical network name over which private network should be created to connected Chameleon compute resources. Only needed for Chameleon requests when networkType is 'private'.")
-  
-    public String getPhysicalNetwork() {
+
+  public String getPhysicalNetwork() {
     return physicalNetwork;
   }
 
@@ -489,10 +491,10 @@ public class ComputeRequest   {
   /**
    * external network name/cidr over which would be used for routing to external world. Only needed for non exogeni requests when networkType is 'private'.
    * @return externalNetwork
-  **/
+   **/
   @ApiModelProperty(value = "external network name/cidr over which would be used for routing to external world. Only needed for non exogeni requests when networkType is 'private'.")
-  
-    public String getExternalNetwork() {
+
+  public String getExternalNetwork() {
     return externalNetwork;
   }
 
@@ -508,10 +510,10 @@ public class ComputeRequest   {
   /**
    * network cidr for the private network. Only needed for non exogeni requests when networkType is 'private'.
    * @return networkCidr
-  **/
+   **/
   @ApiModelProperty(value = "network cidr for the private network. Only needed for non exogeni requests when networkType is 'private'.")
-  
-    public String getNetworkCidr() {
+
+  public String getNetworkCidr() {
     return networkCidr;
   }
 
@@ -527,10 +529,10 @@ public class ComputeRequest   {
   /**
    * network cidr for the AWS VPC. Only needed for VPC requests when networkType is 'private'.
    * @return vpcCidr
-  **/
+   **/
   @ApiModelProperty(value = "network cidr for the AWS VPC. Only needed for VPC requests when networkType is 'private'.")
-  
-    public String getVpcCidr() {
+
+  public String getVpcCidr() {
     return vpcCidr;
   }
 
@@ -546,10 +548,10 @@ public class ComputeRequest   {
   /**
    * image url
    * @return imageUrl
-  **/
+   **/
   @ApiModelProperty(value = "image url")
-  
-    public String getImageUrl() {
+
+  public String getImageUrl() {
     return imageUrl;
   }
 
@@ -565,10 +567,10 @@ public class ComputeRequest   {
   /**
    * image hash
    * @return imageHash
-  **/
+   **/
   @ApiModelProperty(value = "image hash")
-  
-    public String getImageHash() {
+
+  public String getImageHash() {
     return imageHash;
   }
 
@@ -584,10 +586,10 @@ public class ComputeRequest   {
   /**
    * image name
    * @return imageName
-  **/
+   **/
   @ApiModelProperty(value = "image name")
-  
-    public String getImageName() {
+
+  public String getImageName() {
     return imageName;
   }
 
@@ -603,10 +605,10 @@ public class ComputeRequest   {
   /**
    * post boot script
    * @return postBootScript
-  **/
+   **/
   @ApiModelProperty(value = "post boot script")
-  
-    public String getPostBootScript() {
+
+  public String getPostBootScript() {
     return postBootScript;
   }
 
@@ -622,10 +624,10 @@ public class ComputeRequest   {
   /**
    * port url for the stitch port
    * @return stitchPortUrl
-  **/
+   **/
   @ApiModelProperty(value = "port url for the stitch port")
-  
-    public String getStitchPortUrl() {
+
+  public String getStitchPortUrl() {
     return stitchPortUrl;
   }
 
@@ -641,10 +643,10 @@ public class ComputeRequest   {
   /**
    * vlan tag for the stitch port
    * @return stitchTag
-  **/
+   **/
   @ApiModelProperty(value = "vlan tag for the stitch port")
-  
-    public String getStitchTag() {
+
+  public String getStitchTag() {
     return stitchTag;
   }
 
@@ -660,10 +662,10 @@ public class ComputeRequest   {
   /**
    * IP address for the StitchPort interface on VM
    * @return stitchIP
-  **/
+   **/
   @ApiModelProperty(value = "IP address for the StitchPort interface on VM")
-  
-    public String getStitchIP() {
+
+  public String getStitchIP() {
     return stitchIP;
   }
 
@@ -679,10 +681,10 @@ public class ComputeRequest   {
   /**
    * Bandwidth for the StitchPort in bps
    * @return stitchBandwidth
-  **/
+   **/
   @ApiModelProperty(value = "Bandwidth for the StitchPort in bps")
-  
-    public String getStitchBandwidth() {
+
+  public String getStitchBandwidth() {
     return stitchBandwidth;
   }
 
@@ -698,10 +700,10 @@ public class ComputeRequest   {
   /**
    * force mobius to use the flavor indicated instead of the one determined by its algorithm
    * @return forceflavor
-  **/
+   **/
   @ApiModelProperty(value = "force mobius to use the flavor indicated instead of the one determined by its algorithm")
-  
-    public String getForceflavor() {
+
+  public String getForceflavor() {
     return forceflavor;
   }
 
@@ -717,10 +719,10 @@ public class ComputeRequest   {
   /**
    * family used to group compute nodes into different clusters using COMET within a single workflow
    * @return cometFamily
-  **/
+   **/
   @ApiModelProperty(value = "family used to group compute nodes into different clusters using COMET within a single workflow")
-  
-    public String getCometFamily() {
+
+  public String getCometFamily() {
     return cometFamily;
   }
 
@@ -736,10 +738,10 @@ public class ComputeRequest   {
   /**
    * Work directory location, used only when creating containers
    * @return workDirectory
-  **/
+   **/
   @ApiModelProperty(value = "Work directory location, used only when creating containers")
-  
-    public String getWorkDirectory() {
+
+  public String getWorkDirectory() {
     return workDirectory;
   }
 
@@ -763,10 +765,10 @@ public class ComputeRequest   {
   /**
    * Dictionary for the mounts to be passed when creating containers at CHI@Edge
    * @return mounts
-  **/
+   **/
   @ApiModelProperty(value = "Dictionary for the mounts to be passed when creating containers at CHI@Edge")
-      @Valid
-    public List<Map<String, String>> getMounts() {
+  @Valid
+  public List<Map<String, String>> getMounts() {
     return mounts;
   }
 
@@ -790,10 +792,10 @@ public class ComputeRequest   {
   /**
    * Dictionary for the environment to be passed when creating containers at CHI@Edge
    * @return environment
-  **/
+   **/
   @ApiModelProperty(value = "Dictionary for the environment to be passed when creating containers at CHI@Edge")
-  
-    public Map<String, String> getEnvironment() {
+
+  public Map<String, String> getEnvironment() {
     return environment;
   }
 
@@ -817,10 +819,10 @@ public class ComputeRequest   {
   /**
    * Dictionary for the labels to be passed when creating containers at CHI@Edge
    * @return labels
-  **/
+   **/
   @ApiModelProperty(value = "Dictionary for the labels to be passed when creating containers at CHI@Edge")
-  
-    public Map<String, String> getLabels() {
+
+  public Map<String, String> getLabels() {
     return labels;
   }
 
@@ -836,10 +838,10 @@ public class ComputeRequest   {
   /**
    * reservation id returned by the lease created at chameleon, if not specified Mobius creates a new lease
    * @return reservationId
-  **/
+   **/
   @ApiModelProperty(value = "reservation id returned by the lease created at chameleon, if not specified Mobius creates a new lease")
-  
-    public String getReservationId() {
+
+  public String getReservationId() {
     return reservationId;
   }
 
@@ -858,38 +860,38 @@ public class ComputeRequest   {
     }
     ComputeRequest computeRequest = (ComputeRequest) o;
     return Objects.equals(this.site, computeRequest.site) &&
-        Objects.equals(this.cpus, computeRequest.cpus) &&
-        Objects.equals(this.gpus, computeRequest.gpus) &&
-        Objects.equals(this.ramPerCpus, computeRequest.ramPerCpus) &&
-        Objects.equals(this.diskPerCpus, computeRequest.diskPerCpus) &&
-        Objects.equals(this.leaseStart, computeRequest.leaseStart) &&
-        Objects.equals(this.leaseEnd, computeRequest.leaseEnd) &&
-        Objects.equals(this.coallocate, computeRequest.coallocate) &&
-        Objects.equals(this.slicePolicy, computeRequest.slicePolicy) &&
-        Objects.equals(this.sliceName, computeRequest.sliceName) &&
-        Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
-        Objects.equals(this.ipAddress, computeRequest.ipAddress) &&
-        Objects.equals(this.bandwidth, computeRequest.bandwidth) &&
-        Objects.equals(this.networkType, computeRequest.networkType) &&
-        Objects.equals(this.physicalNetwork, computeRequest.physicalNetwork) &&
-        Objects.equals(this.externalNetwork, computeRequest.externalNetwork) &&
-        Objects.equals(this.networkCidr, computeRequest.networkCidr) &&
-        Objects.equals(this.vpcCidr, computeRequest.vpcCidr) &&
-        Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
-        Objects.equals(this.imageHash, computeRequest.imageHash) &&
-        Objects.equals(this.imageName, computeRequest.imageName) &&
-        Objects.equals(this.postBootScript, computeRequest.postBootScript) &&
-        Objects.equals(this.stitchPortUrl, computeRequest.stitchPortUrl) &&
-        Objects.equals(this.stitchTag, computeRequest.stitchTag) &&
-        Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
-        Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth) &&
-        Objects.equals(this.forceflavor, computeRequest.forceflavor) &&
-        Objects.equals(this.cometFamily, computeRequest.cometFamily) &&
-        Objects.equals(this.workDirectory, computeRequest.workDirectory) &&
-        Objects.equals(this.mounts, computeRequest.mounts) &&
-        Objects.equals(this.environment, computeRequest.environment) &&
-        Objects.equals(this.labels, computeRequest.labels) &&
-        Objects.equals(this.reservationId, computeRequest.reservationId);
+            Objects.equals(this.cpus, computeRequest.cpus) &&
+            Objects.equals(this.gpus, computeRequest.gpus) &&
+            Objects.equals(this.ramPerCpus, computeRequest.ramPerCpus) &&
+            Objects.equals(this.diskPerCpus, computeRequest.diskPerCpus) &&
+            Objects.equals(this.leaseStart, computeRequest.leaseStart) &&
+            Objects.equals(this.leaseEnd, computeRequest.leaseEnd) &&
+            Objects.equals(this.coallocate, computeRequest.coallocate) &&
+            Objects.equals(this.slicePolicy, computeRequest.slicePolicy) &&
+            Objects.equals(this.sliceName, computeRequest.sliceName) &&
+            Objects.equals(this.hostNamePrefix, computeRequest.hostNamePrefix) &&
+            Objects.equals(this.ipAddress, computeRequest.ipAddress) &&
+            Objects.equals(this.bandwidth, computeRequest.bandwidth) &&
+            Objects.equals(this.networkType, computeRequest.networkType) &&
+            Objects.equals(this.physicalNetwork, computeRequest.physicalNetwork) &&
+            Objects.equals(this.externalNetwork, computeRequest.externalNetwork) &&
+            Objects.equals(this.networkCidr, computeRequest.networkCidr) &&
+            Objects.equals(this.vpcCidr, computeRequest.vpcCidr) &&
+            Objects.equals(this.imageUrl, computeRequest.imageUrl) &&
+            Objects.equals(this.imageHash, computeRequest.imageHash) &&
+            Objects.equals(this.imageName, computeRequest.imageName) &&
+            Objects.equals(this.postBootScript, computeRequest.postBootScript) &&
+            Objects.equals(this.stitchPortUrl, computeRequest.stitchPortUrl) &&
+            Objects.equals(this.stitchTag, computeRequest.stitchTag) &&
+            Objects.equals(this.stitchIP, computeRequest.stitchIP) &&
+            Objects.equals(this.stitchBandwidth, computeRequest.stitchBandwidth) &&
+            Objects.equals(this.forceflavor, computeRequest.forceflavor) &&
+            Objects.equals(this.cometFamily, computeRequest.cometFamily) &&
+            Objects.equals(this.workDirectory, computeRequest.workDirectory) &&
+            Objects.equals(this.mounts, computeRequest.mounts) &&
+            Objects.equals(this.environment, computeRequest.environment) &&
+            Objects.equals(this.labels, computeRequest.labels) &&
+            Objects.equals(this.reservationId, computeRequest.reservationId);
   }
 
   @Override
@@ -901,7 +903,7 @@ public class ComputeRequest   {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class ComputeRequest {\n");
-    
+
     sb.append("    site: ").append(toIndentedString(site)).append("\n");
     sb.append("    cpus: ").append(toIndentedString(cpus)).append("\n");
     sb.append("    gpus: ").append(toIndentedString(gpus)).append("\n");

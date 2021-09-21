@@ -134,9 +134,7 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
 
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
-                networkId =  networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
-                workflowNetwork.put(NetworkController.NetworkId,networkId);
-                return networkId;
+                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
@@ -228,6 +226,10 @@ public class ChameleonContext extends CloudContext implements AutoCloseable {
             // If network type is default; use chameleon default network i.e. sharednet1
             if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT) {
                 return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetwork(region));
+            }
+            // If network type is default_wan; use chameleon default network i.e. sharedwan1
+            else if (request.getNetworkType() == ComputeRequest.NetworkTypeEnum.DEFAULT_WAN) {
+                return networkController.getNetworkId(region, MobiusConfig.getInstance().getChameleonDefaultNetworkWan());
             }
 
             String externalNetworkId = networkController.getNetworkId(region, request.getExternalNetwork());
