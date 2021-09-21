@@ -398,7 +398,12 @@ public class StackContext implements AutoCloseable{
                 }
                 name = name.toLowerCase();
                 LOGGER.debug("adding node=" + name);
-                response.addHost(name + ".novalocal", null);
+                if (!image.contains("Ubuntu")) {
+                    response.addHost(name + ".novalocal", null);
+                }
+                else {
+                    response.addHost(name, null);
+                }
 
                 Map<String, String> meta = null;
                 if (metaData != null) {
@@ -473,7 +478,12 @@ public class StackContext implements AutoCloseable{
                 }
                 name = name.toLowerCase();
                 LOGGER.debug("adding node=" + name);
-                response.addHost(name + ".novalocal", null);
+                if (!request.getImageName().contains("Ubuntu")) {
+                    response.addHost(name + ".novalocal", null);
+                }
+                else {
+                    response.addHost(name, null);
+                }
                 Map<String, Object> result = api.create(region, name, request.getImageName(), null,
                         request.getEnvironment(), null, null, networkId, entry.getKey(),
                         request.getPostBootScript(), request.getWorkDirectory(), request.getLabels(), request.getMounts());
@@ -507,7 +517,12 @@ public class StackContext implements AutoCloseable{
                     name = name + CloudContext.NodeName + nameIndex;
                 }
                 name = name.toLowerCase();
-                response.addHost(name + ".novalocal", null);
+                if (!image.contains("Ubuntu")) {
+                    response.addHost(name + ".novalocal", null);
+                }
+                else {
+                    response.addHost(name, null);
+                }
                 LOGGER.debug("adding node=" + name + " with flavor=" + entry.getKey());
 
                 String instanceId = computeController.createInstance(region,

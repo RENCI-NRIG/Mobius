@@ -1,0 +1,12 @@
+{
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"chworker",
+    "networkType":"default",
+    "imageName":"CC-Ubuntu18.04",
+    "forceflavor":"m1.medium",
+    "leaseEnd":"1557733832",
+    "postBootScript":"#!/bin/bash\nyum install -y wget\n wget  http://geni-images.renci.org/images/kthare10/scripts/pos/pos_mobius_start.sh -O /root/mobius_start_up.sh\n sh /root/mobius_start_up.sh WORKFLOW all\n wget http://geni-images.renci.org/images/kthare10/scripts/pos/worker.sh -O /root/worker.sh\n sh /root/worker.sh"
+}

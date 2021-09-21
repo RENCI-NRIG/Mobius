@@ -67,6 +67,7 @@ public class MobiusConfig {
     public static final String chameleonUserKeyPath = "mobius.chameleon.KeyPath";
     public static final String chameleonUserSshKey = "mobius.chameleon.sshKeyFile";
     public static final String chameleonDefaultNetwork = "mobius.chameleon.default.network";
+    public static final String chameleonDefaultNetworkWan = "mobius.chameleon.default.network.wan";
     public static final String chameleonDefaultNetworkEdge = "mobius.chameleon.default.network.edge";
     public static final String chameleonDefaultImageName = "mobius.chameleon.defaultImageName";
     public static final String chameleonDefaultFlavorName = "mobius.chameleon.defaultFlavorName";
@@ -287,6 +288,10 @@ public class MobiusConfig {
             return properties.getProperty(chameleonDefaultNetworkEdge);
         else
             return properties.getProperty(chameleonDefaultNetwork);
+    }
+
+    public String getChameleonDefaultNetworkWan() {
+        return properties.getProperty(chameleonDefaultNetworkWan);
     }
 
     public String getChameleonDefaultNetworkEdge() { return properties.getProperty(chameleonDefaultNetworkEdge); }

@@ -24,7 +24,7 @@ public class ChameleonFlavorAlgo {
         Haswell(48, 250059, 131072, "compute_haswell"),
         InfiniBand(48, 250059, 131072, "compute_haswell_ib"),
         Skylake(48, 240057, 196608, "compute_skylake"),
-        Gpus(56, 250059, 131072, "gpu_k80, gpu_m40, gpu_p100, gpu_p100_nvlink"),
+        Gpus(56, 250059, 131072, "gpu_k80, gpu_m40, gpu_p100, gpu_p100_nvlink, gpu_rtx6000"),
         Storage(40, 30000000, 64000, "storage"),
         M1Tiny(1, 1024, 512, "m1.tiny"),
         M1Small(1, 20480, 2048, "m1.small"),

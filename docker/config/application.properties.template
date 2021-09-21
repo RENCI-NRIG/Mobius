@@ -67,6 +67,7 @@ mobius.chameleon.project.domain=default
 mobius.chameleon.KeyPath=./ssh/
 mobius.chameleon.sshKeyFile=id_rsa.pub
 mobius.chameleon.default.network=sharednet1
+mobius.chameleon.default.network.wan=sharedwan1
 mobius.chameleon.default.network.edge=containernet1
 mobius.chameleon.defaultImageName=CC-CentOS7
 mobius.chameleon.defaultFlavorName=baremetal
