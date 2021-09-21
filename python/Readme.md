@@ -465,6 +465,25 @@ python3 condor_client.py -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subne
 ```
 
 Cluster will look like ![this](../mobius/plantuml/images/vsdx-qos.png)
+
+###### Posiedon: Adding Cluster spanning CHI@UC and CHI@TACC with GPUs
+- Create Master @ TACC
+```
+python3 condor_client.py -o create -w pos-wf -s2 'Chameleon:CHI@TACC' -d2 pos/tacc -n2 0 -l `date -v +1d +%s`
+```
+- Add CPU Worker @ UC
+```
+python3 condor_client.py -o add -w pos-wf -s2 'Chameleon:CHI@UC' -d2 pos/uc/cpu -n2 1 -l `date -v +1d +%s`
+```
+- Add GPU Worker @ TACC
+```
+python3 condor_client.py -o add -w pos-wf -s2 'Chameleon:CHI@UC' -d2 pos/uc/gpu -n2 1 -l `date -v +1d +%s`
+```
+###### Posiedon: Adding Cluster KVM@TACC
+```
+python3 condor_client.py -o create -w pos-wf -s2 'Chameleon:KVM@TACC' -d2 pos/kvm/ -n2 1 -l `date -v +1d +%s`
+```
+
 #### <a name="get"></a>Get status of condor cluster
 ```
 python3 condor_client.py -o get -w abcd-1114
