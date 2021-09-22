@@ -8,5 +8,5 @@
     "imageName":"CC-Ubuntu18.04",
     "forceflavor":"compute_cascadelake",
     "leaseEnd":"1557733832",
-    "postBootScript":"#!/bin/bash\nyum install -y wget\n wget  http://geni-images.renci.org/images/kthare10/scripts/pos/pos_mobius_start.sh -O /root/mobius_start_up.sh\n sh /root/mobius_start_up.sh WORKFLOW all\nwget  http://geni-images.renci.org/images/kthare10/scripts/pos/panorama-data.sh -O /root/master.sh\n sh /root/master.sh"
+    "postBootScript":"#!/bin/bash\ngit clone https://github.com/RENCI-NRIG/Mobius-scripts.git /root/Mobius-scripts\ncp /root/Mobius-scripts/scripts/posiedon/pos_mobius_start.sh /root/mobius_start.sh\nsh /root/mobius_start.sh WORKFLOW all\ncp /root/Mobius-scripts/scripts/posiedon/panorama-data.sh /root/master.sh\nsh /root/master.sh"
 }
