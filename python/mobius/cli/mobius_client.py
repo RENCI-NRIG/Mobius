@@ -25,13 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import sys
 import os
-import time
 import json
 import argparse
-import subprocess
-
-from mobius import *
-from comet_common_iface import *
 
 defaultComputeChameleonData={
     "cpus":"4",
@@ -163,7 +158,7 @@ def processStitchPort(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Python client to provision cloud resources by invoking '
+    parser = argparse.ArgumentParser(description='Python client to provision controller resources by invoking '
                                           'Mobius REST Commands.\n')
 
     parser.add_argument('-s', '--site', dest='site', type = str, help='Site', required=False)

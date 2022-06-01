@@ -31,7 +31,7 @@ import traceback
 
 from delete_workflow import DeleteWorkflow
 from get_workflow import GetWorkflow
-from mobius import MobiusInterface
+from mobius.client.mobius import MobiusInterface
 
 
 class JSONData:

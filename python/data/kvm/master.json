@@ -1,0 +1,12 @@
+{
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"chmaster",
+    "networkType":"default",
+    "imageName":"CC-Ubuntu18.04",
+    "forceflavor":"m1.medium",
+    "leaseEnd":"1557733832",
+    "postBootScript":""
+}

@@ -26,9 +26,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from setuptools import setup, find_packages
-
-NAME = "mobius"
-VERSION = "0.1"
+from mobius import __VERSION__
 # To install the library, run the following
 #
 # python setup.py install
@@ -43,13 +41,13 @@ with open("requirements.txt", "r") as fh:
     requirements = fh.read()
 
 setup(
-    name=NAME,
-    version=VERSION,
+    name="mobius",
+    version=__VERSION__,
     description="Mobius Framework",
     author="Komal Thareja",
     author_email="kthare10@renci.org",
     url="https://github.com/RENCI-NRIG/Mobius",
-    keywords=["Swagger", "Mobius Framework"],
+    keywords=["Mobius Framework", "Cloud", "FABRIC", "Chameleon", "MOC"],
     install_requires=requirements,
     setup_requires=requirements,
     packages=find_packages(),

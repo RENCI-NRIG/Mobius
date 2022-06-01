@@ -28,13 +28,10 @@ import os
 import time
 import json
 import argparse
-import subprocess
 import socket
 import glob
 from ssl import create_default_context, Purpose
 
-from mobius import *
-from comet_common_iface import *
 from kafka import *
 
 resourcesVal={"val_":"[{\"cpu\":\"\"},{\"memory\":\"\"}, {\"disk\":\"\"}]"}
@@ -177,7 +174,7 @@ def validate(args, parser):
 
 
 def set_up_parser():
-    parser = argparse.ArgumentParser(description=f'Python client to create Condor cluster using mobius.'
+    parser = argparse.ArgumentParser(description=f'Python client to create Condor cluster using client.'
                                                  f'\nUses master.json, submit.json and worker.json for compute requests '
                                                  f'present in data directory specified.\nCurrently only supports '
                                                  f'provisioning compute resources. Other resources can be provisioned '
@@ -713,9 +710,9 @@ def push_scripts(mb, args, datadir, requests):
 
 def provision_storage(args, datadir, site, ipMap, count, ipStart, submitSubnet, sip, exogeniSubnet, exxogeni_slice_name):
     '''
-    Provisions storage on specific cloud
+    Provisions storage on specific controller
     @params datadir: data directory from where to pick up storage.json
-    @params site: Site on the cloud where to provision the node
+    @params site: Site on the controller where to provision the node
     @params ipMap: IP MAP contains mapping of Hostname to IP Address
     @params count: Current Node counter
     @params ipStart: Starting IP Address
@@ -981,7 +978,7 @@ def cleanup_monitoring(kafkahost, response):
 
 def delete_prometheus_target(kafkahost, ip):
     try:
-        topic_name = 'mobius-promeithus'
+        topic_name = 'client-promeithus'
         context = _create_ssl_context(cafile="certs/DigiCertCA.crt", certfile="certs/client.pem",
                                       keyfile="certs/client.key", password="fabric")
         context.check_hostname = False

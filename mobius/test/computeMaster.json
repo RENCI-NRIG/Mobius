@@ -1,5 +1,5 @@
 {
-    "site":"Exogeni:UFL (Gainesville, FL USA) XO Rack",
+    "site":"Exogeni:UH (Houston, TX USA) XO Rack",
     "cpus":"1",
     "gpus":"0",
     "ramPerCpus":"3072",
@@ -10,6 +10,6 @@
     "imageName":"mb-centos-7",
     "imageHash":"1cb9bde255314761e10d8c9bde727c69bb2c1ca4",    
     "postBootScript":"",
-    "leaseEnd":"1576782731"
+    "leaseEnd":"1635000016"
 }
 

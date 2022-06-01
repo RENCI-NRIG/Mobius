@@ -27,7 +27,6 @@
 
 import requests
 import urllib3
-import string
 import logging
 from random import shuffle
 
@@ -35,8 +34,10 @@ from random import shuffle
 urllib3.disable_warnings()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
 class CometException(Exception):
     pass
+
 
 class CometInterface:
     @classmethod

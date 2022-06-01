@@ -26,15 +26,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 import sys
-import os
-import time
-import json
 import argparse
-import subprocess
-import socket
 
+from mobius.comet.comet_common_iface import CometInterface
 
-from comet_common_iface import *
 
 def main():
     parser = argparse.ArgumentParser()
@@ -78,11 +73,11 @@ def main():
     args = parser.parse_args()
 
     if args.comethost is not None and args.workflowId is not None:
-        print ("Cleaning up COMET context for workflow")
-        comet=CometInterface(args.comethost, None, args.cert, args.key, None)
-        readToken=args.workflowId + "read"
-        writeToken=args.workflowId + "write"
-        response=comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
+        print("Cleaning up COMET context for workflow")
+        comet = CometInterface(args.comethost, None, args.cert, args.key, None)
+        readToken = args.workflowId + "read"
+        writeToken = args.workflowId + "write"
+        response = comet.delete_families(args.comethost, args.workflowId, None, readToken, writeToken)
     else:
         parser.print_help()
         sys.exit(1)
