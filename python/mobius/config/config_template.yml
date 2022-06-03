@@ -36,7 +36,7 @@ resources:
     - resource:
         type: VM
         site: RENC # use FABRIC.RANDOM to choose a random site instead
-        count: 0
+        count: 1
         image: default_rocky_8
         nic_model: NIC_Basic # NIC_Basic(SRIOV), NIC_ConnectX_5 => 25GB, NIC_ConnectX_6 => 100GB
         name_prefix: node
@@ -49,18 +49,19 @@ resources:
 
     - resource:
         type: Baremetal
-        site: CHI@TACC
+        site: KVM@TACC
         count: 1
         image: CC-CentOS8
         network:
           type: sharednet1
         name_prefix: node
         flavor:
-          name: compute_cascadelake
+          name: m1.large
+          # compute_cascadelake
 
 fabric:
-  oc-host: beta-7.fabric-testbed.net
-  cm-host: beta-2.fabric-testbed.net
+  oc-host: orchestrator.fabric-testbed.net
+  cm-host: cm.fabric-testbed.net
   token-location: /Users/kthare10/renci/code/fabric/notebooks/tokens.json
 
   bastion-host: bastion-1.fabric-testbed.net
@@ -88,7 +89,7 @@ chameleon:
   project_id:
     tacc: a400724e818d40cbba1a5c6b5e714462
     uc: ae76673270164b048b59d3bd30676721
-    kvm:
+    kvm: a400724e818d40cbba1a5c6b5e714462
     edge:
 
 

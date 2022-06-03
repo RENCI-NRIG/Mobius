@@ -25,6 +25,8 @@
 import logging
 from typing import List
 
+from tabulate import tabulate
+
 from mobius.controller.chi.network import Network
 from mobius.controller.chi.node import Node
 from mobius.controller.util.config import Config
@@ -79,5 +81,26 @@ class Slice:
     def get_nodes(self) -> List[Node]:
         return self.nodes
 
+    def list_nodes(self) -> list:
+        table = []
+        for node in self.get_nodes():
+            table.append([node.get_reservation_id(),
+                          node.get_name(),
+                          node.get_site(),
+                          node.get_flavor(),
+                          node.get_image(),
+                          node.get_management_ip(),
+                          node.get_reservation_state()
+                          ])
+
+        return tabulate(table, headers=["ID", "Name", "Site", "Flavor", "Image",
+                                        "Management IP", "State"])
+
     def get_networks(self) -> List[Network]:
         return self.networks
+
+    def __str__(self):
+        table = [["Slice Name", self.name],
+                 ]
+
+        return tabulate(table)

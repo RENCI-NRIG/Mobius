@@ -35,9 +35,9 @@ from mobius.controller.util.config import Config
 
 
 class FabricClient(ApiClient):
-    def __init__(self, *, slice_name: str, logger: logging.Logger, fabric_config: dict, runtime_config: dict):
+    def __init__(self, *, logger: logging.Logger, fabric_config: dict, runtime_config: dict):
         """ Constructor """
-        self.slice_name = slice_name
+        self.slice_name = None
         self.logger = logger
         self.slice_id = None
         self.slice_object = None
@@ -65,12 +65,13 @@ class FabricClient(ApiClient):
         except Exception as e:
             print(f"Error: {e}")
 
-    def add_resources(self, *, resource: dict):
+    def add_resources(self, *, resource: dict, slice_name: str):
         if resource.get(Config.RES_COUNT) < 1:
             return
         # Create Slice
         self.logger.debug(f"Adding {resource} to {self.slice_name}")
         if self.slice_object is None:
+            self.slice_name = slice_name
             self.slice_object = fablib.new_slice(self.slice_name)
 
         interface_list = []

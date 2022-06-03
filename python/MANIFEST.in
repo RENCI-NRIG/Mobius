@@ -1,2 +1,3 @@
+include mobius/config/*.yml
 include Readme.md
 include LICENSE

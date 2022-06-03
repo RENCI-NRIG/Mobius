@@ -45,7 +45,7 @@ class ApiClient(ABC):
         """
 
     @abstractmethod
-    def add_resources(self, *, resource: dict):
+    def add_resources(self, *, resource: dict, slice_name: str):
         """
         Build the topology
         """

@@ -49,17 +49,16 @@ class Controller:
         self.chi_client = None
 
         runtime_config = self.config.get_runtime_config()
-        slice_name = runtime_config.get(Config.RUNTIME_SLICE_NAME, "slice-1")
         fabric_config = self.config.get_fabric_config()
         if fabric_config is not None:
             self.__setup_fabric(fabric_config=fabric_config, runtime_config=runtime_config)
             from mobius.controller.fabric.fabric_client import FabricClient
-            self.fabric_client = FabricClient(slice_name=slice_name, logger=self.logger, fabric_config=runtime_config,
+            self.fabric_client = FabricClient(logger=self.logger, fabric_config=runtime_config,
                                               runtime_config=runtime_config)
 
         chi_config = self.config.get_chi_config()
         if chi_config is not None:
-            self.chi_client = ChiClient(slice_name=slice_name, logger=self.logger, chi_config=chi_config,
+            self.chi_client = ChiClient(logger=self.logger, chi_config=chi_config,
                                         runtime_config=runtime_config)
 
     @staticmethod
@@ -87,19 +86,21 @@ class Controller:
         # print('Please input private key passphrase. Press enter for no passphrase.')
         # os.environ['FABRIC_SLICE_PRIVATE_KEY_PASSPHRASE']=getpass()
 
-    def create(self):
+    def create(self, slice_name: str = None):
         try:
             self.logger.debug("Starting create")
+            if slice_name is None:
+                slice_name = self.config.get_runtime_config()[Config.RUNTIME_SLICE_NAME]
             resources = self.config.get_resource_config()
             for resource in resources:
                 resource_dict = resource.get(Config.RESOURCE)
                 r_type = resource_dict.get(Config.RES_TYPE).lower()
                 if r_type == Config.RES_TYPE_BM.lower():
                     # Bare metal on CHI
-                    self.chi_client.add_resources(resource=resource_dict)
+                    self.chi_client.add_resources(resource=resource_dict, slice_name=slice_name)
                 elif r_type == Config.RES_TYPE_VM.lower():
                     # VM on FABRIC
-                    self.fabric_client.add_resources(resource=resource_dict)
+                    self.fabric_client.add_resources(resource=resource_dict, slice_name=slice_name)
 
             if self.fabric_client.get_resources() is not None:
                 self.fabric_client.create_resources()
@@ -111,6 +112,15 @@ class Controller:
         self.fabric_client.delete_resources()
         self.chi_client.delete_resources()
 
-    def get_resources(self):
-        pass
+    def get_resources(self) -> list:
+        resources = []
+        chi_slice = self.chi_client.get_resources()
+        if chi_slice is not None:
+            resources.append(chi_slice)
+
+        fabric_slice = self.fabric_client.get_resources()
+        if fabric_slice is not None:
+            resources.append(fabric_slice)
+
+        return resources
 

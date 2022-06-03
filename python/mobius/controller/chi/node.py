@@ -24,10 +24,9 @@
 # Author Komal Thareja (kthare10@renci.org)
 import logging
 import os
-import traceback
 
 import chi
-from chi.lease import Lease, get_lease, get_lease_id
+from chi.lease import Lease, get_lease_id, get_node_reservation
 from chi.server import get_server
 
 import paramiko
@@ -51,6 +50,8 @@ class Node:
         self.private_key_file = os.environ['OS_SLICE_PRIVATE_KEY_FILE']
         self.public_key_file = os.environ['OS_SLICE_PUBLIC_KEY_FILE']
         self.retry = 5
+        self.default_username = "cc"
+        self.state = None
 
     def __is_lease_active(self, *, lease: Lease = None) -> bool:
         if lease is None:
@@ -68,16 +69,12 @@ class Node:
     def __delete_lease(self, *, lease: Lease):
         lease_id = lease.id
         self.logger.info(f"Deleting lease: {lease}")
-        print("Deleting lease")
         lease.delete()
-        print("Delete done")
         for i in range(0, self.retry):
-            print("Checking lease for delete done")
             if self.__lease_exists(lease_id=lease_id) is None:
                 break
             else:
                 time.sleep(30)
-        print("Out of delete")
 
     def __lease_exists(self, *, lease_id: str = None) -> Lease or None:
         try:
@@ -96,30 +93,71 @@ class Node:
 
         # Lease Exists
         if existing_lease is not None:
-            print("KOMAL -- existing lease")
             # Lease is not ACTIVE; delete it
             if not self.__is_lease_active(lease=existing_lease):
-                print("KOMAL -- existing lease delete")
                 self.logger.info("Deleting the existing non-Active lease")
                 self.__delete_lease(lease=existing_lease)
             # Use existing lease
             else:
-                print("KOMAL -- using existing lease")
                 self.lease = existing_lease
                 return
 
         # Lease doesn't exist Create a Lease
         self.logger.info("Creating the lease")
-        print("Before create")
         self.lease = Lease(name=f'{self.slice_name}-{self.name}', node_type=self.flavor)
-        print("After create")
         try:
             self.lease.wait()
         except Exception as e:
             self.logger.debug(self.lease.lease)
             self.logger.error(f"Failed to wait for the lease to be ACTIVE: {e}")
 
+    def get_reservation_id(self):
+        if self.lease is not None:
+            return get_node_reservation(self.lease.id)
+        return None
+
     def create(self):
+        if self.site == "KVM@TACC":
+            self.__create_kvm()
+        else:
+            self.__create_baremetal()
+
+    def __server_exists(self) -> bool:
+        try:
+            server_id = chi.server.get_server_id(f'{self.slice_name}-{self.name}')
+            if server_id is not None:
+                server = chi.server.get_server(server_id)
+                self.logger.info(f"Server: {server._info}")
+                self.state = server._info['OS-EXT-STS:vm_state']
+                addresses = server._info['addresses'][self.network]
+                for a in addresses:
+                    if a['OS-EXT-IPS:type'] == 'floating':
+                        self.mgmt_ip = a['addr']
+                return True
+        except Exception as e:
+            self.logger.error(f"Server {self.slice_name}-{self.name} does not exist")
+        return False
+
+    def __create_kvm(self):
+        # Select your project
+        chi.set('project_name', self.project_name)
+        chi.set('project_domain_name', 'default')
+
+        if self.__server_exists():
+            self.logger.info(f"Server {self.slice_name}-{self.name} already exists!")
+            return
+
+        # Create the VM
+        server = chi.server.create_server(server_name=f'{self.slice_name}-{self.name}', image_name=self.image,
+                                          network_name=self.network, key_name=self.key_pair, flavor_name=self.flavor)
+
+        # Wait for VM to be Active
+        chi.server.wait_for_active(server_id=server.id)
+
+        # Attach the floating IP
+        self.mgmt_ip = chi.server.associate_floating_ip(server_id=server.id)
+
+    def __create_baremetal(self):
         # Select your project
         chi.set('project_name', self.project_name)
         chi.set('project_domain_name', 'default')
@@ -129,6 +167,10 @@ class Node:
 
         self.__create_lease()
 
+        if self.__server_exists():
+            self.logger.info(f"Server {self.slice_name}-{self.name} already exists!")
+            return
+
         # Created Lease is not Active
         if not self.__is_lease_active():
             self.logger.error("Stopping the provisioning as the lease could not be created")
@@ -137,20 +179,22 @@ class Node:
         self.logger.info(f"Using the lease {self.lease.lease}")
 
         # Launch the server
-        server = self.lease.create_server(name=self.name, image=self.image,
-                                          net_name=self.network,
-                                          key=self.key_pair)
-        server.wait()  # Ensure server has started
+        server = chi.server.create_server(server_name=f'{self.slice_name}-{self.name}', image_name=self.image,
+                                          network_name=self.network, key_name=self.key_pair,
+                                          reservation_id=self.get_reservation_id())
 
-        server.associate_floating_ip()
-        server = get_server(self.name)
-        self.mgmt_ip = server.ip
+        # Wait for Server to be Active
+        chi.server.wait_for_active(server_id=server.id)
+
+        # Attach the floating IP
+        self.mgmt_ip = chi.server.associate_floating_ip(server_id=server.id)
 
     def delete(self):
-        server = get_server(self.name)
+        server = chi.server.get_server(self.name)
         if server is not None:
             server.delete()
-        self.lease.delete()
+        if self.lease is not None:
+            self.lease.delete()
 
     def __get_paramiko_key(self, private_key_file: str, private_key_passphrase: str = None):
 
@@ -203,7 +247,7 @@ class Node:
                 client.set_missing_host_key_policy(paramiko.MissingHostKeyPolicy())
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                client.connect(self.mgmt_ip, username="cc", pkey=key)
+                client.connect(self.mgmt_ip, username=self.default_username, pkey=key)
 
                 ftp_client=client.open_sftp()
                 file_attributes = ftp_client.put(local_file_path, remote_file_path)
@@ -252,7 +296,7 @@ class Node:
                 client.set_missing_host_key_policy(paramiko.MissingHostKeyPolicy())
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                client.connect(self.mgmt_ip, username="cc", pkey=key)
+                client.connect(self.mgmt_ip, username=self.default_username, pkey=key)
 
                 ftp_client = client.open_sftp()
                 ftp_client.get(remote_file_path, local_file_path)
@@ -362,11 +406,11 @@ class Node:
                 client = paramiko.SSHClient()
                 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                client.connect(self.mgmt_ip, username="cc", pkey=key)
+                client.connect(self.mgmt_ip, username=self.default_username, pkey=key)
 
                 stdin, stdout, stderr = client.exec_command('echo \"' + command + '\" > /tmp/chi_execute_script.sh; chmod +x /tmp/chi_execute_script.sh; /tmp/chi_execute_script.sh')
-                rtn_stdout = str(stdout.read(),'utf-8').replace('\\n','\n')
-                rtn_stderr = str(stderr.read(),'utf-8').replace('\\n','\n')
+                rtn_stdout = str(stdout.read(), 'utf-8').replace('\\n', '\n')
+                rtn_stderr = str(stderr.read(), 'utf-8').replace('\\n', '\n')
 
                 client.close()
 
@@ -388,3 +432,26 @@ class Node:
                 pass
 
         raise Exception("ssh failed: Should not get here")
+
+    def __str__(self):
+        return f"Name: {self.name} Mgmt IP: {self.mgmt_ip} Site: {self.site} Image: {self.image} " \
+               f"Slice Name: {self.slice_name} KeyPair: {self.key_pair} Project Name: {self.project_name}"
+
+    def get_name(self) -> str:
+        return f'{self.slice_name}-{self.name}'
+
+    def get_site(self) -> str:
+        return self.site
+
+    def get_flavor(self) -> str:
+        return self.flavor
+
+    def get_image(self) -> str:
+        return self.image
+
+    def get_management_ip(self) -> str:
+        return self.mgmt_ip
+
+    def get_reservation_state(self) -> str:
+        return self.state
+

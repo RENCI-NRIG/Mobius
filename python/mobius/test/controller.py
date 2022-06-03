@@ -26,4 +26,9 @@ from mobius.controller.controller import Controller
 
 if __name__ == "__main__":
     controller = Controller(config_file_location="./config.yml")
+    #controller = Controller(config_file_location="./config.yml", slice_name="test-slice")
     controller.create()
+    resources = controller.get_resources()
+    for r in resources:
+        print(r)
+        print(r.list_nodes())

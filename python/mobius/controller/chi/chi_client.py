@@ -30,8 +30,8 @@ from mobius.controller.util.config import Config
 
 
 class ChiClient(ApiClient):
-    def __init__(self, *, slice_name: str, logger: logging.Logger, chi_config: dict, runtime_config: dict):
-        self.slice_name = slice_name
+    def __init__(self, *, logger: logging.Logger, chi_config: dict, runtime_config: dict):
+        self.slice_name = None
         self.logger = logger
         self.chi_config = chi_config
         self.slice_object = None
@@ -81,7 +81,7 @@ class ChiClient(ApiClient):
     def get_available_resources(self):
         pass
 
-    def add_resources(self, *, resource: dict):
+    def add_resources(self, *, resource: dict, slice_name: str):
         if resource.get(Config.RES_COUNT) < 1:
             return
         self.logger.debug(f"Adding {resource} to {self.slice_name}")
@@ -89,6 +89,7 @@ class ChiClient(ApiClient):
         self.setup_environment(site=site)
 
         if self.slice_object is None:
+            self.slice_name = slice_name
             # Should be done only after setting up the environment
             from mobius.controller.chi.slice import Slice
             self.slice_object = Slice(name=self.slice_name, logger=self.logger,
