@@ -23,8 +23,8 @@
 #
 # Author Komal Thareja (kthare10@renci.org)
 import logging
-import os
 import traceback
+from typing import List
 
 from fabrictestbed_extensions.fablib.fablib import fablib
 from fabrictestbed_extensions.fablib.resources import Resources
@@ -37,42 +37,48 @@ from mobius.controller.util.config import Config
 class FabricClient(ApiClient):
     def __init__(self, *, logger: logging.Logger, fabric_config: dict, runtime_config: dict):
         """ Constructor """
-        self.slice_name = None
         self.logger = logger
-        self.slice_id = None
-        self.slice_object = None
         self.fabric_config = fabric_config
         self.runtime_config = runtime_config
         self.node_counter = 0
+        self.slices = {}
 
-    def get_resources(self) -> Slice:
+    def get_resources(self, slice_id: str = None, slice_name: str = None) -> List[Slice] or None:
+        if slice_id is None and slice_name is None and len(self.slices) == 0:
+            return None
         try:
-            print("get slice_id")
-            if self.slice_id is not None:
-                print("slice_id: " + str(self.slice_id))
-                return fablib.get_slice(slice_id=self.slice_id)
+            result = []
+            self.logger.info("get slice_id")
+            if slice_id is not None:
+                self.logger.info("slice_id: " + str(slice_id))
+                result.append(fablib.get_slice(slice_id=slice_id))
+            elif slice_name is not None:
+                self.logger.info("slice id is none. slice name: " + slice_name)
+                result.append(fablib.get_slice(name=slice_name))
             else:
-                print("slice id is none. slice name: " + self.slice_name)
-                return fablib.get_slice(name=self.slice_name)
+                result = self.slices.values()
+            return result
         except Exception as e:
-            print(f"Exception: {e}")
+            self.logger.info(f"Exception: {e}")
 
     def get_available_resources(self) -> Resources:
         try:
             available_resources = fablib.get_available_resources()
-            print(f"Available Resources: {available_resources}")
+            self.logger.info(f"Available Resources: {available_resources}")
             return available_resources
         except Exception as e:
-            print(f"Error: {e}")
+            self.logger.info(f"Error: {e}")
 
-    def add_resources(self, *, resource: dict, slice_name: str):
+    def add_resources(self, *, resource: dict, slice_name: str) -> Slice or None:
         if resource.get(Config.RES_COUNT) < 1:
-            return
+            return None
         # Create Slice
-        self.logger.debug(f"Adding {resource} to {self.slice_name}")
-        if self.slice_object is None:
-            self.slice_name = slice_name
-            self.slice_object = fablib.new_slice(self.slice_name)
+
+        if slice_name in self.slices:
+            self.logger.info(f"Slice {slice_name} already exists!")
+            return None
+        self.logger.debug(f"Adding {resource} to {slice_name}")
+        slice_object = fablib.new_slice(slice_name)
 
         interface_list = []
         node_count = resource.get(Config.RES_COUNT)
@@ -91,40 +97,49 @@ class FabricClient(ApiClient):
         for i in range(node_count):
             node_name = f"{node_name_prefix}{self.node_counter}"
             self.node_counter += 1
-            node = self.slice_object.add_node(name=node_name, image=image, site=site, cores=cores, ram=ram, disk=disk)
+            node = slice_object.add_node(name=node_name, image=image, site=site, cores=cores, ram=ram, disk=disk)
 
             iface = node.add_component(model=nic_model, name=f"{node_name}-nic1").get_interfaces()[0]
             interface_list.append(iface)
 
         # Layer3 Network (provides data plane internet access)
-        net1 = self.slice_object.add_l3network(name=f"{site}-network", interfaces=interface_list,
+        net1 = slice_object.add_l3network(name=f"{site}-network", interfaces=interface_list,
                                                type=network_type)
 
-    def create_resources(self) -> bool:
+        self.slices[slice_name] = slice_object
+        return slice_object
+
+    def submit_and_wait(self, *, slice_object: Slice) -> str or None:
         try:
-            if self.slice_object is None:
+            if slice_object is None:
                 raise Exception("Add Resources to the Slice, before calling create")
             # Check if the slice has more than one site then add a layer2 network
             # Submit Slice Request
             self.logger.debug("Submit slice request")
-            self.slice_id = self.slice_object.submit(wait=False)
+            slice_id = slice_object.submit(wait=False)
             self.logger.debug("Waiting for the slice to Stable")
-            self.slice_object.wait(progress=True)
-            self.slice_object.update()
-            self.slice_object.post_boot_config()
+            slice_object.wait(progress=True)
+            slice_object.update()
+            slice_object.post_boot_config()
             self.logger.debug("Slice provisioning successful")
-            return True
+            return slice_id
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
-        return False
+        return None
 
-    def delete_resources(self):
+    def delete_resources(self, *, slice_id: str = None, slice_name: str = None):
+        if slice_id is None and slice_name is None and len(self.slices) == 0:
+            return None
         try:
-            if self.slice_id is not None:
-                slice_object = fablib.get_slice(slice_id=self.slice_id)
+            if slice_id is not None:
+                slice_object = fablib.get_slice(slice_id=slice_id)
+                slice_object.delete()
+            elif slice_name is not None:
+                slice_object = fablib.get_slice(slice_name)
+                slice_object.delete()
             else:
-                slice_object = fablib.get_slice(self.slice_name)
-            slice_object.delete()
+                for s in self.slices.values():
+                    s.delete()
         except Exception as e:
-            print(f"Fail: {e}")
+            self.logger.info(f"Fail: {e}")

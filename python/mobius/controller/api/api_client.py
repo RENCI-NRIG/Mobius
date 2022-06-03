@@ -27,7 +27,7 @@ from abc import ABC, abstractmethod
 
 class ApiClient(ABC):
     @abstractmethod
-    def get_resources(self):
+    def get_resources(self, slice_id: str = None, slice_name: str = None):
         """
         Return set of the allocated Resources
         """
@@ -39,19 +39,13 @@ class ApiClient(ABC):
         """
 
     @abstractmethod
-    def create_resources(self):
-        """
-        Provision resources
-        """
-
-    @abstractmethod
     def add_resources(self, *, resource: dict, slice_name: str):
         """
         Build the topology
         """
 
     @abstractmethod
-    def delete_resources(self):
+    def delete_resources(self, *, slice_id: str = None, slice_name: str = None):
         """
         Delete provisioned resources
         """

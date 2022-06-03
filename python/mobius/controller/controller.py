@@ -86,12 +86,13 @@ class Controller:
         # print('Please input private key passphrase. Press enter for no passphrase.')
         # os.environ['FABRIC_SLICE_PRIVATE_KEY_PASSPHRASE']=getpass()
 
-    def create(self, slice_name: str = None):
+    def create(self, *, slice_name: str = None):
         try:
             self.logger.debug("Starting create")
             if slice_name is None:
                 slice_name = self.config.get_runtime_config()[Config.RUNTIME_SLICE_NAME]
             resources = self.config.get_resource_config()
+            fabric_slice = None
             for resource in resources:
                 resource_dict = resource.get(Config.RESOURCE)
                 r_type = resource_dict.get(Config.RES_TYPE).lower()
@@ -100,27 +101,29 @@ class Controller:
                     self.chi_client.add_resources(resource=resource_dict, slice_name=slice_name)
                 elif r_type == Config.RES_TYPE_VM.lower():
                     # VM on FABRIC
-                    self.fabric_client.add_resources(resource=resource_dict, slice_name=slice_name)
+                    fabric_slice = self.fabric_client.add_resources(resource=resource_dict, slice_name=slice_name)
 
-            if self.fabric_client.get_resources() is not None:
-                self.fabric_client.create_resources()
+            if fabric_slice is not None:
+                self.fabric_client.submit_and_wait(slice_object=fabric_slice)
         except Exception as e:
             self.logger.error(f"Exception occurred while creating resources: {e}")
             self.logger.error(traceback.format_exc())
 
-    def delete(self):
-        self.fabric_client.delete_resources()
-        self.chi_client.delete_resources()
+    def delete(self, *, slice_name: str = None):
+        self.fabric_client.delete_resources(slice_name=slice_name)
+        self.chi_client.delete_resources(slice_name=slice_name)
 
     def get_resources(self) -> list:
         resources = []
-        chi_slice = self.chi_client.get_resources()
-        if chi_slice is not None:
-            resources.append(chi_slice)
+        chi_slices = self.chi_client.get_resources()
+        if chi_slices is not None:
+            for x in chi_slices:
+                resources.append(x)
 
-        fabric_slice = self.fabric_client.get_resources()
-        if fabric_slice is not None:
-            resources.append(fabric_slice)
+        fabric_slices = self.fabric_client.get_resources()
+        if fabric_slices is not None:
+            for x in fabric_slices:
+                resources.append(x)
 
         return resources
 

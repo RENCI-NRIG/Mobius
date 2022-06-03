@@ -32,7 +32,10 @@ The easiest way to get started using Mobius API is to use the example shown belo
 
 ```
     # Create a controller obect
-    controller = Controller(config_file_location="./config.yml", slice_name="test-slice")
+    # Default slice name is picked up from the config file
+    controller = Controller(config_file_location="./config.yml")
+    # User specified slice name is used to identify the resources
+    #controller = Controller(config_file_location="./config.yml", slice_name="test-slice")
     # Provision the resources as specified in the configuration file
     controller.create()
     # Get the provisioned resources
