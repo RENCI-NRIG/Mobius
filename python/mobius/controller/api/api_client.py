@@ -21,23 +21,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-#
-# Author: Komal Thareja (kthare10@renci.org)
-import traceback
-
-from mobius.client.mobius import MobiusInterface
+# Author Komal Thareja (kthare10@renci.org)
+from abc import ABC, abstractmethod
 
 
-class ListWorkflow:
-    def __init__(self, args, logger):
-        self.logger = logger
-        self.args = args
+class ApiClient(ABC):
+    @abstractmethod
+    def get_resources(self):
+        """
+        Return set of the allocated Resources
+        """
 
-    def list(self):
-        try:
-            mb = MobiusInterface()
-            self.logger.info("List workflows")
-            response = mb.list_workflows(self.args.mobiushost)
-        except Exception as e:
-            self.logger.error(f"Exception occurred: {e}")
-            self.logger.error(traceback.format_exc())
+    @abstractmethod
+    def get_available_resources(self):
+        """
+        Return set of the available Resources
+        """
+
+    @abstractmethod
+    def create_resources(self):
+        """
+        Provision resources
+        """
+
+    @abstractmethod
+    def add_resources(self, *, resource: dict):
+        """
+        Build the topology
+        """
+
+    @abstractmethod
+    def delete_resources(self):
+        """
+        Delete provisioned resources
+        """

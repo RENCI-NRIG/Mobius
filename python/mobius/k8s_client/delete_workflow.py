@@ -29,7 +29,7 @@ from ssl import create_default_context, Purpose
 
 from kafka import KafkaProducer
 
-from mobius import MobiusInterface
+from mobius.client.mobius import MobiusInterface
 
 
 class DeleteWorkflow:

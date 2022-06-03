@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from mobius import MobiusInterface
+from mobius.client.mobius import MobiusInterface
 
 
 class GetWorkflow:
