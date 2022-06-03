@@ -122,7 +122,7 @@ resources:
 # <a name="install"></a>Installation
 You can install using the following command
 ```
-pip install mobius
+pip install mobius-py
 ```
 
 ## Requirements:

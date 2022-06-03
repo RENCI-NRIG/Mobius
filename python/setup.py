@@ -41,7 +41,7 @@ with open("requirements.txt", "r") as fh:
     requirements = fh.read()
 
 setup(
-    name="mobius",
+    name="mobius-py",
     version=__VERSION__,
     description="Mobius Framework",
     author="Komal Thareja",
