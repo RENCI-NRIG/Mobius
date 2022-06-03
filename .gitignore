@@ -142,5 +142,5 @@ buildNumber.properties
 .DS_Store
 python/__pycache__/
 docker/logs/
-python/mobius/config/config.yml
+config.yml
 docker/config/application.properties
