@@ -144,3 +144,5 @@ python/__pycache__/
 docker/logs/
 config.yml
 docker/config/application.properties
+*.log
+__pycache__
