@@ -394,7 +394,7 @@ class Node:
 
     def execute(self, command, retry=3, retry_interval=10):
         """
-        Runs a command on the FABRIC node.
+        Runs a command on the node.
         :param command: the command to run
         :type command: str
         :param retry: the number of times to retry SSH upon failure
