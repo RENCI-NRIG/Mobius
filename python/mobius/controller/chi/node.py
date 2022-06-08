@@ -70,7 +70,7 @@ class Node:
         self.logger.info(f"Deleting lease: {self.leased_resource_name}")
         chi.lease.delete_lease(self.leased_resource_name)
 
-    def __create_lease(self):
+    def __create_lease(self) -> bool:
         # Check if the lease exists
         existing_lease = None
         try:
@@ -86,10 +86,10 @@ class Node:
                 self.__delete_lease()
             # Use existing lease
             else:
-                return
+                return True
 
         # Lease doesn't exist Create a Lease
-        self.logger.info("Creating the lease")
+        self.logger.info(f"Creating the lease - {self.leased_resource_name}")
         reservations = [{
             "resource_type": "physical:host",
             "resource_properties": f'["==", "$node_type", "{self.flavor}"]',
@@ -103,6 +103,7 @@ class Node:
             chi.lease.wait_for_active(self.leased_resource_name)
         except Exception as e:
             self.logger.error("Error occurred while waiting for the lease to be Active")
+            self.__delete_lease()
             return False
         return True
 
