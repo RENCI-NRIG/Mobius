@@ -110,6 +110,7 @@ class ChiClient(ApiClient):
         try:
             if slice_name is not None:
                 if slice_name in self.slices:
+                    self.logger.info(f"Deleting slice {slice_name}")
                     slice_object = self.slices.get(slice_name)
                     slice_object.delete()
             else:

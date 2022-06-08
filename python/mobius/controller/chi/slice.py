@@ -74,8 +74,10 @@ class Slice:
 
     def delete(self):
         for n in self.nodes:
+            self.logger.info(f"Deleting node: {n}")
             n.delete()
         for n in self.networks:
+            self.logger.info(f"Deleting network: {n}")
             n.delete()
 
     def get_nodes(self) -> List[Node]:

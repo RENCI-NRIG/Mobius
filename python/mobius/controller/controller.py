@@ -36,12 +36,13 @@ class Controller:
         self.config = Config(path=config_file_location)
         log_config = self.config.get_log_config()
         self.logger = logging.getLogger(str(log_config.get(Config.PROPERTY_CONF_LOGGER, __name__)))
+        log_level = log_config.get(Config.PROPERTY_CONF_LOG_LEVEL, logging.INFO)
 
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(log_level)
         file_handler = RotatingFileHandler(log_config.get(Config.PROPERTY_CONF_LOG_FILE),
                                            backupCount=int(log_config.get(Config.PROPERTY_CONF_LOG_RETAIN)),
                                            maxBytes=int(log_config.get(Config.PROPERTY_CONF_LOG_SIZE)))
-        logging.basicConfig(level=logging.DEBUG,
+        logging.basicConfig(level=log_level,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler], force=True)
 
