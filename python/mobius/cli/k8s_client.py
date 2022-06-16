@@ -29,10 +29,10 @@ import sys
 import traceback
 from logging.handlers import RotatingFileHandler
 
-from get_workflow import GetWorkflow
-from list_workflow import ListWorkflow
-from create_workflow import CreateWorkflow
-from delete_workflow import DeleteWorkflow
+from mobius.k8s_client.get_workflow import GetWorkflow
+from mobius.k8s_client.list_workflow import ListWorkflow
+from mobius.k8s_client.create_workflow import CreateWorkflow
+from mobius.k8s_client.delete_workflow import DeleteWorkflow
 
 
 class K8sClient:
@@ -53,7 +53,7 @@ class K8sClient:
 
     def __set_up_parser(self):
         parser = argparse.ArgumentParser(
-            description=f'Python client to create Condor cluster using mobius.\nUses master.json, submit.json and '
+            description=f'Python client to create Condor cluster using client.\nUses master.json, submit.json and '
                         f'worker.json for compute requests present in data directory specified.\nCurrently only '
                         f'supports provisioning compute resources. Other resources can be provisioned via '
                         f'mobius_client.\nCreates COMET contexts for Chameleon resources and thus enables '

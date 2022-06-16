@@ -1,5 +1,3 @@
-# coding: utf-8
-
 #!/usr/bin/env python3
 # MIT License
 #
@@ -25,39 +23,16 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from setuptools import setup, find_packages
-from mobius import __VERSION__
-# To install the library, run the following
-#
-# python setup.py install
-#
-# prerequisite: setuptools
-# http://pypi.python.org/pypi/setuptools
+from mobius.client.mobius import MobiusInterface
 
-with open("Readme.md", "r") as fh:
-    long_description = fh.read()
 
-with open("requirements.txt", "r") as fh:
-    requirements = fh.read()
+class GetWorkflow:
+    def __init__(self, args, logger):
+        self.logger = logger
+        self.args = args
 
-setup(
-    name="mobius-py",
-    version=__VERSION__,
-    description="Mobius Framework",
-    author="Komal Thareja",
-    author_email="kthare10@renci.org",
-    url="https://github.com/RENCI-NRIG/Mobius",
-    keywords=["Mobius Framework", "Cloud", "FABRIC", "Chameleon", "MOC"],
-    install_requires=requirements,
-    setup_requires=requirements,
-    packages=find_packages(),
-    include_package_data=True,
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.7'
-)
+    def get(self):
+        mb = MobiusInterface()
+        self.logger.info("Getting status of workflow")
+        response = mb.get_workflow(self.args.mobiushost, self.args.workflowId)
+        return response

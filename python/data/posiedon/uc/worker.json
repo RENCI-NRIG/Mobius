@@ -1,0 +1,12 @@
+{
+    "cpus":"1",
+    "gpus":"0",
+    "ramPerCpus":"4096",
+    "diskPerCpus":"5000",
+    "hostNamePrefix":"worker",
+    "imageName":"CC-CentOS8",
+    "networkType":"default",
+    "networkCidr":"192.168.125.0/24",
+    "forceflavor":"compute_skylake",
+    "postBootScript":"#!/bin/bash\nyum install -y wget\n wget  http://geni-images.renci.org/images/kthare10/scripts/flynet/flynet_mobius_start.sh -O /root/mobius_start_up.sh\n sh /root/mobius_start_up.sh WORKFLOW all"
+}

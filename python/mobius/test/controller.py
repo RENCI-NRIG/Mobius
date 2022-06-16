@@ -21,18 +21,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-#
-# Author: Komal Thareja (kthare10@renci.org)
-from mobius import MobiusInterface
+# Author Komal Thareja (kthare10@renci.org)
+import time
 
+from mobius.controller.controller import Controller
 
-class GetWorkflow:
-    def __init__(self, args, logger):
-        self.logger = logger
-        self.args = args
+if __name__ == "__main__":
+    #controller = Controller(config_file_location="./config.yml")
+    controller = Controller(config_file_location="./config.yml")
+    controller.create(slice_name="test-slice")
+    resources = controller.get_resources()
+    for r in resources:
+        print(r)
+        print(r.list_nodes())
+        for n in r.get_nodes():
+            print(n)
 
-    def get(self):
-        mb = MobiusInterface()
-        self.logger.info("Getting status of workflow")
-        response = mb.get_workflow(self.args.mobiushost, self.args.workflowId)
-        return response
+    print("Sleeping for 10 seconds")
+    time.sleep(10)
+    controller.delete(slice_name="test-slice")

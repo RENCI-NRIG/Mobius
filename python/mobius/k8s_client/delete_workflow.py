@@ -29,7 +29,7 @@ from ssl import create_default_context, Purpose
 
 from kafka import KafkaProducer
 
-from mobius import MobiusInterface
+from mobius.client.mobius import MobiusInterface
 
 
 class DeleteWorkflow:
@@ -56,7 +56,7 @@ class DeleteWorkflow:
 
     def __delete_prometheus_target(self, ip):
         try:
-            topic_name = 'mobius-promeithus'
+            topic_name = 'client-promeithus'
             context = self.__create_ssl_context(cafile="certs/DigiCertCA.crt",
                                                 certfile="certs/client.pem",
                                                 keyfile="certs/client.key",
