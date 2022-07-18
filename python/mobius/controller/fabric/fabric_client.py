@@ -113,6 +113,14 @@ class FabricClient(ApiClient):
         try:
             if slice_object is None:
                 raise Exception("Add Resources to the Slice, before calling create")
+
+            # Check if slice already exists; return existing slice
+            existing_slices = self.get_resources(slice_name=slice_object.get_name())
+            if existing_slices is not None and len(existing_slices) > 0:
+                self.slices[slice_object.get_name()] = existing_slices[0]
+                return existing_slices[0].get_slice_id()
+
+
             # Check if the slice has more than one site then add a layer2 network
             # Submit Slice Request
             self.logger.debug("Submit slice request")
