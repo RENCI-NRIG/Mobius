@@ -1,194 +1,592 @@
 # Table of contents
 
-- [Mobius](#Mobius)
-  - [Component Diagram](#component)
-  - [Cloud API](#api)
-    - [Ahab](#ahab)
-    - [Apache Jclouds](#jclouds)
-  - [Workflow Database](#db)
-  - [Periodic Processor](#pp)
-  - [Policy Monitor](#pm)
-  - [Mobius Controller](#mc)
-  - [Mobius APIs](#todo)
-  - [How to use or launch Mobius?](#docker)
-# <a name="Mobius"></a>DyNamo Network-centric Platform: Mobius
-A network-centric platform called Mobius depicted in Figure includes (a) support for integrated, multi-cloud resource provisioning and for high-performance science data flows across diverse infrastructures, and (b) enhanced mechanisms for interacting with higher level application and workflow management systems and transforming high-level resource requests to low-level provisioning actions, thereby bridging the abstraction gap between data-driven science applications and resource provisioning systems, and (c) transparently maintain the quality of service of the provisioned end-to-end infrastructure through continuous monitoring and control. Mobius was enhanced to support the provisioning of network connections between compute resources across sites/clouds and modulating the bandwidth on these network connections.
+ - [Description](#descr)
+ - [Installation](#install)
+   - [Mobius Client](#mbclient)
+     - [Usage](#usage1)
+   - [K8s Client](#k8sclient)
+     - [Usage](#k8susage)
+     - [Examples](#k8sexamples)
+   - [Condor Client](#condorclient)
+     - [Usage](#usage2)   
+   - [Json Data](#json)
+   - [Certificates](#certs)
+   - [Mobius Client Examples](#mobius_client_examples)
+     - [Create a workflow](#createworkflow)
+     - [Create a compute node in a workflow](#createcompute)
+     - [Create a stitch port in a workflow](#createstitchport)
+     - [Get status of a workflow](#getworkflow)
+     - [Delete a workflow](#deleteworkflow)
+     - [List workflows](#listworkflow)
+   - [Condor Client Examples](#condor_client_examples)
+     - [Create a condor cluster](#create)
+     - [Get status of condor cluster](#get)
+     - [Delete condor cluster](#delete)
+     - [List workflows](#list)
+ 
+# <a name="descr"></a>Description
+The Mobius API is a Python library that simplifies the native cloud interfaces for various clouds such as FABRIC, 
+Chameleon and adds many additional capabilities that are commonly used to create experiments.
 
-The  Mobius  platform  has  been  implemented  as  a  Springframework  based  REST  server  and  exposes  a  REST  API  forautomated provisioning of network and compute resources. Itconsumes high level application-aware resource requests fromscientists or from workflow systems managing the applicationson  behalf  of  scientists  and  automatically  provisions  computeresources and network paths using the native APIs of differentresource  providers.  The  structure  of  the  different  high-levelprovisioning  requests  for  compute,  storage  and  network  re-sources are documented in the Mobius github repository [Design](./mobius/Readme.md). Essentially, the applications can specify to Mobius their resourcerequirements over time in the form of a Gantt chart. Scientists can easily set up application-specific environments by invokingthe Mobius REST API. 
+The easiest way to get started using Mobius API is to use the example shown below.
 
-
-- Design details can be found in [Design](./mobius/Readme.md)
-- Interface specifications can be found in [Interface](./mobius/Interface.md)
-- Code can be generated via swagger by referring to [HowToGenerateCodeFromSwagger](./mobius/HowToGenerateCodeFromSwagger.md)
-## <a name="component"></a>Component Diagram
-![Component Diagram](./mobius/plantuml/images/mobius.png)
-
-## <a name="api"></a> Multi-cloud and Network Resource Manager
-At this layer, Mobius translates application requests to native cloud specific requests. Since we are leveraging the ExoGENI network overlay to set up data flow paths, the application-level data movement requests get translated to ExoGENI network provisioning requests. The Multi-cloud and Network Resource Manager consists of two native cloud specific adapters to provision resources on our target infrastructures.
-
-### <a name="ahab"></a> AHAB 
-is a collection of graph-based Java libraries designed to allow applications to control, modify and manage the state of ExoGENI slices. The native request and resource representation used by ExoGENI is based on declarative representations using NDL-OWL. Ahab includes libndl, which provides a graph-based abstraction for interacting with ExoGENI slices. It primary handles the conversion of an abstract topology graph consisting of ComputeNodes, networks, stitchports, storage, etc. into NDL-OWL resource requests, which are then sent to ExoGENI using another library called libtransport. The Mobius Ahab adapter leverages the Ahab library functionalities to instantiate compute resources on ExoGENI racks and to create network paths between stitchports, ExoGENI racks and other cloud providers like ChameleonCloud. 
-
-## <a name="jclouds"></a> Apache Jclouds
-Apache jclouds is an open source multi-cloud toolkit for the Java platform that allows to create applications that are portable across different cloud providers while maintaining full control to use cloud-specific features. We have implemented a Mobius jclouds adapter for OpenStack to provision resources on Chameleon Cloud, XSEDE JetStream, Amazon AWS and Mass Open Cloud. We also plan to add support for AWS DirectConnect to move data in and out of the EC2 provisioned resources.
-
-## <a name="db"></a> Workflow Database
-The information about all the resources provisioned for a workflow or an application on different clouds and the corresponding application request parameters is maintained in the  Workflow Database (PostgreSql hosted on a docker container).
-
-## <a name="pp"></a> Periodic Processor
-The high level application requests can be represented as a Gantt chart of required resources for a particular application or workflow. The periodic processor triggers the provisioning of the resources scheduled to be provisioned at a particular time. It also monitors the provisioning status of all the resources instantiated for various application workflows and triggers notifications to applications/workflow management system via an AMQP based messaging space.
-
-## <a name="pm"></a> Monitoring and Control
-The Prometheus monitoring system has been added to the DyNamo ecosystem. Mobius automatically configures the Prometheus node exporter on each compute node to push system metrics to a Prometheus server hosted at RENCI. The metrics collected by Prometheus enable us to dynamically take actions to ensure the infrastructure QoS. The actions include enabling compute, storage and network elasticity, i.e., growing and shrinking compute or storage resource pools and increasing or decreasing network properties of links. To visualize the collected data in a comprehensive and easy to understand way, an instance of Grafana has been configured to pull the metric data from Prometheus and plot various graphs on a dashboard depicted in Figure.
-
-![Monitoring Diagram](./mobius/plantuml/images/monitoring.png)
-
-### Example Monitoring Dashboard
-![Monitoring Dashboard](./mobius/plantuml/images/grafana.png)
-
-## <a name="pm"></a> Virtual SDX
-A Virtual Software Defined Exchange (vSDX) is defined as a virtual interconnect point between multiple adjacent domains, e.g, instruments, compute resources, or data/storage systems. Like a static SDX, a vSDX uses Software Define Networking (SDN) within the exchange to enforce different network policies.
-
-In our case, the vSDX support is provided by the ExoPlex network architecture depicted in Figure below. ExoPlex uses an elastic slice controller to coordinate dynamic circuits and the Bro security monitors via Ahab. The controller exposes REST APIs for clients to request network stitching and connectivity and to express QoS parameters. The vSDX slice is comprised by virtual compute nodes running OpenVSwitch, OpenFlow controllers, and Bro traffic monitors. Traffic flow and routing within the vSDX slice are governed of a variant of the Ryu rest router SDN controller. The vSDX slice controller computes routes internally for traffic transiting through the vSDX network, and invokes the northbound SDN controller API to install them. The SDN controller runs another Ryu module (rest ofctl) to block traffic from offending senders. If a Bro node detects that traffic violates a Bro policy, it blocks the sender’s traffic by invoking a rest ofctl API via the Bro NetControl plugin.
-
-In our scenario, the Exoplex Slice controller runs as a docker container. Mobius has been enhanced to communicate with the ExoPlex Slice controller to establish network connectivity between ExoGENI and Chameleon via layer2 networks and to allocate bandwidth to individual workflows. Once connectivity is established, Mobius triggers REST API calls to publish network prefixes, sets up routes between network prefixes and dynamically applies different bandwidths as needed. Additionally, we have implemented a Python based interface that can be used to provision the required resources. This interface enables programmatic resource provisioning and is capable of spinning up resources, establishing connectivity and implementing network QoS policies on a per workflow ensemble level.
-![VSDX](./mobius/plantuml/images/dynamo.png)
-
-### Exoplex vSDX
-![Exoplex vSDX](./mobius/plantuml/images/exoplex.png)
-
-### Cross Test Bed Resources with Virtual SDX Example and Qos Rules applied
-![VSDX Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/vsdx-qos.png)
-
-### Cross Test Bed Resources without Virtual SDX Example
-![Example cluster with Exogeni and Chameleon](./mobius/plantuml/images/novsdx-ex.png)
-
-## <a name="mc"></a> Mobius Controller
-The Mobius controller orchestrates all the above components and processes the incoming REST requests to trigger appropriate Mobius components. 
-
-## <a name="todo"></a>APIS
-API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/mobius/1.0.0)
-
-#### Version
-
-The Orchestrator API is versioned based on the release found in GitHub.
-
-API :
-
-Resource | Action | Input | Output
-:--------|:----:|:---:|:---:
-`/listWorkflows` | GET: Get the list of active workflows | NA | Response format
-`/workflow` | GET: Get the status of the workflow by passing workflow id | `workflowID` Workflow ID | Response format
-`/workflow` | POST: Creates a new workflow | `workflowID` Workflow ID | Response format
-`/workflow` | POST: Creates a new workflow | `workflowID` Workflow ID | Response format
-`/workflow` | DELETE: Delete a workflow | `workflowID` Workflow ID | Response format
-`/storage` | POST: Request/modify storage resource for a workflow | `workflowID` Workflow ID, `storage request` body | Response format
-`/network` | POST: Request/modify network resource for a workflow | `workflowID` Workflow ID, `network request` body | Response format
-`/compute` | POST: Request/modify compute resource for a workflow | `workflowID` Workflow ID, `compute request` body | Response format
-`/stitch` | POST: Request/modify stitching | `workflowID` Workflow ID, `stitch request` body | Response format
-`/sdxPrefix` | POST: Request to publish subnets and connect them at the SDX | `workflowID` Workflow ID, `prefix request` body | Response format
-`/script` | POST: Request to push command or set of commands to a node | `workflowID` Workflow ID, `script request` body | Response format
-
-
-Example: Response format
-
-```json
-{
-  "status": 0,
-  "message": "string",
-  "value": {},
-  "version": "string"
-}
 ```
-Storage Request
-```json
-{
-  "mountPoint": "string",
-  "target": "string",
-  "size": 0,
-  "leaseStart": "string",
-  "leaseEnd": "string",
-  "action": "add"
-}
+    # Create a controller obect
+    # Default slice name is picked up from the config file
+    controller = Controller(config_file_location="./config.yml")
+    # User specified slice name is used to identify the resources
+    #controller = Controller(config_file_location="./config.yml", slice_name="test-slice")
+    # Provision the resources as specified in the configuration file
+    controller.create()
+    # Get the provisioned resources
+    resources = controller.get_resources()
+    # Print the resources provisioned
+    for r in resources:
+        print(r)
+        print(r.list_nodes())
 ```
-Network Request
-```json
-{
-  "source": "string",
-  "sourceIP": "string",
-  "sourceSubnet": "string",
-  "sourceLocalSubnet": "string",
-  "destination": "string",
-  "destinationIP": "string",
-  "destinationSubnet": "string",
-  "destLocalSubnet": "string",
-  "linkSpeed": "string",
-  "leaseStart": "string",
-  "leaseEnd": "string",
-  "chameleonSdxControllerIP": "string",
-  "action": "add"
-}
+
+User is expected to provide a config file `config.yml` containing their credentials and resource parameters. Template
+`mobius/config/config_template.yml` can be used to create a `config.yml`. Please find below the list of the parameters 
+that must be updated.
+
+- Update the SSH public and private key files to be used for the provisioned VMs/Bare Metals
 ```
-Compute Request
-```json
-{
-  "site": "string",
-  "cpus": 0,
-  "gpus": 0,
-  "ramPerCpus": 0,
-  "diskPerCpus": 0,
-  "leaseStart": "string",
-  "leaseEnd": "string",
-  "coallocate": false,
-  "slicePolicy": "default",
-  "sliceName": "string",
-  "hostNamePrefix": "string",
-  "ipAddress": "string",
-  "bandwidth": "string",
-  "networkType": "default",
-  "physicalNetwork": "string",
-  "externalNetwork": "string",
-  "networkCidr": "string",
-  "vpcCidr": "string",
-  "imageUrl": "string",
-  "imageHash": "string",
-  "imageName": "string",
-  "postBootScript": "string",
-  "stitchPortUrl": "string",
-  "stitchTag": "string",
-  "stitchIP": "string",
-  "stitchBandwidth": "string",
-  "forceflavor": "string",
-  "cometFamily": "string"
-}
+runtime:
+  slice-private-key-location: /Users/kthare10/.ssh/id_rsa
+  slice-public-key-location: /Users/kthare10/.ssh/id_rsa.pub
 ```
-Stitch Request
-```json
-{
-  "target": "string",
-  "portUrl": "string",
-  "tag": "string",
-  "stitchIP": "string",
-  "bandwidth": "string"
-}
+- Update FABRIC credentials
+  - Location of the user's FABRIC tokens
+  - User's Bastion User name
+  - User's Fabric Bastion Private Key
+  - User's Project Id
 ```
-Prefix Request
-```json
-{
-  "source": "string",
-  "sourceSubnet": "string",
-  "gatewayIP": "string",
-  "destinationSubnet": "string",
-  "bandwidth": "string"
-}
+fabric:
+  token-location: /Users/kthare10/renci/code/fabric/notebooks/tokens.json
+  bastion-user-name: kthare10_0011904101
+  bastion-key-location: /Users/kthare10/.ssh/fabric-bastion
+  project_id: b9847fa1-13ef-49f9-9e07-ae6ad06cda3f
 ```
-Script Request
+
+- Update Chameleon credentials
+  - UserName
+  - Password
+  - Key Pair
+  - Project Name
+  - Project Id
 ```
-{
-  "target": "string",
-  "name": "string",
-  "script": "string"
-}
+chameleon:
+  user: kthare10
+  password: 
+  key_pair: kthare10
+  project_name: CH-822154
+  project_id:
+    tacc: a400724e818d40cbba1a5c6b5e714462
+    uc: ae76673270164b048b59d3bd30676721
+    kvm: a400724e818d40cbba1a5c6b5e714462
+    edge:
 ```
-## <a name="docker"></a>How to use or launch Mobius?
-- Refer to [Docker](./docker/Readme.md) to launch Mobius
+- Update the resource counts
+  - Set count to 0 or more depending on where the resources should be provisioned.
+  - Copy and add more resource blocks if resources are needed at additional sites
+  - Change other parameters as needed
+```
+resources:
+    - resource:
+        type: VM
+        site: RENC # use FABRIC.RANDOM to choose a random site instead
+        count: 1
+        image: default_rocky_8
+        nic_model: NIC_Basic # NIC_Basic(SRIOV), NIC_ConnectX_5 => 25GB, NIC_ConnectX_6 => 100GB
+        name_prefix: node
+        network:
+          type: IPv6 # Allowed values IPv4 or IPv6
+        flavor:
+          cores: 2
+          ram: 8
+          disk: 10
+
+    - resource:
+        type: Baremetal
+        site: KVM@TACC
+        count: 1
+        image: CC-CentOS8
+        network:
+          type: sharednet1
+        name_prefix: node
+        flavor:
+          name: m1.large
+```
+
+# <a name="install"></a>Installation
+You can install using the following command
+```
+pip install mobius-py
+```
+
+## Requirements:
+Requires python 3.9 or above version
+
+# CLI
+Mobius Python API also provides following CLI interface as well.
+- Mobius Client
+- Condor Client
+- K8s Client
+
+Details about the CLI interface can be found below.
+
+## <a name="mbclient"></a>Mobius Client
+Mobius client to trigger Moobius REST commands.
+
+### <a name="usage1"></a>Usage
+```
+usage: mobius_client.py [-h] [-s SITE] [-m MOBIUSHOST] -o OPERATION -w
+                        WORKFLOWID [-d DATA] [-r RESOURCETYPE] [-t TARGET]
+
+Python client to provision cloud resources by invoking Mobius REST Commands.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SITE, --site SITE  Site
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -o OPERATION, --operation OPERATION
+                        Operation allowed values: post|get|delete; post -
+                        provision workflow or compute or storage or
+                        stitchport; get - get a workflow; delete - delete a
+                        workflow
+  -w WORKFLOWID, --workflowId WORKFLOWID
+                        workflowId
+  -d DATA, --data DATA  data, JSON data to send; if not specified; default
+                        data is used; only used with post; must not be
+                        specified if target is indicated; must be specified
+                        for stitchport
+  -r RESOURCETYPE, --resourcetype RESOURCETYPE
+                        resourcetype allowed values:
+                        workflow|compute|storage|stitchport; only used with
+                        post; must be specified
+  -t TARGET, --target TARGET
+                        target hostname of the server to which to attach
+                        storage; only used with resourcetype storage
+```
+## <a name="k8sclient"></a>K8s Client
+Python client to provision K8s and Kube Edge Cluster by invoking various Mobius REST APIs on different clouds.
+
+### <a name="k8susage"></a>Usage
+```
+usage: k8s_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
+                     [-s3 JETSTREAMSITE] [-s4 MOCSITE] [-n1 EXOWORKERS]
+                     [-n2 CHWORKERS] [-n3 JTWORKERS] [-n4 MOCWORKERS]
+                     [-c COMETHOST] [-t CERT] [-k KEY] [-m MOBIUSHOST] -o
+                     OPERATION [-w WORKFLOWID] [-i1 EXOIPSTART]
+                     [-i2 CHIPSTART] [-i3 JTIPSTART] [-i4 MOCIPSTART]
+                     [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
+                     [-d3 JTDATADIR] [-d4 MOCDATADIR] [-kh KAFKAHOST]
+
+Python client to create Condor cluster using mobius. Uses master.json,
+submit.json and worker.json for compute requests present in data directory
+specified. Currently only supports provisioning compute resources. Other
+resources can be provisioned via mobius_client. Creates COMET contexts for
+Chameleon resources and thus enables exchanging keys and hostnames within
+workflow
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s1 EXOGENISITE, --exogenisite EXOGENISITE
+                        Exogeni Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
+                        Chameleon Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s3 JETSTREAMSITE, --jetstreamsite JETSTREAMSITE
+                        Jetstream Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s4 MOCSITE, --mocsite MOCSITE
+                        Mass Open Cloud Site at which resources must be
+                        provisioned; must be specified for create operation
+  -n1 EXOWORKERS, --exoworkers EXOWORKERS
+                        Number of workers to be provisioned on Exogeni; must
+                        be specified for create operation
+  -n2 CHWORKERS, --chworkers CHWORKERS
+                        Number of workers to be provisioned on Chameleon; must
+                        be specified for create operation
+  -n3 JTWORKERS, --jtworkers JTWORKERS
+                        Number of workers to be provisioned on Jetstream; must
+                        be specified for create operation
+  -n4 MOCWORKERS, --mocworkers MOCWORKERS
+                        Number of workers to be provisioned on Mass Open
+                        Cloud; must be specified for create operation
+  -c COMETHOST, --comethost COMETHOST
+                        Comet Host default(https://comet-
+                        hn1.exogeni.net:8111/) used only for provisioning
+                        resources on chameleon
+  -t CERT, --cert CERT  Comet Certificate default(certs/client.pem); used only
+                        for provisioning resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key default(certs/client.key); used
+                        only for provisioning resources on chameleon
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -o OPERATION, --operation OPERATION
+                        Operation allowed values: create|get|delete|list|add
+  -w WORKFLOWID, --workflowId WORKFLOWID
+                        workflowId
+  -i1 EXOIPSTART, --exoipStart EXOIPSTART
+                        Exogeni Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i2 CHIPSTART, --chipStart CHIPSTART
+                        Chameleon Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i3 JTIPSTART, --jtipStart JTIPSTART
+                        Jetstream Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i4 MOCIPSTART, --mocipStart MOCIPSTART
+                        Mass Open Cloud Start IP Address of the range of IPs
+                        to be used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time; can be specified for create operation
+  -d1 EXODATADIR, --exodatadir EXODATADIR
+                        Exogeni Data directory where to look for master.json,
+                        submit.json and worker.json; must be specified for
+                        create operation
+  -d2 CHDATADIR, --chdatadir CHDATADIR
+                        Chameleon Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d3 JTDATADIR, --jtdatadir JTDATADIR
+                        Jetstream Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d4 MOCDATADIR, --mocdatadir MOCDATADIR
+                        Mass Open Cloud Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -kh KAFKAHOST, --kafkahost KAFKAHOST
+                        Kafka Host - monitoring server; must be specified for
+                        delete operation
+```
+### <a name="k8sexamples"></a>K8s Example
+#### Provision K8s cluster on Exogeni
+User can provision Kubernetes and Kube Edge cluster on Exogeni as below:
+```
+python3 k8s_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni/ -l `date -v +2d +%s` -o create -w flynet2 -n1 2 -i1 192.168.125.10
+```
+
+#### Provision K8s cluster on Chameleon
+NOTE: Additional Configuration is required in docker/application.properties file for Chameleon KVM. Please check README in docker directory.
+##### User can provision Kubernetes and Kube Edge cluster on Chameleon KVM as below:
+```
+python3 k8s_client.py -s2 'Chameleon:KVM@TACC'  -d2 ./flynet/chameleon/ -l `date -v +2d +%s` -o create -w flynet-chameleon -n2 2 -i2 192.168.125.10
+```
+#### Provision Hybrid K8s Cluster
+- Provision Kubernetes and Kube Edge cluster on Chameleon Baremetal
+- Provision Drone and BaseStation on Exogeni
+```
+python3 k8s_client.py -s2 'Chameleon:CHI@UC'  -d2 ./flynet/chameleon-exo/ -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./flynet/exogeni-drone/  -l `date -v +2d +%s` -o create -w flynet-hybrid -n2 1 -i2 192.168.135.10 -n1 0 -i1 192.168.130.10
+```
+#### Provision Flynet with CHI@Edge
+- Provision Kubernetes and Kube Edge cluster on Chameleon Baremetal
+- Provision Drone on CHI@Edge
+```
+python3 k8s_client.py -s2 'Chameleon:CHI@UC'  -d2 ./flynet/chi-edge/ -l `date -v +2d +%s` -o create -w flynet-hybrid -n2 1 -i2 192.168.135.10 
+```
+
+## <a name="condor"></a>Condor Client
+Python client to create Condor clusters by invoking various supported Mobius REST commands.
+
+### <a name="usage2"></a>Usage
+```
+usage: condor_client.py [-h] [-s1 EXOGENISITE] [-s2 CHAMELEONSITE]
+                        [-s3 JETSTREAMSITE] [-s4 MOSSITE] [-n1 EXOWORKERS]
+                        [-n2 CHWORKERS] [-n3 JTWORKERS] [-n4 MOSWORKERS]
+                        [-c COMETHOST] [-t CERT] [-k KEY] [-m MOBIUSHOST] -o
+                        OPERATION -w WORKFLOWID [-i1 EXOIPSTART]
+                        [-i2 CHIPSTART] [-i3 JTIPSTART] [-i4 MOSIPSTART]
+                        [-l LEASEEND] [-d1 EXODATADIR] [-d2 CHDATADIR]
+                        [-d3 JTDATADIR] [-d4 MOSDATADIR] [-kh KAFKAHOST]
+
+Python client to create Condor cluster using mobius. Uses master.json,
+submit.json and worker.json for compute requests present in data directory
+specified. Currently only supports provisioning compute resources. Other
+resources can be provisioned via mobius_client. Creates COMET contexts for
+Chameleon resources and thus enables exchanging keys and hostnames within
+workflow
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s1 EXOGENISITE, --exogenisite EXOGENISITE
+                        Exogeni Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s2 CHAMELEONSITE, --chameleonsite CHAMELEONSITE
+                        Chameleon Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s3 JETSTREAMSITE, --jetstreamsite JETSTREAMSITE
+                        Jetstream Site at which resources must be provisioned;
+                        must be specified for create operation
+  -s4 MOSSITE, --mossite MOSSITE
+                        Mass Open Cloud Site at which resources must be
+                        provisioned; must be specified for create operation
+  -n1 EXOWORKERS, --exoworkers EXOWORKERS
+                        Number of workers to be provisioned on Exogeni; must
+                        be specified for create operation
+  -n2 CHWORKERS, --chworkers CHWORKERS
+                        Number of workers to be provisioned on Chameleon; must
+                        be specified for create operation
+  -n3 JTWORKERS, --jtworkers JTWORKERS
+                        Number of workers to be provisioned on Jetstream; must
+                        be specified for create operation
+  -n4 MOSWORKERS, --mosworkers MOSWORKERS
+                        Number of workers to be provisioned on Mass Open
+                        Cloud; must be specified for create operation
+  -c COMETHOST, --comethost COMETHOST
+                        Comet Host default(https://comet-
+                        hn1.exogeni.net:8111/) used only for provisioning
+                        resources on chameleon
+  -t CERT, --cert CERT  Comet Certificate default(certs/inno-
+                        hn_exogeni_net.pem); used only for provisioning
+                        resources on chameleon
+  -k KEY, --key KEY     Comet Certificate key default(certs/inno-
+                        hn_exogeni_net.key); used only for provisioning
+                        resources on chameleon
+  -m MOBIUSHOST, --mobiushost MOBIUSHOST
+                        Mobius Host e.g. http://localhost:8080/mobius
+  -o OPERATION, --operation OPERATION
+                        Operation allowed values: create|get|delete
+  -w WORKFLOWID, --workflowId WORKFLOWID
+                        workflowId
+  -i1 EXOIPSTART, --exoipStart EXOIPSTART
+                        Exogeni Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i2 CHIPSTART, --chipStart CHIPSTART
+                        Chameleon Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i3 JTIPSTART, --jtipStart JTIPSTART
+                        Jetstream Start IP Address of the range of IPs to be
+                        used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -i4 MOSIPSTART, --mosipStart MOSIPSTART
+                        Mass Open Cloud Start IP Address of the range of IPs
+                        to be used for VMs; 1st IP is assigned to master and
+                        subsequent IPs are assigned to submit node and
+                        workers; can be specified for create operation
+  -l LEASEEND, --leaseEnd LEASEEND
+                        Lease End Time; can be specified for create operation
+  -d1 EXODATADIR, --exodatadir EXODATADIR
+                        Exogeni Data directory where to look for master.json,
+                        submit.json and worker.json; must be specified for
+                        create operation
+  -d2 CHDATADIR, --chdatadir CHDATADIR
+                        Chameleon Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d3 JTDATADIR, --jtdatadir JTDATADIR
+                        Jetstream Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -d4 MOSDATADIR, --mosdatadir MOSDATADIR
+                        Mass Open Cloud Data directory where to look for
+                        master.json, submit.json and worker.json; must be
+                        specified for create operation
+  -kh KAFKAHOST, --kafkahost KAFKAHOST
+                        Kafka Host - monitoring server; must be specified for
+                        delete operation    
+```
+### <a name="json"></a>JSON Data
+Json Data for Master, Submit and Worker Nodes is read from Mobius/python/data directory.
+
+### <a name="certs"></a>Certificates
+Example Comet Certficates are present in Mobius/python/certs directory.
+
+### <a name="mobius_client_examples"></a>Mobius Client Examples
+#### <a name="createworkflow"></a>Create a workflow
+```
+python3 mobius_client.py -o post -r workflow -w abcd-1234
+```
+#### <a name="createcompute"></a>Create a compute node in a workflow
+The following example also shows IP address assignment controlled by user.
+```
+python3 mobius_client.py -o post -r compute -w abcd-1234 -d '{
+    "site":"Exogeni:UH (Houston, TX USA) XO Rack",
+    "cpus":"4",
+    "gpus":"0",
+    "ramPerCpus":"3072",
+    "diskPerCpus":"19200",
+    "hostNamePrefix":"master",
+    "ipAddress": "172.16.0.1",
+    "coallocate":"true",
+    "imageUrl":"http://geni-images.renci.org/images/kthare10/mobius/mb-centos-7/mb-centos-7.xml",
+    "imageName":"mb-centos-7",
+    "imageHash":"2dc5f35c91712845f9b6fec6bad1f6f33c64df39",
+    "leaseEnd":"1557733832",
+    "postBootScript":"curl http://geni-images.renci.org/images/cwang/Condor/scripts/exogeni-scripts/master.sh -o /root/master.sh; sh /root/master.sh"
+}'
+
+python3 mobius_client.py -o post -r compute -w abcd-1234 -f ../mobius/test/computeMaster.json
+```
+#### <a name="createstitchport"></a>Create a stitch port in a workflow
+```
+python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -d '{
+     "target":"master0",
+     "portUrl":"http://geni-orca.renci.org/owl/uhNet.rdf#UHNet/IBM/G8052/TengigabitEthernet/1/1/ethernet",
+     "tag":"2001",
+     "stitchIP": "72.16.0.1",
+     "bandwidth":"10000000"
+}'
+
+python3 mobius_client.py -o post -w abcd-1234 -r stitchPort -f ../mobius/test/stitch.json
+```
+#### <a name="getworkflow"></a>Get status of a workflow
+```
+python3 mobius_client.py -o get -w abcd-1234
+```
+#### <a name="deleteworkflow"></a>Delete a workflow
+```
+python3 mobius_client.py -o delete -w abcd-1234
+```
+#### <a name="listworkflow"></a>List workflows
+```
+python3 mobius_client.py -o get
+```
+
+### <a name="condor_client_examples"></a>Condor Client Examples
+#### <a name="create"></a>Create a condor cluster
+Create a condor cluster with 1 master, 1 submit and 1 worker node. 
+NOTE: Comet context for each node is created and neuca tools are also installed on each node. This results in hostnames and keys to be exchanged between all nodes in condor cluster
+
+##### Chameleon:
+- Master, Worker, Submit and Storage nodes on Chameleon (if json for either of the nodes is not present they are not instantiated)
+```
+python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w abcd-1114 -n2 1
+```
+##### Chameleon(with Monitoring and Stitching to Exogeni):
+```
+python3 condor_client.py  -s2 Chameleon:CHI@UC -d2 ./chameleon_mon/ -l `date -v +2d +%s` -i2 "192.168.100.5" -o create -w ch-abcd-1114 -n2 1
+```
+
+NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
+##### Exogeni
+- Master, Worker, Submit and Storage nodes on Exogeni (if json for either of the nodes is not present they are not instantiated)
+- Stitch.json if present in the directory would be used to stitch
+```
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./exogeni/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
+```
+##### Exogeni(with Monitoring)
+```
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./exogeni_mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -o create -w abcd-1114 -n1 1
+```
+##### MOC
+- Master, Worker nodes on MOC
+```
+python3 condor_client.py -o create -w casa-moc-test -s4 'Mos:moc-kzn' -d4 ./moc-casa/ -i4 "192.158.100.4" -l `date -v +2d +%s`  -n4 1
+```
+
+##### Hybrid Model: 
+- Master, Worker and Storage nodes on Exogeni
+- Storage node stitched to UNT and Chameleon
+- Storage node acts a forwarder to transfer traffic from Exogeni to Chameleon and viceversa
+- Storage node acts a forwarder to transfer traffic from UNT to Exogeni and viceversa
+###### Submit and Master node running together
+```
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+```
+###### Separate submit node
+```
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+```
+###### Submit and Master node running together with monitoring enabled
+```
+python3 condor_client.py -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@UC -d2 ./hybrid/chameleon-casa-mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 1 -n2 1
+```
+```
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon/ -s2 Chameleon:CHI@TACC -d2 ./hybrid/chameleon-casa-mon/ -l `date -v +2d +%s` -i1 "172.16.0.1" -i2 "192.168.10.5" -o create -w abcd-1114 -n1 0 -n2 1
+```
+###### Submit and Master node running together with monitoring and sdx enabled
+```
+python3 condor_client.py -s1 'Exogeni:UFL (Gainesville, FL USA) XO Rack'  -d1 ./hybrid/exogeni-casa-mon-sdx/ -s2  Chameleon:CHI@TACC -d2 ./hybrid/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.20.2" -i2 "192.168.10.6" -o create -w abcd-1114 -n1 0 -n2 1
+```
+
+NOTE: Start IP address passed via -i2 should match the network specified in JSON for the nodes.
+NOTE: Nodes for hybrid model on exogeni if instantitaed on UH rack, chameleon nodes should be instantiated on UC as stitchport from UH rack to Chameleon TACC site is not allowed 
+
+##### Cluster spanning 4 clouds
+- Master and submit node on Exogeni
+- Worker on Chameleon, Jetstream and Mass Open Cloud
+```
+python3 condor_client.py -o create -w merit-w1 -s1 'Exogeni:UH (Houston, TX USA) XO Rack'  -d1 ./merit/exogeni/ -s2 Chameleon:CHI@UC -d2 ./merit/chameleon/ -s3 'Jetstream:TACC' -d3 ./merit/jetstream/ -s4 'Mos:moc-kzn' -d4 ./merit/mos/ -l `date -v +2d +%s` -n1 1 -n2 1 -n3 1 -n4 1
+```
+##### Multiple Clusters in a single workflow spanning Exogeni and Chameleon with VSDX and Qos applied
+Mobius containers should be brought up using the following command:
+```
+docker-compose -f docker-compose_sdx.yml up -d
+```
+ 
+Note: Please update docker/docker-compose_sdx.yml and docker/config/sdx.conf to point to appropriate SSH files before bringing up the container. Mobius doesn’t control the lease of the sdx slice so it should be extended from the Flukes if it needs to stay up for more than 1 day.
+ 
+Such a configuration can be created by using the following two commands.
+ 
+###### Creating the 1st cluster
+MAC:
+```
+python3 condor_client.py -s1 'Exogeni:UMass (UMass Amherst, MA, USA) XO Rack'  -d1 ./hybrid/multi-subnet/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet1/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i1 "192.168.10.3"  -i2 "192.168.30.6" -o create -w abcd-1114 -n1 0 -n2 1
+```
+Linux:
+```
+python3 condor_client.py -s1 'Exogeni:UMass (UMass Amherst, MA, USA) XO Rack'  -d1 ./hybrid/multi-subnet/exogeni-casa-mon-sdx/  -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet1/chameleon-casa-mon-sdx/ -l `date -d "+2days" +%s` -i1 "192.168.10.3"  -i2 "192.168.30.6" -o create -w abcd-1114 -n1 0 -n2 1
+
+```
+###### Adding the 2nd cluster to the workflow
+MAC:
+```
+python3 condor_client.py -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet2/chameleon-casa-mon-sdx/ -l `date -v +2d +%s` -i2 "192.168.40.6" -o add -w abcd-1114 -n2 1
+```
+LINUX:
+```
+python3 condor_client.py -s2  'Chameleon:CHI@UC' -d2 ./hybrid/multi-subnet/subnet2/chameleon-casa-mon-sdx/ -l `date -d "+2days" +%s` -i2 "192.168.40.6" -o add -w abcd-1114 -n2 1
+```
+
+Cluster will look like ![this](../mobius/plantuml/images/vsdx-qos.png)
+
+###### Posiedon: Adding Cluster spanning CHI@UC and CHI@TACC with GPUs
+- Create Master @ TACC
+```
+python3 condor_client.py -o create -w pos-wf -s2 'Chameleon:CHI@TACC' -d2 pos/tacc -n2 0 -l `date -v +1d +%s`
+```
+- Add CPU Worker @ UC
+```
+python3 condor_client.py -o add -w pos-wf -s2 'Chameleon:CHI@UC' -d2 pos/uc/cpu -n2 1 -l `date -v +1d +%s`
+```
+- Add GPU Worker @ TACC
+```
+python3 condor_client.py -o add -w pos-wf -s2 'Chameleon:CHI@UC' -d2 pos/uc/gpu -n2 1 -l `date -v +1d +%s`
+```
+###### Posiedon: Adding Cluster KVM@TACC
+```
+python3 condor_client.py -o create -w pos-wf -s2 'Chameleon:KVM@TACC' -d2 pos/kvm/ -n2 1 -l `date -v +1d +%s`
+```
+
+#### <a name="get"></a>Get status of condor cluster
+```
+python3 condor_client.py -o get -w abcd-1114
+```
+
+#### <a name="delete"></a>Delete condor cluster
+```
+python3 condor_client.py -o delete -w abcd-1114 
+```
+#### <a name="list"></a>List workflows
+```
+python3 condor_client.py -o list
+```
