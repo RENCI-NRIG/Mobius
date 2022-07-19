@@ -1,9 +1,0 @@
-{
-    "hosts": [
-        {
-            "zone": "nova",
-            "host_name": "ubuntu",
-            "service": "compute"
-        }
-    ]
-}
