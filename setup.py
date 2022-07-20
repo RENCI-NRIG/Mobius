@@ -34,7 +34,7 @@ from mobius import __VERSION__
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-with open("Readme.md", "r") as fh:
+with open("README.md", "r") as fh:
     long_description = fh.read()
 
 with open("requirements.txt", "r") as fh:
