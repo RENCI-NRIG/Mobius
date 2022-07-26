@@ -116,15 +116,17 @@ class Controller:
 
     def get_resources(self) -> list:
         resources = []
-        chi_slices = self.chi_client.get_resources()
-        if chi_slices is not None:
-            for x in chi_slices:
-                resources.append(x)
+        if self.chi_client:
+            chi_slices = self.chi_client.get_resources()
+            if chi_slices is not None:
+                for x in chi_slices:
+                    resources.append(x)
 
-        fabric_slices = self.fabric_client.get_resources()
-        if fabric_slices is not None:
-            for x in fabric_slices:
-                resources.append(x)
+        if self.fabric_client:
+            fabric_slices = self.fabric_client.get_resources()
+            if fabric_slices is not None:
+                for x in fabric_slices:
+                    resources.append(x)
 
         return resources
 

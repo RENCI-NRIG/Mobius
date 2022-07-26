@@ -103,8 +103,7 @@ class FabricClient(ApiClient):
             interface_list.append(iface)
 
         # Layer3 Network (provides data plane internet access)
-        net1 = slice_object.add_l3network(name=f"{site}-network", interfaces=interface_list,
-                                               type=network_type)
+        slice_object.add_l3network(name=f"{site}-network", interfaces=interface_list, type=network_type)
 
         self.slices[slice_name] = slice_object
         return slice_object
@@ -116,10 +115,13 @@ class FabricClient(ApiClient):
 
             # Check if slice already exists; return existing slice
             existing_slices = self.get_resources(slice_name=slice_object.get_name())
-            if existing_slices is not None and len(existing_slices) > 0:
-                self.slices[slice_object.get_name()] = existing_slices[0]
-                return existing_slices[0].get_slice_id()
 
+            if existing_slices is not None:
+                existing_slices = [slice_object for slice_object in existing_slices if slice_object is not None]
+
+                if len(existing_slices) > 0:
+                    self.slices[slice_object.get_name()] = existing_slices[0]
+                    return existing_slices[0].get_slice_id()
 
             # Check if the slice has more than one site then add a layer2 network
             # Submit Slice Request
